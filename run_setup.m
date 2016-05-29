@@ -26,4 +26,4 @@ catch
     run(sprintf('%s%scvx%scvx_setup', CNMF_dir, filesep, filesep));
 end
 %% save path
-savepath();
+%savepath();
