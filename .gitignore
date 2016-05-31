@@ -6,3 +6,5 @@ cvx/
 *.avi
 
 *.m~
+
+demos/demo_rui.m
