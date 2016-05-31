@@ -1,4 +1,4 @@
-function [Ain, Cin, center, Cn] = greedyROI_endoscope(Y, K, options,debug_on, save_avi)
+function [Ain, Cin, center, Cn, PNR] = greedyROI_endoscope(Y, K, options,debug_on, save_avi)
 %% a greedy method for detecting ROIs and initializing CNMF. in each iteration,
 % it searches the one with large (peak-median)/noise level and large local
 % correlation. It's the same with greedyROI_corr.m, but with some features
@@ -22,116 +22,151 @@ function [Ain, Cin, center, Cn] = greedyROI_endoscope(Y, K, options,debug_on, sa
 %       center: K' X 2, coordinate of each neuron's center
 %       Cn:  d1*d2, correlation image
 
-%% Author: Pengcheng Zhou, Carnegie Mellon University.
+%% Author: Pengcheng Zhou, Carnegie Mellon University. zhoupc1988@gmail.com
 % the method is an modification of greedyROI method used in Neuron paper of Eftychios
 % Pnevmatikakis et.al. https://github.com/epnev/ca_source_extraction/blob/master/utilities/greedyROI2d.m
-%% In each iteration of peeling off neurons, it searchs the one with maximum
+% In each iteration of peeling off neurons, it searchs the one with maximum
 % value of (max-median)/noise * Cn, which achieves a balance of SNR and
 % local correlation.
 
 
 %% use correlation to initialize NMF
 %% parameters
-d1 = options.d1;
-d2 = options.d2;
-gSig = options.gSig;
-gSiz = options.gSiz;
-min_corr = options.min_corr;
-% boudnary to be removed 
-try 
-    bd = options.bd; 
-catch 
+d1 = options.d1;        % image height
+d2 = options.d2;        % image width
+gSig = options.gSig;    % width of the gaussian kernel approximating one neuron
+gSiz = options.gSiz;    % average size of neurons
+min_corr = options.min_corr;    %minimum local correlations for determining seed pixels
+min_pnr = 15;               % peak to noise ratio for determining seed pixels
+% boudnary to avoid for detecting seed pixels
+try
+    bd = options.bd;
+catch
     bd = gSig*2;
 end
 % min_pixel = 5;  % minimum number of pixels to be a neuron
-sig = 2;    % thresholding noise by sig*std()
-max_sig_ratio = 10; 
+sig = 10;    % thresholding noise by sig*std()
 
-% maxIter = 5;
-if ~exist('debug_on', 'var'); debug_on = false; end
-if ~exist('save_avi', 'var'); save_avi = false; end
-if ~ismatrix(Y); Y = reshape(Y, d1*d2, []); end;
+% exporting initialization procedures as a video
+if ~exist('save_avi', 'var')||isempty(save_avi)
+    save_avi = false;
+elseif ischar(save_avi)
+    avi_name = save_avi;
+    save_avi = true;
+    debug_on = true;
+elseif save_avi
+    avi_name = 'greedyROI_example.avi';
+    debug_on = true; % turn on debug mode
+else
+    save_avi = false; %don't save initialization procedure
+end
+% debug mode and exporting results
+if ~exist('debug_on', 'var')
+    debug_on = false;
+end
+
+if ~ismatrix(Y); Y = reshape(Y, d1*d2, []); end;  % convert the 3D movie to a matrix
+Y(isnan(Y)) = 0;    % remove nan values
+Y = double(Y); 
+T = size(Y, 2);
 
 %% preprocessing data
-% spatially filter data
+% create a spatial filter for removing background
 psf = fspecial('gaussian', round(gSiz), gSig);
 ind_nonzero = (psf(:)>=max(psf(:,1)));
 psf = psf-mean(psf(ind_nonzero));
 psf(~ind_nonzero) = 0;
 
+% filter the data
 HY = imfilter(reshape(Y, d1,d2,[]), psf, 'replicate');
 HY = reshape(HY, d1*d2, []);
-T = size(HY, 2);
-HY_max = max(HY, [], 2)-mean(HY, 2);    % maximum projection
+% HY_med = median(HY, 2);
+% HY_max = max(HY, [], 2)-HY_med;    % maximum projection
+HY = bsxfun(@minus, HY, median(HY, 2)); 
+HY_max = max(HY, [], 2); 
+Ysig = get_noise_fft(HY, options);
+PNR = reshape(HY_max./Ysig, d1, d2);
+PNR(PNR<min_pnr) = 0;
+PNR0 = PNR;
 
 % estimate noise level and thrshold diff(HY)
-dHY = diff(HY, 1, 2);
-Ysig = std(dHY(:, 1:10:end), 0, 2);
-dHY(bsxfun(@lt, dHY, Ysig*sig)) = 0;    % all negative and noisy spikes are removed
-HY_max(HY_max<= Ysig*max_sig_ratio) = 0;    %
+% dHY = diff(HY(:, 1:nf:end), 1, 2);  %
+% Ysig = std(dHY(:, 1:5:end), 0, 2);
+% dHY(bsxfun(@lt, dHY, Ysig*sig)) =0;    % all negative and noisy spikes are removed
+HY_thr = HY;
+HY_thr(bsxfun(@lt, HY_thr, Ysig*sig)) = 0;
 
 % compute loal correlation
-Cn = correlation_image(full(dHY), [1,3], d1,d2);
+Cn = correlation_image(HY_thr, [1,2], d1,d2);
 Cn0 = Cn;   % backup
 Cn(isnan(Cn)) = 0;
 Cn = Cn + rand(size(Cn))*(1e-6);
 clear dHY;
 
-% screen searching pixels as center of the neuron
-v_search = Cn.*reshape(HY_max./Ysig, d1, d2);
-v_search(or(Cn<min_corr, v_search<0)) = 0;
-ind_search = false(d1*d2,1);  % showing whether this pixel has been searched before 
+% screen seeding pixels as center of the neuron
+v_search = Cn.*PNR;
+v_search(or(Cn<min_corr, PNR<min_pnr)) = 0;
+ind_search = false(d1*d2,1);  % showing whether this pixel has been searched before
+ind_search(v_search==0) = true; % ignore pixels with small correlations or low peak-noise-ratio
 
 % show local correlation
 if debug_on
     figure('position', [100, 100, 1290, 646]); %#ok<*UNRCH>
     subplot(231);
-    imagesc(Cn); colorbar;
+        imagesc(Cn); colorbar;
+%     imagesc(Cn.*PNR, quantile(Cn(:).*PNR(:), [0.5, 0.99])); colorbar;
     axis equal off tight; hold on;
-    title('correlation image');
+%     title('Cn * PNR');
+    title('Cn'); 
     if save_avi
-        avi_file = VideoWriter('greedyROI_example.avi');
+        avi_file = VideoWriter(avi_name);
         avi_file.open();
     end
 end
 
 %% start initialization
-if ~exist('K', 'var')||isempty(K); K = round(d1*d2/25); end
+if ~exist('K', 'var')||isempty(K); K = sum(v_search(:)>0);
+else
+    K = min(sum(v_search(:)>0), K);
+end
 Ain = zeros(d1*d2, K);  % spatial components
 Cin = zeros(K, T);      % temporal components
 center = zeros(K, 2);   % center of the initialized components
 
 %% do initialization in a greedy way
 searching_flag = true;
-    k = 0;      %number of found components
-while searching_flag   
-    %% find local maximum as initialization point     
+k = 0;      %number of found components
+% set boundary to be 0
+ind_bd = false(size(v_search));
+ind_bd(1:bd, :) = true;
+ind_bd((end-bd+1):end, :) = true;
+ind_bd(:, 1:bd) = true;
+ind_bd(:, (end-bd):end) = true;
+while searching_flag
+    %% find local maximum as initialization point
     %find all local maximum as initialization point
-    tmp_d = round(gSiz/2) + 1;
-    v_search(ind_search) = 0; 
+    tmp_d = round(gSig)+1;
+    v_search(ind_search) = 0;
     v_max = ordfilt2(v_search, tmp_d^2, true(tmp_d));
     % set boundary to be 0
-    v_search(1:bd, :) = 0;
-    v_search((end-bd+1):end, :) = 0;
-    v_search(:, 1:bd) = 0;
-    v_search(:, (end-bd):end) = 0;
+    v_search(ind_bd) = 0;
     
     ind_localmax = find(and(v_search(:)==v_max(:), v_max(:)>0));
-    if(isempty(ind_localmax)); break; end 
-    [max_vs, ind_sort] = sort(v_search(ind_localmax), 'descend');
+    if(isempty(ind_localmax)); break; end
+    [~, ind_sort] = sort(v_search(ind_localmax), 'descend');
     ind_localmax = ind_localmax(ind_sort);
     [r_peak, c_peak] = ind2sub([d1,d2],ind_localmax);
     
-    %% try initialization over all local maximums 
+    %% try initialization over all local maximums
     for mcell = 1:length(ind_localmax);
         % find the starting point
         ind_p = ind_localmax(mcell);
-        max_v = max_vs(mcell);
-        if max_v==0; % all pixels has been tried for initialization 
-            searching_flag = false;
-            break;
-        end;  
-        ind_search(ind_p) = true; % indicating that this pixel has been searched. 
+        %         max_v = max_vs(mcell);
+        max_v = v_search(ind_p);
+        ind_search(ind_p) = true; % indicating that this pixel has been searched.
+        if max_v==0; % all pixels have been tried for initialization
+            continue;
+        end;
         [r, c]  = ind2sub([d1, d2], ind_p);
         
         % roughly check whether this is a good starting point
@@ -162,7 +197,7 @@ while searching_flag
             imagesc(reshape(v_search, d1, d2), [0, max_v]); colorbar;
             title(sprintf('neuron %d', k+1));
             axis equal off tight; hold on;
-            plot(c_peak(mcell:end), r_peak(mcell:end), '.r'); 
+            plot(c_peak(mcell:end), r_peak(mcell:end), '.r');
             plot(c,r, 'og');
             subplot(233);
             imagesc(reshape(Cn(ind_nhood), nr, nc));
@@ -176,13 +211,15 @@ while searching_flag
         %% extract ai, ci
         sz = [nr, nc];
         [ai, ci, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
+        if or(any(isnan(ai)), any(isnan(ci))); ind_success=false; end
+        if max(ci)/get_noise_fft(ci)<min_pnr; ind_success=false; end
         if ind_success
             % save this initialization
             k = k+1;
             Ain(ind_nhood, k) = ai;
             Cin(k, :) = ci;
             center(k, :) = [r, c];
-
+            
             % avoid searching nearby pixels that are highly correlated with this one
             ind_search(ind_nhood(ai>max(ai)*options.merge_thr)) = true;
             
@@ -190,24 +227,32 @@ while searching_flag
             Y(ind_nhood, :) = Y_box - ai*ci;
             % update filtered data
             Hai = imfilter(reshape(ai, nr, nc), psf, 'replicate');  % filter ai
-            HY(ind_nhood, :) = HY_box - Hai(:)*ci;
+            HY_box = HY_box - Hai(:)*ci;       
+%             HY_box_med = median(HY_box, 2);
+            HY_box = bsxfun(@minus, HY_box, median(HY_box, 2)); 
+            HY(ind_nhood, :) = HY_box;
             % update the maximum projection of HY
-            dHY_box = diff(HY(ind_nhood, :), 1, 2);
-            Ysig_box = std(dHY_box(:, 1:10:end), 0, 2);
-            dHY_box(bsxfun(@lt, dHY_box, Ysig_box)) = 0;
-            temp  = HY(ind_nhood, :);
-            temp = max(temp, [], 2) - mean(temp, 2); 
-            temp(temp<Ysig_box*max_sig_ratio) = 0;
-            HY_max(ind_nhood, :) = temp;
-            
+            %             dHY_box = diff(HY(ind_nhood, 1:nf:end), 1, 2);
+            Ysig_box = get_noise_fft(HY_box, options);
+            %             dHY_box(bsxfun(@lt, dHY_box, Ysig_box*sig)) = 0;
+%             temp = max(HY_box, [], 2) - HY_box_med;
+            temp = max(HY_box, [], 2);
+            tmp_PNR = temp./Ysig_box;
+            tmp_PNR(or(isnan(tmp_PNR), tmp_PNR<min_pnr)) = 0;
+            PNR(ind_nhood) = tmp_PNR;
+            HY_box_thr = HY_box;
+%             HY_box_thr(bsxfun(@lt, HY_box, HY_box_med+Ysig_box*sig)) = 0;
+            HY_box_thr(bsxfun(@lt, HY_box, Ysig_box*sig)) = 0;
             
             % update correlation image
-            tmp_Cn = correlation_image(dHY_box, [1,3], nr, nc);
+            tmp_Cn = correlation_image(HY_box_thr, [1,2], nr, nc);
             tmp_Cn(or(isnan(tmp_Cn), tmp_Cn<min_corr)) = 0;
             Cn(ind_nhood) = tmp_Cn;
             
             % update search value
-            v_search(ind_nhood) = Cn(ind_nhood).*HY_max(ind_nhood)./Ysig_box;
+            v_search(ind_nhood) = Cn(ind_nhood).*PNR(ind_nhood);
+            v_search(ind_bd) = 0;
+            v_search(ind_search) = 0;
         else
             continue;
         end
@@ -223,7 +268,7 @@ while searching_flag
             axis equal off tight;
             title('spatial component');
             subplot(2,3,4:6); cla;
-            plot(ci); title('temporal component');
+            plot(ci); title('temporal component'); axis tight;
             if save_avi;
                 frame = getframe(gcf);
                 frame.cdata = imresize(frame.cdata, [646, 1290]);
@@ -252,4 +297,6 @@ Ain = sparse(Ain(:, 1:k));
 Cin = Cin(1:k, :);
 % Cin(Cin<0) = 0;
 Cn = Cn0;
+PNR = PNR0;
 if save_avi; avi_file.close(); end
+end

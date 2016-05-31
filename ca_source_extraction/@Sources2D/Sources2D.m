@@ -48,6 +48,9 @@ classdef Sources2D < handle
             [obj.A, obj.C, obj.b, obj.f, center] = initialize_components(Y, K, tau, obj.options);
         end
         
+        %% fast initialization for microendoscopic data
+        [center, Cn, pnr] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi);  
+        
         %% update spatial components
         function updateSpatial(obj, Y)
             [obj.A, obj.b, obj.C] = update_spatial_components(Y, ...
@@ -359,7 +362,7 @@ classdef Sources2D < handle
             % captured too much noiser pixels or all pxiels are zero, ignore this neuron
             ind_delete = or(center_ratio<0., sum(A2,1)==0);
             A2(:, ind_delete) = [];
-            C(ind_delete) = [];
+%             C(ind_delete) = [];
             ind_neuron = (1:K);
             ind_neuron(ind_delete) =[];
         end
@@ -389,35 +392,55 @@ classdef Sources2D < handle
         
         %% load data
         function [Y, neuron] = load_data(obj, nam, sframe, num2read)
-            ssub = obj.options.ssub;
-            tsub = obj.options.tsub;
-            d1 = obj.options.d1;
-            d2 = obj.options.d2;
-            Tbatch = round((2^30/8)/(d1*d2)/tsub)*tsub;
-            temp = imfinfo(nam); 
-            num2read = min(num2read, length(temp)-sframe+1); 
+            ssub = obj.options.ssub;    % spatial downsampling factor
+            tsub = obj.options.tsub;    % temporal downsampling factor
+            d1 = obj.options.d1;        % image height
+            d2 = obj.options.d2;        % image width
+            Tbatch = round((2^28)/(d1*d2)/tsub)*tsub; % maximum memory usage is 2GB
+            [~, ~, file_type] = fileparts(nam);
+            if strcmpi(file_type, '.mat')
+                data = matfile(nam);
+                Ysiz = data.Ysiz; 
+                numFrame = Ysiz(3);
+                img = data.Y(:, :, 1); 
+            elseif strcmpi(file_type, '.tif') || strcmpi(file_type, '.tiff')
+                numFrame = length(imfinfo(nam));
+                img = imread(nam); 
+            end
+            num2read = min(num2read, numFrame-sframe+1); % frames to read
+            
             if Tbatch>=num2read
-                Yraw = bigread2(nam, sframe, num2read);
+                % load all data because the file is too small
+                if strcmpi(file_type, '.mat')
+                    Yraw = data.Y;
+                elseif strcmpi(file_type, '.tif') || strcmpi(file_type, '.tiff')
+                    Yraw = bigread2(nam, sframe, num2read);
+                else
+                    fprintf('\nThe input file format is not supported yet\n\n');
+                    return;
+                end
                 [neuron, Y] = obj.downSample(double(Yraw));
             else
-                d1s = ceil(d1/ssub);
-                d2s = ceil(d2/ssub);
-                Ts = floor(num2read/tsub);
-                Y = zeros(d1s, d2s, Ts);
-                k0 = 1;
-                k1 = Tbatch/tsub;
-                nbatch = floor(num2read/Tbatch);
-                for m=1:nbatch
-                    if m==nbatch
-                        Yraw = bigread2(nam, sframe, num2read-(m-1)*Tbatch);
-                        [neuron, Y(:,:, k0:end)] = obj.downSample(double(Yraw));
+                % load data in batch model
+                [d1s, d2s] = size(imresize(img, 1/ssub));  % size of spatial downsampled data
+                Ts = floor(num2read/tsub);  % frame number after downsampling
+                Y = zeros(d1s, d2s, Ts);    % downsampled data size
+                lastframe = sframe + Ts*tsub -1;  % index of the last frame for loading
+                frame0 = sframe;
+                while sframe<= lastframe
+                    tmp_num2read =  min(lastframe-sframe+1, Tbatch);
+                    if strcmpi(file_type, '.mat')
+                        fprintf('load data from frame %d to frame %d of %d total frames\n', sframe, sframe+tmp_num2read-1, lastframe);
+                        Yraw = data.Y(:, :, sframe:(sframe+tmp_num2read-1));
+                    elseif strcmpi(file_type, '.tif') || strcmpi(file_type, '.tiff')
+                        Yraw = bigread2(nam, sframe, tmp_num2read);
                     else
-                        Yraw = bigread2(nam, sframe, Tbatch);
-                        [~, Y(:, :, k0:k1)] = obj.downSample(double(Yraw));
-                        k0 = k1+1;
-                        k1 = k0+Tbatch/tsub-1;
-                        sframe = sframe+Tbatch;
+                        fprintf('\nThe input file format is not supported yet\n\n');
+                        return;
                     end
+                    [neuron, temp] = obj.downSample(double(Yraw));
+                    Y(:, :, (sframe-frame0)/tsub + (1:size(temp, 3))) = temp;
+                    sframe = sframe + size(Yraw,3);
                 end
             end
         end
@@ -431,7 +454,7 @@ classdef Sources2D < handle
                 AA = obj.A(:, ind);
             end
             if nargin<3
-                ratio = 0.1; 
+                ratio = 0.1;
             end
             AA = bsxfun(@times, AA, 1./sum(AA,1));
             AA(bsxfun(@lt, AA, max(AA, [], 1)*ratio)) = 0;
@@ -444,15 +467,15 @@ classdef Sources2D < handle
                 col = round(col/2);
             end
             img = obj.reshape(img, 2);
-            img = img/max(img(:))*(2^16); 
+            img = img/max(img(:))*(2^16);
             img = uint16(img);
         end
         
         %% play video
         function playAC(obj, avi_file, cell_id)
             if nargin<3
-                cell_id = 1:size(obj.C, 1); 
-            end 
+                cell_id = 1:size(obj.C, 1);
+            end
             [K, T] = size(obj.C(cell_id, :));
             % draw random color for each neuron
             tmp = mod((1:K)', 6)+1;
@@ -470,7 +493,7 @@ classdef Sources2D < handle
             
             for m=1:T
                 img = obj.A(:, cell_id)*bsxfun(@times, obj.C(cell_id,m), col);
-                img = obj.reshape(img, 2);                
+                img = obj.reshape(img, 2);
                 imagesc(uint8(img));
                 axis equal off tight;
                 title(sprintf('Time %.2f seconds', m/obj.Fs));
@@ -486,7 +509,7 @@ classdef Sources2D < handle
         
         %% manually add missing neurons
         manual_add(obj, Yres);
-        %% automatically add missing neurons. 
+        %% automatically add missing neurons.
         auto_add(obj, Yres, K);
     end
     

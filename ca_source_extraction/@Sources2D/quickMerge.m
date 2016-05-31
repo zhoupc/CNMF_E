@@ -31,7 +31,7 @@ else
 end
 
 %% using merging criterion to detect paired neurons
-flag_merge = and((C_corr>=merge_thr), A_corr>0.1);
+flag_merge = and((C_corr>=merge_thr), A_corr>=0);
 
 [l,c] = graph_connected_comp(sparse(flag_merge));     % extract connected components
 

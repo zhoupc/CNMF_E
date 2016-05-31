@@ -22,23 +22,22 @@ if or(isempty(tsub), tsub<1); tsub = 1; end
 ssub = round(ssub);
 tsub = round(tsub);
 
-% data dimension
-[d1, d2, T] = size(Y);
+if and(ssub==1, tsub==1)
+    fprintf('no downsampling required\n'); 
+    Y_ds = Y; 
+    return; 
+end 
 
 %% downsampe
-d1s = ceil(d1/ssub);
-d2s = ceil(d2/ssub);
-Ts = floor(T/tsub);
+[d1, d2, T] = size(Y); 
 
-if ssub>1
-    % spatial downsampling
-    Y_ds = imresize(Y, [d1s, d2s], 'box');
-else
-    Y_ds = Y; 
-end
-
+% temporal downsampling 
+Ts = floor(T/tsub); % remove few 
 if tsub>1  
     % temporal downsampling, take the mean of continuours tsub frames 
-    % if mod(T, tsub)~=0, discard the rest 
-    Y_ds = squeeze(mean(reshape(Y_ds(:, :, 1:(Ts*tsub)), d1s, d2s, tsub, Ts), 3)); 
+    % if mod(T, tsub)~=0, discard the rest frames
+    Y_ds = squeeze(mean(reshape(Y(:, :, 1:(Ts*tsub)), d1, d2, tsub, Ts), 3)); 
 end
+
+% spatial downsampling 
+Y_ds = imresize(Y_ds, 1/ssub); 

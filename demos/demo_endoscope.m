@@ -90,10 +90,10 @@ for m=1:nb
 end
 %% update spatial components (blcok 2)
 tic;
-max_min_ratio = 50;     % for each neuron's spatial component, it threshold the nonzero pixels to be bigger than max / max_min_ratio.
+max_min_ratio = 15;     % for each neuron's spatial component, it threshold the nonzero pixels to be bigger than max / max_min_ratio.
 neuron.trimSpatial(max_min_ratio);
 ind_nonzero = (neuron.A>0);     % nonzero pixels
-neuron.options.se = strel('disk', 10);
+neuron.options.se = strel('disk', 5);
 IND = determine_search_location(neuron.A, 'dilate', neuron.options);
 
 % update spatial components with model DY = A*DC

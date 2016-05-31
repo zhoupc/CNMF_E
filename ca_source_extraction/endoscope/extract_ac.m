@@ -41,15 +41,18 @@ y_bg = median(Y(ind_bd, :), 1);  % take the mean in the boundary as an estimatio
 dY = diff(Y(:, ind_sort), 1, 2); 
 dY(bsxfun(@lt, abs(dY), std(dY, 0, 2)*2)) = 0; 
 dci = diff(ci(ind_sort)); 
-dci(dci<std(dci, 0, 2)*2) = 0; 
+dci(dci<std(dci)*2) = 0; 
 ai = max(0, dY*dci'/(dci*dci')); 
 
 % post-process ai by bwlabel
-temp = full(ai>max(ai)/10);
+temp = full(ai>max(ai)/15);
 l = bwlabel(reshape(temp, nr, nc), 4);   % remove disconnected components
 temp(l~=l(ind_ctr)) = false;
 ai(~temp(:)) = 0;
-
+if sum(ai(:)>0) < 4 %the ROI is too small
+    ind_success=false; 
+    return; 
+end
 % estimate ci again 
 ind_nonzero = (ai>0); 
 ai_mask = mean(ai(ind_nonzero))*ind_nonzero; 
