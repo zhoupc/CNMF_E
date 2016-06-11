@@ -86,7 +86,7 @@ debug_on = true;        % debug mode
 save_avi = true;
 neuron.options.min_corr = 0.9;
 neuron.options.nk = 1; %round(T/(60*neuron.Fs)); % number of knots for spline basis, the interval between knots is 180 seconds
-patch_par = [3, 3];  % divide the optical field into 3 X 3 patches and do initialization patch by patch
+patch_par = 1; %[3, 3];  % divide the optical field into 3 X 3 patches and do initialization patch by patch
 K = 100; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
 neuron.options.bd = []; % boundaries to be removed due to motion correction 
 [center, Cn, pnr] = neuron.initComponents_endoscope(Y, K, patch_par, debug_on, save_avi); 
@@ -131,7 +131,7 @@ colormap winter;
 axis equal; axis off;
 title('contours of estimated neurons');
 
-%% udpate background (cell 1, the following three blocks can be run iteratively)
+%% udpate background (cell 1, the following three cells can be run iteratively)
 % determine nonzero pixels for each neuron 
 max_min_ratio = 50;     % it thresholds the nonzero pixels to be bigger than max / max_min_ratio.
 neuron.trimSpatial(max_min_ratio);
@@ -140,8 +140,8 @@ IND = determine_search_location(neuron.A, [], neuron.options);
 % start approximating theb background
 tic;
 Ybg = Y-neuron.A*neuron.C; 
-ssub = 3;   % downsample the data to improve the speed 
-rr = neuron.options.gSiz;  % average neuron size, it will determine the neighbors for regressing each pixel's trace
+ssub = 1;   % downsample the data to improve the speed 
+rr = round(neuron.options.gSiz*1.5);  % average neuron size, it will determine the neighbors for regressing each pixel's trace
 active_px = [];% (sum(IND, 2)>0);  %If some missing neurons are not covered by active_px, use [] to replace IND
 Ybg = neuron.localBG(Ybg, ssub, rr, active_px); % estiamte local background.
 fprintf('Time cost in estimating the background:        %.2f seconds\n', toc); 
@@ -242,13 +242,13 @@ ctr = round( neuron.estCenter());
 
 figure('position', [0,0, 1248, 600]);
 % avi_file = VideoWriter('~/Dropbox/Public/Garret/day1/residual.avi');
-save_avi = true;
+save_avi = false;
 if save_avi
     avi_file = VideoWriter([dir_nm, file_nm, '_results1.avi']);
     avi_file.open();
 end
-Ymax = quantile(Y(1:1000:(d1*d2*T)), 0.999);
-ACmax = 70; %quantile(Yac(1:1000:(d1*d2*T)), 0.9999);
+Ymax = 2000; %quantile(Y(1:1000:(d1*d2*T)), 0.9999);
+ACmax = 50; %quantile(Yac(1:1000:(d1*d2*T)), 0.9999);
 
 %     subplot(4,6, [5,6,11,12]); 
 for m=1:5:T
