@@ -1,4 +1,4 @@
-function [Ain, Cin, center, Cn, PNR] = greedyROI_endoscope(Y, K, options,debug_on, save_avi)
+function [Ain, Cin, center, Cn, PNR, debug_on] = greedyROI_endoscope(Y, K, options,debug_on, save_avi)
 %% a greedy method for detecting ROIs and initializing CNMF. in each iteration,
 % it searches the one with large (peak-median)/noise level and large local
 % correlation. It's the same with greedyROI_corr.m, but with some features
@@ -37,7 +37,7 @@ d2 = options.d2;        % image width
 gSig = options.gSig;    % width of the gaussian kernel approximating one neuron
 gSiz = options.gSiz;    % average size of neurons
 min_corr = options.min_corr;    %minimum local correlations for determining seed pixels
-min_pnr = 15;               % peak to noise ratio for determining seed pixels
+min_pnr = 10;               % peak to noise ratio for determining seed pixels
 % boudnary to avoid for detecting seed pixels
 try
     bd = options.bd;
@@ -113,7 +113,7 @@ ind_search(v_search==0) = true; % ignore pixels with small correlations or low p
 if debug_on
     figure('position', [100, 100, 1290, 646]); %#ok<*UNRCH>
     subplot(231);
-        imagesc(Cn); colorbar;
+        imagesc(Cn0); colorbar;
 %     imagesc(Cn.*PNR, quantile(Cn(:).*PNR(:), [0.5, 0.99])); colorbar;
     axis equal off tight; hold on;
 %     title('Cn * PNR');
@@ -145,7 +145,8 @@ ind_bd(:, (end-bd):end) = true;
 while searching_flag
     %% find local maximum as initialization point
     %find all local maximum as initialization point
-    tmp_d = round(gSig)+1;
+    tmp_d = 2*round(gSig)+1;
+    v_search = medfilt2(v_search, [3, 3]); 
     v_search(ind_search) = 0;
     v_max = ordfilt2(v_search, tmp_d^2, true(tmp_d));
     % set boundary to be 0
@@ -191,6 +192,14 @@ while searching_flag
         Y_box = Y(ind_nhood, :);    % extract spatial component from Y_box
         ind_ctr = sub2ind([nr, nc], r-rsub(1)+1, c-csub(1)+1);   % subscripts of the center
         
+        % a larger neighbours for updating HY after initialization of one
+        % neuron 
+        rsub = max(1, -2*gSiz+r):min(d1, 2*gSiz+r);
+        csub = max(1, -2*gSiz+c):min(d2, 2*gSiz+c);
+        [cind, rind] = meshgrid(csub, rsub);
+        ind_nhood_HY = sub2ind([d1, d2], rind(:), cind(:));
+        [nr2, nc2] = size(cind); 
+        
         %% show temporal trace in the center
         if debug_on
             subplot(232); cla;
@@ -226,31 +235,28 @@ while searching_flag
             % update the raw data
             Y(ind_nhood, :) = Y_box - ai*ci;
             % update filtered data
-            Hai = imfilter(reshape(ai, nr, nc), psf, 'replicate');  % filter ai
-            HY_box = HY_box - Hai(:)*ci;       
-%             HY_box_med = median(HY_box, 2);
-            HY_box = bsxfun(@minus, HY_box, median(HY_box, 2)); 
-            HY(ind_nhood, :) = HY_box;
+            Hai = imfilter(reshape(Ain(ind_nhood_HY, k), nr2, nc2), psf, 'replicate'); 
+            HY_box = HY(ind_nhood_HY, :) - Hai(:)*ci; 
+%             HY_box = bsxfun(@minus, HY_box, median(HY_box, 2)); 
+            HY(ind_nhood_HY, :) = HY_box; 
+            
             % update the maximum projection of HY
-            %             dHY_box = diff(HY(ind_nhood, 1:nf:end), 1, 2);
-            Ysig_box = get_noise_fft(HY_box, options);
-            %             dHY_box(bsxfun(@lt, dHY_box, Ysig_box*sig)) = 0;
-%             temp = max(HY_box, [], 2) - HY_box_med;
+            Ysig_box = Ysig(ind_nhood_HY);
             temp = max(HY_box, [], 2);
             tmp_PNR = temp./Ysig_box;
             tmp_PNR(or(isnan(tmp_PNR), tmp_PNR<min_pnr)) = 0;
-            PNR(ind_nhood) = tmp_PNR;
-            HY_box_thr = HY_box;
-%             HY_box_thr(bsxfun(@lt, HY_box, HY_box_med+Ysig_box*sig)) = 0;
+            PNR(ind_nhood_HY) = tmp_PNR;
+            
+            HY_box_thr = HY_box;  %thresholded version of HY
             HY_box_thr(bsxfun(@lt, HY_box, Ysig_box*sig)) = 0;
             
             % update correlation image
-            tmp_Cn = correlation_image(HY_box_thr, [1,2], nr, nc);
+            tmp_Cn = correlation_image(HY_box_thr, [1,2], nr2, nc2);
             tmp_Cn(or(isnan(tmp_Cn), tmp_Cn<min_corr)) = 0;
-            Cn(ind_nhood) = tmp_Cn;
+            Cn(ind_nhood_HY) = tmp_Cn;
             
             % update search value
-            v_search(ind_nhood) = Cn(ind_nhood).*PNR(ind_nhood);
+            v_search(ind_nhood_HY) = Cn(ind_nhood_HY).*PNR(ind_nhood_HY);
             v_search(ind_bd) = 0;
             v_search(ind_search) = 0;
         else
@@ -267,8 +273,9 @@ while searching_flag
             imagesc(reshape(ai, nr, nc));
             axis equal off tight;
             title('spatial component');
-            subplot(2,3,4:6); cla;
+            subplot(2,3,4:6); hold on; 
             plot(ci); title('temporal component'); axis tight;
+            legend('activity in the center', 'new estimation'); 
             if save_avi;
                 frame = getframe(gcf);
                 frame.cdata = imresize(frame.cdata, [646, 1290]);

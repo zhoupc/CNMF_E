@@ -47,7 +47,7 @@ fprintf('\nThe data has been mapped to RAM. It has %d X %d pixels X %d frames. \
 
 %% create Source2D class object for storing results and parameters
 neuron_raw = Sources2D('d1',d1,'d2',d2);   % dimensions of datasets
-neuron_raw.Fs = 10;         % frame rate
+neuron_raw.Fs = 20;         % frame rate
 neuron_raw.options.Fs = 20; 
 ssub = 1;           % spatial downsampling factor 
 tsub = 1;           % temporal downsampling factor 
@@ -82,8 +82,8 @@ fprintf('Time cost in downsapling data:     %.2f seconds\n', toc);
 
 %% initialization of A, C
 tic;
-debug_on = false;        % debug mode 
-save_avi = false;
+debug_on = true;        % debug mode 
+save_avi = true;
 neuron.options.min_corr = 0.9;
 neuron.options.nk = 1; %round(T/(60*neuron.Fs)); % number of knots for spline basis, the interval between knots is 180 seconds
 patch_par = [3, 3];  % divide the optical field into 3 X 3 patches and do initialization patch by patch

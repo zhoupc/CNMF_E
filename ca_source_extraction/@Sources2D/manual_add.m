@@ -12,18 +12,26 @@ figure;
 subplot(221);
 obj.image(Ymax);
 axis equal off tight;
+POS = get(gca, 'position'); 
+POS(1) = POS(1)+POS(3)+0.01; 
+POS(3) = 0.02; 
+S='temp=subplot(221); imagesc(temp.Children.CData, [0, get(gco, ''value'')]); axis equal off tight;';
+uic=uicontrol('style','slider','units','normalized','position', ...
+    POS,'min',0,'max',max(Ymax(:)),'value',max(Ymax),'callback',S);
 
 A = zeros(size(obj.A));
 C = zeros(size(obj.C));
 k = 0;  % number of neurons added
 psf = fspecial('gaussian', round(gSiz), gSig);
 psf = psf-mean(psf(:));
+disp('adjust the colorbar and type any key to continue\n'); 
+pause; 
+
 while true
     % pick neuron locations
     subplot(221);
-    obj.image(Ymax);
+    obj.image(Ymax, [0, get(uic, 'value')]);
     axis equal off tight; 
-    colorbar; 
     [c,r] = ginput(1); c=round(c); r=round(r);
     ind_ctr = sub2ind([d1,d2], r, c);
     y0 = squeeze(Yres(ind_ctr, :));

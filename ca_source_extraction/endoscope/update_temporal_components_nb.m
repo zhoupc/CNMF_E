@@ -1,4 +1,4 @@
-function [C,f,P,S,YrA] = update_temporal_components_nb(Y,A,b,Cin,fin,P,options)
+function [C,P,S,YrA] = update_temporal_components_nb(Y,A,b,Cin,fin,P,options)
 
 % update temporal components and background given spatial components
 % A variety of different methods can be used and are separated into 2 classes:
@@ -35,7 +35,6 @@ function [C,f,P,S,YrA] = update_temporal_components_nb(Y,A,b,Cin,fin,P,options)
 % 
 % OUTPUTS:
 % C:        temporal components (nr X T matrix)
-% f:        temporal background (1 x T vector)
 % P:        struct for neuron parameters
 % S:        deconvolved activity
 
@@ -112,14 +111,6 @@ if isempty(Cin) || nargin < 4    % estimate temporal components if missing
     ITER = max(ITER,3);
 end
 
-if  isempty(b) || isempty(fin) || nargin < 5  % re-estimate temporal background
-    if isempty(b) || nargin < 3
-        [b,fin] = nnmf(max(Y - A*Cin,0),1);
-    else
-        fin = max((b'*Y - (b'*A)*Cin)/norm(b)^2,0);
-    end
-end
-
 if ~memmaped
     saturatedPix = setdiff(1:d,unsaturatedPix);     % remove any saturated pixels
     Ysat = Y(saturatedPix,:);
@@ -127,14 +118,11 @@ if ~memmaped
     bsat = b(saturatedPix,:);
     Y = Y(unsaturatedPix,:);
     A = A(unsaturatedPix,:);
-    b = b(unsaturatedPix,:);
     d = length(unsaturatedPix);
 end
 
 K = size(A,2);
-A = [A,b];
 S = zeros(size(Cin));
-Cin = [Cin;fin];
 C = Cin;
 
 if strcmpi(method,'noise_constrained')
@@ -379,6 +367,5 @@ else
         end
     end
 end
-f = C(K+1:end,:);
 C = C(1:K,:);
 YrA = YrA(:,1:K)';

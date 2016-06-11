@@ -49,7 +49,7 @@ classdef Sources2D < handle
         end
         
         %% fast initialization for microendoscopic data
-        [center, Cn, pnr] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi);  
+        [center, Cn, pnr] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi);
         
         %% update spatial components
         function updateSpatial(obj, Y)
@@ -57,16 +57,27 @@ classdef Sources2D < handle
                 obj.C, obj.f, obj.A, obj.P, obj.options);
         end
         
+        %% udpate spatial components without background
+        function updateSpatial_nb(obj, Y)
+            [obj.A, obj.C] = update_spatial_components_nb(Y, ...
+                obj.C, obj.A, obj.P, obj.options);
+        end
         %% update temporal components
         function updateTemporal(obj, Y)
             [obj.C, obj.f, obj.P, obj.S] = update_temporal_components(...
                 Y, obj.A, obj.b, obj.C, obj.f, obj.P, obj.options);
         end
         
+        %% update temporal components without background
+        function updateTemporal_nb(obj, Y)
+            [obj.C, obj.P, obj.S] = update_temporal_components_nb(...
+                Y, obj.A, obj.b, obj.C, obj.f, obj.P, obj.options);
+        end
+        
         %% merge found components
         function [nr, merged_ROIs] = merge(obj, Y)
             [obj.A, obj.C, nr, merged_ROIs, obj.P, obj.S] = merge_components(...
-                Y,obj.A, obj.b, obj.C, obj.f, obj.P,obj.S, obj.options);
+                Y,obj.A, [], obj.C, [], obj.P,obj.S, obj.options);
         end
         
         %% compute the residual
@@ -193,10 +204,10 @@ classdef Sources2D < handle
         end
         
         %% update A & C using HALS
-        function obj = HALS_AC(obj, Y)
+        function [obj, IDs] = HALS_AC(obj, Y)
             %update A,C,b,f with HALS
             Y = obj.reshape(Y, 1);
-            [obj.A, obj.C, obj.b, obj.f] = HALS_2d(Y, obj.A, obj.C, obj.b,...
+            [obj.A, obj.C, obj.b, obj.f, IDs] = HALS_2d(Y, obj.A, obj.C, obj.b,...
                 obj.f, obj.options);
         end
         
@@ -362,7 +373,7 @@ classdef Sources2D < handle
             % captured too much noiser pixels or all pxiels are zero, ignore this neuron
             ind_delete = or(center_ratio<0., sum(A2,1)==0);
             A2(:, ind_delete) = [];
-%             C(ind_delete) = [];
+            %             C(ind_delete) = [];
             ind_neuron = (1:K);
             ind_neuron(ind_delete) =[];
         end
@@ -400,12 +411,12 @@ classdef Sources2D < handle
             [~, ~, file_type] = fileparts(nam);
             if strcmpi(file_type, '.mat')
                 data = matfile(nam);
-                Ysiz = data.Ysiz; 
+                Ysiz = data.Ysiz;
                 numFrame = Ysiz(3);
-                img = data.Y(:, :, 1); 
+                img = data.Y(:, :, 1);
             elseif strcmpi(file_type, '.tif') || strcmpi(file_type, '.tiff')
                 numFrame = length(imfinfo(nam));
-                img = imread(nam); 
+                img = imread(nam);
             end
             num2read = min(num2read, numFrame-sframe+1); % frames to read
             
@@ -491,9 +502,10 @@ classdef Sources2D < handle
                 fp.open();
             end
             
+            cmax = max(reshape(obj.A*obj.C(:, 1:100:end), 1, []));
             for m=1:T
                 img = obj.A(:, cell_id)*bsxfun(@times, obj.C(cell_id,m), col);
-                img = obj.reshape(img, 2);
+                img = obj.reshape(img, 2)/cmax*500;
                 imagesc(uint8(img));
                 axis equal off tight;
                 title(sprintf('Time %.2f seconds', m/obj.Fs));
@@ -511,6 +523,60 @@ classdef Sources2D < handle
         manual_add(obj, Yres);
         %% automatically add missing neurons.
         auto_add(obj, Yres, K);
+        
+        %% post process spatial component
+        function A_ = post_process_spatial(obj, A_)
+            if ~exist('A_', 'var');
+                A_ = obj.A;
+            end
+            A_ = threshold_components(A_, obj.options);
+            obj.A = A_;
+        end
+        
+        %% estimate local background
+        function Ybg = localBG(obj, Ybg, ssub, rr, IND, method)
+            if ~exist('rr', 'var')||isempty(rr); rr=obj.options.gSiz; end
+            if ~exist('ssub', 'var')||isempty(ssub); ssub = 1; end
+            if ~exist('IND', 'var'); IND = []; end
+            if ~exist('method', 'var'); method = 'regression'; end
+            Ybg = lle(obj.reshape(Ybg, 2), ssub, rr, IND, method);
+            Ybg = obj.reshape(Ybg, 1);
+        end
+        
+        %% save results
+        function save_results(obj, file_nm, Ybg) %#ok<INUSD>
+            warning('off', 'all');
+            neuron_results = struct(obj);  %#ok<NASGU>
+            if exist('Ybg', 'var')
+                save(file_nm, 'neuron_results', 'Ybg');
+            else
+                save(file_nm, 'neuron_results');
+            end
+            warning('on', 'all');
+            fprintf('results has been saved into file %s\n', file_nm);
+        end
+        
+        %% event detection
+        function E = event_detection(obj, sig, w)
+            % detect events by thresholding S with sig*noise
+            % can get at most one spike
+            % sig: threshold of the minimum amplitude of the events
+            
+            if ~exist('sig', 'var')|| isempty(sig)
+                sig=5;
+            end
+            
+            if ~exist('w', 'var')||isempty(w)
+                w = obj.Fs;
+            end
+            E =obj.C;    % event detection
+            Emin = ordfilt2(E, 1, ones(1, w));
+            Emax = ordfilt2(E, w, ones(1, w));
+            E(E~=Emax) = 0;  % only select local maximums
+            for m=1:size(E,1)
+                E(m, E(m, :)-Emin(m, :)< obj.P.neuron_sn{m}*sig) = 0; % remove small transients
+            end
+        end
     end
     
 end

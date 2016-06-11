@@ -21,13 +21,16 @@ if nargin < 4
     P_or = [];
 else
     P_or = P;
-    if isfield(P,'gn'); P_or.gn=P.gn(srt); end
-    if isfield(P,'b'); P_or.b=P.b(srt); end
-    if isfield(P,'c1'); P_or.c1=P.c1(srt); end
-    if isfield(P,'neuron_sn'); P_or.neuron_sn=P.neuron_sn(srt); end
+    try
+        if isfield(P,'gn')&& ~isempty(P.gn); P_or.gn=P.gn(srt); end
+        if isfield(P,'b')&& ~isempty(P.b); P_or.b=P.b(srt); end
+        if isfield(P,'c1')&&~isempty(P.c1); P_or.c1=P.c1(srt); end
+        if isfield(P,'neuron_sn')&&~isempty(P.neuron_sn); P_or.neuron_sn=P.neuron_sn(srt); end
+    catch
+    end
 end
 
-if nargin < 3 || isempty(S)
+if nargin < 3 || isempty(S) ||(size(S, 1)~=length(srt))
     S_or = [];
 else
     S_or = S(srt,:);

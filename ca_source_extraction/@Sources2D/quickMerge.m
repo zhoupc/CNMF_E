@@ -21,17 +21,27 @@ merge_thr = options.merge_thr;      % merging threshold
 
 %% find neuron pairs to merge
 % compute spatial correlation
-A_corr = corr(A);
+temp = bsxfun(@times, A, 1./sum(A,1)); 
+A_overlap = temp'*temp; 
 
 % compute temporal correlation
-if ~exist('temporal_component', 'var') && strcmpi(temporal_component, 'S')
-    C_corr = corr(obj.S) - eye(K); 
+if ~exist('temporal_component', 'var')|| isempty(temporal_component)
+    temporal_component = 'C'; 
+end
+
+if strcmpi(temporal_component, 'S')
+    S = obj.S; 
+    if isempty(S) || (size(S, 1)~=size(obj.C, 1))
+        S = diff(obj.C, 1, 2); 
+        S(bsxfun(@lt, S, 2*get_noise_fft(S))) = 0; 
+    end
+    C_corr = corr(S') - eye(K); 
 else
     C_corr = corr(C')-eye(K);
 end
 
 %% using merging criterion to detect paired neurons
-flag_merge = and((C_corr>=merge_thr), A_corr>=0);
+flag_merge = and((C_corr>=merge_thr), A_overlap>0);
 
 [l,c] = graph_connected_comp(sparse(flag_merge));     % extract connected components
 

@@ -83,7 +83,7 @@ while and(m>=1, m<=length(ind))
     if save_img
         saveas(gcf, sprintf('neuron_%d.png', ind(m)));
     else
-        fprintf('Neuron %d, keep(k, default)/delete(d)/split(s)/delete all(da)/backward(b):    ', ind(m));
+        fprintf('Neuron %d, keep(k, default)/delete(d)/split(s)/delete all(da)/backward(b)/end(e):    ', ind(m));
         temp = input('', 's');
         if temp=='d'
             ind_del(m) = true;
@@ -109,6 +109,8 @@ while and(m>=1, m<=length(ind))
             catch 
                 sprintf('the neuron is not split\n'); 
             end 
+        elseif strcmpi(temp, 'e')
+            break; 
         else
             m = m+1;
         end

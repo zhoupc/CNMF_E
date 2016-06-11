@@ -8,3 +8,11 @@ cvx/
 *.m~
 
 demos/demo_rui.m
+
+demos.xml
+
+demos/demo_susanne.m
+
+demos/save_video.m
+
+demos/test_a.m

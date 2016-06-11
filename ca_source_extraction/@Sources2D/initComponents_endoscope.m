@@ -1,4 +1,4 @@
-function [center, Cn, pnr] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi)
+function [center, Cn, PNR] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi)
 %% initializing spatial/temporal components for miceoendoscopic data
 %% input:
 %   Y:  d1 X d2 X T matrix or (d1*d2)X T matrix, video data
@@ -11,20 +11,21 @@ function [center, Cn, pnr] = initComponents_endoscope(obj, Y, K, patch_sz, debug
 %% Output:
 %   center: d*2 matrix, centers of all initialized neurons.
 %   Cn:     correlation image
+%   PNR:    peak to noise ratio 
 %% Author: Pengcheng Zhou, Carnegie Mellon University, zhoupc1988@gmail.com
 
 %% process parameters
 d1 = obj.options.d1;
 d2 = obj.options.d2;
 
-if isfield(obj.options, 'nk')
+if isfield(obj.options, 'nk') % number of knots for creating spline basis 
     nk = obj.options.nk;
 else
     nk = 5;
 end
-% maximum number in each neuron
+% maximum neuron number in each patch
 if (~exist('K', 'var')) || (isempty(K))
-    % if K is not specified, use infinite number as a maximum
+    % if K is not specified, use a very large number as default
     K = round((d1*d2));
 end
 
@@ -41,14 +42,15 @@ end
 if ~exist('debug_on', 'var')
     debug_on = false;
 end
+
 % divide the optical fields into multiple patches
 if (~exist('patch_sz', 'var'))||(isempty(patch_sz))||(max(patch_sz(:))==1)
     % use the whole optical field directly
-    if nk>1
+    if nk>1  % detrend data 
         Ydt = detrend_data(obj.reshape(double(Y), 1), nk); % detrend data
-        [Ain, Cin, center, Cn, pnr] = greedyROI_endoscope(Ydt, K, obj.options, debug_on, save_avi);
-    else
-        [Ain, Cin, center, Cn, pnr] = greedyROI_endoscope(Y, K, obj.options, debug_on, save_avi);
+        [Ain, Cin, center, Cn, PNR] = greedyROI_endoscope(Ydt, K, obj.options, debug_on, save_avi);
+    else    % without detrending 
+        [Ain, Cin, center, Cn, PNR] = greedyROI_endoscope(Y, K, obj.options, debug_on, save_avi);
     end
     obj.A = Ain;
     obj.C = Cin;
@@ -81,7 +83,7 @@ Ain = cell(nr_patch, nc_patch); % save spatial components of neurons in each pat
 Cin = cell(nr_patch, nc_patch); % save temporal components of neurons in each patch
 center = cell(nr_patch, nc_patch);     % save centers of all initialized neurons
 Cn = zeros(d1, d2);
-pnr = zeros(d1, d2);
+PNR = zeros(d1, d2);
 
 % initialize A and C for each patch
 flag_patch = false(nr_patch, nc_patch);
@@ -89,11 +91,13 @@ for mr = 1:nr_patch
     r0 = max(1, r0_patch(mr)-bd); % minimum row index of the patch
     r1 = min(d1, r0_patch(mr+1)+bd-1); % maximum row index of the patch
     for mc = 1:nc_patch
-        c0 = max(1, c0_patch(mc)-bd);
-        c1 = min(d2, c0_patch(mc+1)+bd-1);
+        c0 = max(1, c0_patch(mc)-bd); % minimum column index of the patch 
+        c1 = min(d2, c0_patch(mc+1)+bd-1); % maximum column index of the patch 
         tmp_options = obj.options;
         tmp_options.d1 = (r1-r0)+1;
         tmp_options.d2 = (c1-c0)+1;
+        
+        % name of the video 
         if ischar(save_avi)
             tmp_save_avi = sprintf('%s_%d_%d_%d_%d.avi', save_avi, r0, c0, r1, c1);
         elseif save_avi
@@ -102,17 +106,21 @@ for mr = 1:nr_patch
             tmp_save_avi = false;
         end
         
-        % crop the patch data
+        % take the patch from the raw data 
         nrows = (r1-r0+1);  % number of rows in the patch
         ncols = (c1-c0+1);  %number of columns in the patch
         Ypatch = double(reshape(Y(r0:r1, c0:c1, :), nrows*ncols, []));
-        % top patch
+        
+        % top patch, some signals have been explained by neurons in the top
+        % patch 
         if mr>1
             tmpA = reshape(Ain{mr-1, mc}, d1, d2, []);
             tmpC = Cin{mr-1, mc};
             Ypatch = Ypatch - reshape(tmpA(r0:r1, c0:c1,:), nrows*ncols, [])*tmpC;
         end
-        % left patch
+        
+        % left patch, some signals have been explained by neurons in the
+        % left patch 
         if mc>1
             tmpA = reshape(Ain{mr, mc-1}, d1, d2, []);
             tmpC = Cin{mr, mc-1};
@@ -120,9 +128,9 @@ for mr = 1:nr_patch
         end
         if nk>1
             Ypatch_dt = detrend_data(Ypatch, nk); % detrend data
-            [tmp_Ain,tmp_Cin, tmp_center, tmp_Cn, tmp_pnr] = greedyROI_endoscope(Ypatch_dt, K, tmp_options, debug_on, tmp_save_avi);
+            [tmp_Ain,tmp_Cin, tmp_center, tmp_Cn, tmp_PNR, debug_on] = greedyROI_endoscope(Ypatch_dt, K, tmp_options, debug_on, tmp_save_avi);
         else
-            [tmp_Ain,tmp_Cin, tmp_center, tmp_Cn, tmp_pnr] = greedyROI_endoscope(Ypatch, K, tmp_options, debug_on, tmp_save_avi);
+            [tmp_Ain,tmp_Cin, tmp_center, tmp_Cn, tmp_PNR, debug_on] = greedyROI_endoscope(Ypatch, K, tmp_options, debug_on, tmp_save_avi);
         end
         close(gcf);
         
@@ -133,7 +141,7 @@ for mr = 1:nr_patch
         Cin{mr, mc} = tmp_Cin;      % temporal components of all neurons
         center{mr, mc} = bsxfun(@plus, tmp_center, [r0-1, c0-1]); % centers
         Cn(r0:r1, c0:c1) = max(Cn(r0:r1, c0:c1), tmp_Cn);
-        pnr(r0:r1, c0:c1) = max(pnr(r0:r1, c0:c1), tmp_pnr);
+        PNR(r0:r1, c0:c1) = max(PNR(r0:r1, c0:c1), tmp_PNR);
         
         % display initialization progress
         flag_patch(mr, mc) = true;
