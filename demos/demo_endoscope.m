@@ -47,13 +47,13 @@ fprintf('\nThe data has been mapped to RAM. It has %d X %d pixels X %d frames. \
 
 %% create Source2D class object for storing results and parameters
 neuron_raw = Sources2D('d1',d1,'d2',d2);   % dimensions of datasets
-neuron_raw.Fs = 10;         % frame rate
+neuron_raw.Fs = 3;         % frame rate
 neuron_raw.options.Fs = 20; 
 ssub = 1;           % spatial downsampling factor 
 tsub = 1;           % temporal downsampling factor 
 neuron_raw.updateParams('ssub', ssub,...  % spatial downsampling factor
     'tsub', tsub, ...  %temporal downsampling factor
-    'gSig', 4,... %width of the gaussian kernel, which can approximates the average neuron shape
+    'gSig', 3,... %width of the gaussian kernel, which can approximates the average neuron shape
     'gSiz', 15, ...% average size of a neuron
     'dist', 2, ... % maximum size of the neuron: dist*gSiz
     'search_method', 'ellipse', ... % searching method
@@ -67,7 +67,7 @@ num2read= numFrame;             % user input: how many frames to read   (optiona
 tic; 
 if and(ssub==1, tsub==1)
     neuron = neuron_raw; 
-    Y = double(data.Y);  
+    Y = double(data.Y(:, :, sframe+(1:num2read)-1));  
     [d1s,d2s, T] = size(Y);
     fprintf('\nThe data has been loaded into RAM. It has %d X %d pixels X %d frames. \nLoading all data requires %.2f GB RAM\n\n', d1s, d2s, T, d1s*d2s*T*8/(2^30));
 else 
@@ -80,14 +80,34 @@ neuron_raw.P.p = 2;      %order of AR model
 
 fprintf('Time cost in downsapling data:     %.2f seconds\n', toc);
 
+%% compute correlation image and peak-to-noise ratio image. 
+% this step is not necessary, but it can give you some ideas of how your
+% data look like 
+[Cn, pnr] = neuron.correlation_pnr(Y); 
+figure('position', [100, 100, 1024, 500]); 
+subplot(311); 
+imagesc(Cn, [0, 1]); colorbar; 
+axis equal off tight; 
+title('correlation image'); 
+
+subplot(312); 
+imagesc(pnr); colorbar; 
+axis equal off tight; 
+title('peak-to-noise ratio'); 
+
+subplot(313); 
+imagesc(Cn.*pnr, [0, 1]); colorbar; 
+axis equal off tight; 
+title('Cn.*PNR'); 
+
 %% initialization of A, C
 tic;
-debug_on = false;        % debug mode 
-save_avi = false;
+debug_on = true;        % debug mode 
+save_avi = true;
 neuron.options.min_corr = 0.9;
 neuron.options.nk = 1; %round(T/(60*neuron.Fs)); % number of knots for spline basis, the interval between knots is 180 seconds
-patch_par = [3, 3];  % divide the optical field into 3 X 3 patches and do initialization patch by patch
-K = 100; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
+patch_par = 1; %[3, 3];  % divide the optical field into 3 X 3 patches and do initialization patch by patch
+K = 500; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
 neuron.options.bd = []; % boundaries to be removed due to motion correction 
 [center, Cn, pnr] = neuron.initComponents_endoscope(Y, K, patch_par, debug_on, save_avi); 
 figure; 
@@ -139,8 +159,9 @@ IND = determine_search_location(neuron.A, [], neuron.options);
 
 % start approximating theb background
 tic;
+clear Ysignal; 
 Ybg = Y-neuron.A*neuron.C; 
-ssub = 3;   % downsample the data to improve the speed 
+ssub = 2;   % downsample the data to improve the speed 
 rr = neuron.options.gSiz;  % average neuron size, it will determine the neighbors for regressing each pixel's trace
 active_px = [];% (sum(IND, 2)>0);  %If some missing neurons are not covered by active_px, use [] to replace IND
 Ybg = neuron.localBG(Ybg, ssub, rr, active_px); % estiamte local background.
@@ -166,7 +187,7 @@ if strcmpi(spatial_method, 'lars')
 else
     IND = determine_search_location(neuron.A, 'dilate', neuron.options);
     neuron.A = HALS_spatial(Ysignal, neuron.A, neuron.C, IND, 10);
-    %     neuron.post_process_spatial(); % uncomment this line to postprocess
+%         neuron.post_process_spatial(); % uncomment this line to postprocess
     ind = find(sum(neuron.A, 1)==0);
     neuron.delete(ind);
     %     the results

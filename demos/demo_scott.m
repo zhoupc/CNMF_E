@@ -80,13 +80,33 @@ neuron_raw.P.p = 2;      %order of AR model
 
 fprintf('Time cost in downsapling data:     %.2f seconds\n', toc);
 
+%% compute correlation image and peak-to-noise ratio image. 
+% this step is not necessary, but it can give you some ideas of how your
+% data look like 
+[Cn, pnr] = neuron.correlation_pnr(Y); 
+figure('position', [10, 500, 1776, 400]); 
+subplot(131); 
+imagesc(Cn, [0, 1]); colorbar; 
+axis equal off tight; 
+title('correlation image'); 
+
+subplot(132); 
+imagesc(pnr,[0,max(pnr(:))*0.98]); colorbar; 
+axis equal off tight; 
+title('peak-to-noise ratio'); 
+
+subplot(133); 
+imagesc(Cn.*pnr, [0,max(pnr(:))*0.98]); colorbar; 
+axis equal off tight; 
+title('Cn*PNR'); 
 %% initialization of A, C
 tic;
 debug_on = true;        % debug mode 
 save_avi = true;
-neuron.options.min_corr = 0.8;
+neuron.options.min_corr = 0.9;
+neuron.options.min_pnr = 10; 
 neuron.options.nk = 1; %round(T/(60*neuron.Fs)); % number of knots for spline basis, the interval between knots is 180 seconds
-patch_par = 1; %[3, 3];  % divide the optical field into 3 X 3 patches and do initialization patch by patch
+patch_par = [3,3]; %1;  % divide the optical field into 3 X 3 patches and do initialization patch by patch
 K = 500; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
 neuron.options.bd = []; % boundaries to be removed due to motion correction 
 [center, Cn, pnr] = neuron.initComponents_endoscope(Y, K, patch_par, debug_on, save_avi); 
@@ -126,7 +146,7 @@ neuron.viewNeurons();
 
 %% display contours of the neurons 
 figure; 
-neuron.viewContours(Cn, 0.8, 0); 
+neuron.viewContours(Cn, 0.95, 0); 
 colormap winter; 
 axis equal; axis off;
 title('contours of estimated neurons');

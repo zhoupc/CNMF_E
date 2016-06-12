@@ -577,6 +577,17 @@ classdef Sources2D < handle
                 E(m, E(m, :)-Emin(m, :)< obj.P.neuron_sn{m}*sig) = 0; % remove small transients
             end
         end
+        
+        % compute correlation image and peak to noise ratio for endoscopic
+        % data. unlike the correlation image for two-photon data,
+        % correlation image of the microendoscopic data needs to be
+        % spatially filtered first. otherwise neurons are significantly
+        % overlapped. 
+        function [Cn, PNR] = correlation_pnr(obj, Y)
+            [Cn, PNR] = correlation_image_endoscope(Y, obj.options); 
+%             obj.Cn = Cn; 
+%             obj.PNR = PNR; 
+        end
     end
     
 end
