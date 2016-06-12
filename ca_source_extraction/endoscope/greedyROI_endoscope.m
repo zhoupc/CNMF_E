@@ -38,6 +38,7 @@ gSig = options.gSig;    % width of the gaussian kernel approximating one neuron
 gSiz = options.gSiz;    % average size of neurons
 min_corr = options.min_corr;    %minimum local correlations for determining seed pixels
 min_pnr = 10;               % peak to noise ratio for determining seed pixels
+min_v_search = min_corr*min_pnr; 
 % boudnary to avoid for detecting seed pixels
 try
     bd = options.bd;
@@ -67,7 +68,7 @@ end
 
 if ~ismatrix(Y); Y = reshape(Y, d1*d2, []); end;  % convert the 3D movie to a matrix
 Y(isnan(Y)) = 0;    % remove nan values
-Y = double(Y); 
+Y = double(Y);
 T = size(Y, 2);
 
 %% preprocessing data
@@ -82,8 +83,8 @@ HY = imfilter(reshape(Y, d1,d2,[]), psf, 'replicate');
 HY = reshape(HY, d1*d2, []);
 % HY_med = median(HY, 2);
 % HY_max = max(HY, [], 2)-HY_med;    % maximum projection
-HY = bsxfun(@minus, HY, median(HY, 2)); 
-HY_max = max(HY, [], 2); 
+HY = bsxfun(@minus, HY, median(HY, 2));
+HY_max = max(HY, [], 2);
 Ysig = get_noise_fft(HY, options);
 PNR = reshape(HY_max./Ysig, d1, d2);
 PNR(PNR<min_pnr) = 0;
@@ -113,11 +114,11 @@ ind_search(v_search==0) = true; % ignore pixels with small correlations or low p
 if debug_on
     figure('position', [100, 100, 1290, 646]); %#ok<*UNRCH>
     subplot(231);
-        imagesc(Cn0); colorbar;
-%     imagesc(Cn.*PNR, quantile(Cn(:).*PNR(:), [0.5, 0.99])); colorbar;
+    imagesc(Cn0); colorbar;
+    %     imagesc(Cn.*PNR, quantile(Cn(:).*PNR(:), [0.5, 0.99])); colorbar;
     axis equal off tight; hold on;
-%     title('Cn * PNR');
-    title('Cn'); 
+    %     title('Cn * PNR');
+    title('Cn');
     if save_avi
         avi_file = VideoWriter(avi_name);
         avi_file.open();
@@ -146,11 +147,13 @@ while searching_flag
     %% find local maximum as initialization point
     %find all local maximum as initialization point
     tmp_d = 2*round(gSig)+1;
-    v_search = medfilt2(v_search, [3, 3])+randn(size(v_search))*(1e-10); 
+    v_search = medfilt2(v_search, [gSig, gSig])+randn(size(v_search))*(1e-10);
     v_search(ind_search) = 0;
     v_max = ordfilt2(v_search, tmp_d^2, true(tmp_d));
     % set boundary to be 0
     v_search(ind_bd) = 0;
+    
+    ind_search(v_search<min_v_search) = true;    % avoid generating new seed pixels after initialization
     
     ind_localmax = find(and(v_search(:)==v_max(:), v_max(:)>0));
     if(isempty(ind_localmax)); break; end
@@ -165,7 +168,7 @@ while searching_flag
         %         max_v = max_vs(mcell);
         max_v = v_search(ind_p);
         ind_search(ind_p) = true; % indicating that this pixel has been searched.
-        if max_v==0; % all pixels have been tried for initialization
+        if max_v<min_v_search; % all pixels have been tried for initialization
             continue;
         end;
         [r, c]  = ind2sub([d1, d2], ind_p);
@@ -193,12 +196,12 @@ while searching_flag
         ind_ctr = sub2ind([nr, nc], r-rsub(1)+1, c-csub(1)+1);   % subscripts of the center
         
         % a larger neighbours for updating HY after initialization of one
-        % neuron 
+        % neuron
         rsub = max(1, -2*gSiz+r):min(d1, 2*gSiz+r);
         csub = max(1, -2*gSiz+c):min(d2, 2*gSiz+c);
         [cind, rind] = meshgrid(csub, rsub);
         ind_nhood_HY = sub2ind([d1, d2], rind(:), cind(:));
-        [nr2, nc2] = size(cind); 
+        [nr2, nc2] = size(cind);
         
         %% show temporal trace in the center
         if debug_on
@@ -235,10 +238,10 @@ while searching_flag
             % update the raw data
             Y(ind_nhood, :) = Y_box - ai*ci;
             % update filtered data
-            Hai = imfilter(reshape(Ain(ind_nhood_HY, k), nr2, nc2), psf, 'replicate'); 
-            HY_box = HY(ind_nhood_HY, :) - Hai(:)*ci; 
-%             HY_box = bsxfun(@minus, HY_box, median(HY_box, 2)); 
-            HY(ind_nhood_HY, :) = HY_box; 
+            Hai = imfilter(reshape(Ain(ind_nhood_HY, k), nr2, nc2), psf, 'replicate');
+            HY_box = HY(ind_nhood_HY, :) - Hai(:)*ci;
+            %             HY_box = bsxfun(@minus, HY_box, median(HY_box, 2));
+            HY(ind_nhood_HY, :) = HY_box;
             
             % update the maximum projection of HY
             Ysig_box = Ysig(ind_nhood_HY);
@@ -273,9 +276,9 @@ while searching_flag
             imagesc(reshape(ai, nr, nc));
             axis equal off tight;
             title('spatial component');
-            subplot(2,3,4:6); hold on; 
+            subplot(2,3,4:6); hold on;
             plot(ci); title('temporal component'); axis tight;
-            legend('activity in the center', 'new estimation'); 
+            legend('activity in the center', 'new estimation');
             if save_avi;
                 frame = getframe(gcf);
                 frame.cdata = imresize(frame.cdata, [646, 1290]);
