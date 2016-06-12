@@ -93,6 +93,9 @@ Names = [
     % ORDER COMPONENTS (order_components.m)
     'nsd                ' % number of standard deviations (default: 3)
     'nfr                ' % number of consecutive frames (default: 3)
+    % parameters for microendoscope 
+    'min_pnr            '
+    'seed_method        '    
     ];
 
 [m,n] = size(Names);
@@ -259,6 +262,8 @@ Values = [
     % ORDER COMPONENTS (order_components.m)
     {3}
     {5}
+    {10}
+    {'auto'}
     ];
 
 for j = 1:m
