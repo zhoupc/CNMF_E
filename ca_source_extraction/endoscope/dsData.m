@@ -36,8 +36,8 @@ Ts = floor(T/tsub); % remove few
 if tsub>1  
     % temporal downsampling, take the mean of continuours tsub frames 
     % if mod(T, tsub)~=0, discard the rest frames
-    Y_ds = squeeze(mean(reshape(Y(:, :, 1:(Ts*tsub)), d1, d2, tsub, Ts), 3)); 
+    Y = squeeze(mean(reshape(Y(:, :, 1:(Ts*tsub)), d1, d2, tsub, Ts), 3)); 
 end
 
 % spatial downsampling 
-Y_ds = imresize(Y_ds, 1/ssub); 
+Y_ds = imresize(Y, 1/ssub); 

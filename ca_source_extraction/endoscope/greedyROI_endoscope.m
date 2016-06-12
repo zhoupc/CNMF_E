@@ -146,7 +146,7 @@ while searching_flag
     %% find local maximum as initialization point
     %find all local maximum as initialization point
     tmp_d = 2*round(gSig)+1;
-    v_search = medfilt2(v_search, [3, 3]); 
+    v_search = medfilt2(v_search, [3, 3])+randn(size(v_search))*(1e-10); 
     v_search(ind_search) = 0;
     v_max = ordfilt2(v_search, tmp_d^2, true(tmp_d));
     % set boundary to be 0
