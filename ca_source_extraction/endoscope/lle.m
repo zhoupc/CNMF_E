@@ -10,7 +10,11 @@ function Yest = lle(Y, ssub, rr, ACTIVE_PX, method)
 %% Author: Pengcheng Zhou, Carnegie Mellon University,2016
 
 %% input arguments
-[d1, d2, ~] = size(Y);
+[d1, d2, T] = size(Y);
+
+% center the fluorescence intensity by its mean 
+Ymean = mean(Y, 3); 
+Y = Y - bsxfun(@minus, Ymean, ones(1, 1, T)); 
 
 % average neuron size
 if ~exist('r', 'var')|| isempty(r)
@@ -99,3 +103,4 @@ end
 if ssub>1 %up sampling
     Yest = imresize(Yest, [d1, d2]);
 end
+Yest = Yest + bsxfun(@times, Ymean-median(Yest, 3), ones(1, 1, T)); 
