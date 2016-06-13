@@ -519,10 +519,21 @@ classdef Sources2D < handle
             if nargin>1; fp.close(); end
         end
         
-        %% manually add missing neurons
-        manual_add(obj, Yres);
-        %% automatically add missing neurons.
-        auto_add(obj, Yres, K);
+        %% find neurons from the residual
+        % you can do it in either manual or automatic way
+        function [center, Cn, pnr] = pickNeurons(obj, Y, patch_par, seed_method)
+            if ~exist('patch_par', 'var')||isempty(patch_par)
+                seed_method = [3,3];
+            end
+            if ~exist('seed_method', 'var')||isempty(seed_method)
+                seed_method = 'auto';
+            end
+            neuron = obj.copy();
+            neuron.options.seed_method = seed_method;
+            [center, Cn, pnr] = neuron.initComponents_endoscope(Y, [], patch_par, false, false);
+            obj.A = [obj.A, neuron.A];
+            obj.C = [obj.C; neuron.C];
+        end
         
         %% post process spatial component
         function A_ = post_process_spatial(obj, A_)
@@ -582,11 +593,11 @@ classdef Sources2D < handle
         % data. unlike the correlation image for two-photon data,
         % correlation image of the microendoscopic data needs to be
         % spatially filtered first. otherwise neurons are significantly
-        % overlapped. 
+        % overlapped.
         function [Cn, PNR] = correlation_pnr(obj, Y)
-            [Cn, PNR] = correlation_image_endoscope(Y, obj.options); 
-%             obj.Cn = Cn; 
-%             obj.PNR = PNR; 
+            [Cn, PNR] = correlation_image_endoscope(Y, obj.options);
+            %             obj.Cn = Cn;
+            %             obj.PNR = PNR;
         end
     end
     

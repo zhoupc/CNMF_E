@@ -40,6 +40,10 @@ function [C,P,S,YrA] = update_temporal_components_nb(Y,A,b,Cin,fin,P,options)
 
 % Written by: 
 % Eftychios A. Pnevmatikakis, Simons Foundation, 2015
+% modified by Pengcheng Zhou, Carnegie Mellon University, 2015
+% modifications: 
+% 1, remove the background term 
+% 2, correct baseline before running temporal deconvolution 
 
 memmaped = isobject(Y);
 if memmaped
@@ -196,7 +200,9 @@ if options.temporal_parallel
                             Stemp(jj,:) = Ctemp(jj,:)*G';
                         case 'constrained_foopsi'
                             %if restimate_g
-                            [cc,cb,c1,gn,sn,spk] = constrained_foopsi(Ytemp(:,jj),[],[],[],[],options);
+                            tmp_y = Ytemp(:,jj); 
+                            tmp_y = remove_baseline(tmp_y); 
+                            [cc,cb,c1,gn,sn,spk] = constrained_foopsi(tmp_y,[],[],[],[],options);
                             %else
                             %    [cc,cb,c1,gn,sn,spk] = constrained_foopsi(Ytemp(:,jj)/nA(jj),[],[],P.g,[],options);
                             %end
@@ -287,6 +293,7 @@ else
                         case 'constrained_foopsi'
                             %YrA(:,ii) = YrA(:,ii) + Cin(ii,:)';
                             Ytemp = YrA(:,ii) + Cin(ii,:)';
+                            Ytemp = remove_baseline(Ytemp); 
                             if restimate_g
                                 [cc,cb,c1,gn,sn,spk] = constrained_foopsi(Ytemp,[],[],[],[],options);
                                 P.gn{ii} = gn;

@@ -37,8 +37,9 @@ d2 = options.d2;        % image width
 gSig = options.gSig;    % width of the gaussian kernel approximating one neuron
 gSiz = options.gSiz;    % average size of neurons
 min_corr = options.min_corr;    %minimum local correlations for determining seed pixels
-min_pnr = 10;               % peak to noise ratio for determining seed pixels
-min_v_search = min_corr*min_pnr; 
+min_pnr = options.min_pnr;               % peak to noise ratio for determining seed pixels
+min_v_search = min_corr*min_pnr;
+seed_method = options.seed_method; % methods for selecting seed pixels 
 % boudnary to avoid for detecting seed pixels
 try
     bd = options.bd;
@@ -46,7 +47,7 @@ catch
     bd = gSig*2;
 end
 % min_pixel = 5;  % minimum number of pixels to be a neuron
-sig = 10;    % thresholding noise by sig*std()
+sig = 5;    % thresholding noise by sig*std()
 
 % exporting initialization procedures as a video
 if ~exist('save_avi', 'var')||isempty(save_avi)
@@ -87,8 +88,8 @@ HY = bsxfun(@minus, HY, median(HY, 2));
 HY_max = max(HY, [], 2);
 Ysig = get_noise_fft(HY, options);
 PNR = reshape(HY_max./Ysig, d1, d2);
-PNR(PNR<min_pnr) = 0;
 PNR0 = PNR;
+PNR(PNR<min_pnr) = 0;
 
 % estimate noise level and thrshold diff(HY)
 % dHY = diff(HY(:, 1:nf:end), 1, 2);  %
@@ -102,7 +103,6 @@ Cn = correlation_image(HY_thr, [1,2], d1,d2);
 Cn0 = Cn;   % backup
 Cn(isnan(Cn)) = 0;
 Cn = Cn + rand(size(Cn))*(1e-6);
-clear dHY;
 
 % screen seeding pixels as center of the neuron
 v_search = Cn.*PNR;
@@ -153,10 +153,45 @@ while searching_flag
     % set boundary to be 0
     v_search(ind_bd) = 0;
     
-    ind_search(v_search<min_v_search) = true;    % avoid generating new seed pixels after initialization
-    
-    ind_localmax = find(and(v_search(:)==v_max(:), v_max(:)>0));
-    if(isempty(ind_localmax)); break; end
+    if strcmpi(seed_method, 'manual') %manually select seed pixels 
+        tmp_fig = figure('position', [200, 200, 1024, 412]);
+        subplot(121); cla; 
+        imagesc(Cn0.*PNR0); colorbar; hold on; 
+        title('Cn*PNR'); 
+        plot(center(1:k, 2), center(1:k, 1), '*r'); 
+        axis equal off tight; 
+        subplot(122); 
+        imagesc(v_search, [0, max(max(min_v_search(:)*0.99), min_v_search)]);
+        hold on;
+        axis equal tight; colorbar; drawnow; 
+        set(gca, 'xtick', []); 
+        set(gca, 'ytick', []); 
+        title('click neuron centers for initialziation');
+        xlabel('click invalid pixels to stop', 'color', 'r');
+        ind_localmax = zeros(K,1);
+        for tmp_k=1:K
+            figure(tmp_fig); 
+            [tmp_x, tmp_y] = ginput(1);
+            tmp_x = round(tmp_x); tmp_y = round(tmp_y);
+            if isempty(tmp_x)||or(tmp_x<1, tmp_x>d2) || or(tmp_y<1, tmp_y>d1) ||(v_search(tmp_y, tmp_x)==0)
+                break;
+            end
+            plot(tmp_x, tmp_y, '*r');
+            drawnow(); 
+            ind_localmax(tmp_k) = sub2ind([d1,d2], tmp_y, tmp_x);
+        end
+
+        ind_localmax = ind_localmax(1:(tmp_k-1));       
+        if isempty(ind_localmax)
+            break; 
+        end
+        close(tmp_fig);
+    else
+        % automatically select seed pixels 
+        ind_search(v_search<min_v_search) = true;    % avoid generating new seed pixels after initialization
+        ind_localmax = find(and(v_search(:)==v_max(:), v_max(:)>0));
+        if(isempty(ind_localmax)); break; end       
+    end
     [~, ind_sort] = sort(v_search(ind_localmax), 'descend');
     ind_localmax = ind_localmax(ind_sort);
     [r_peak, c_peak] = ind2sub([d1,d2],ind_localmax);

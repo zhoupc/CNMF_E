@@ -82,6 +82,7 @@ while and(m>=1, m<=length(ind))
     %% save images
     if save_img
         saveas(gcf, sprintf('neuron_%d.png', ind(m)));
+        m = m+1; 
     else
         fprintf('Neuron %d, keep(k, default)/delete(d)/split(s)/delete all(da)/backward(b)/end(e):    ', ind(m));
         temp = input('', 's');

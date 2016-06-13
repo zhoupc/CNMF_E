@@ -10,7 +10,7 @@ function [ai, ci, ind_success] = extract_ac(HY, Y, ind_ctr, sz)
 
 nr = sz(1);
 nc = sz(2);
-min_corr = 0.85;
+min_corr = 0.7;
 min_pixels = 5;
 
 %% find pixels highly correlated with the center
@@ -36,7 +36,7 @@ end
 % indc = [1:nc, 1:nc, ones(1, nr)*nc, ones(1,nr)];
 % ind_bd = sub2ind([nr, nc], indr, indc);     % indices for boundary pixels
 % y_bg = median(Y(ind_bd, :), 1);  % take the mean in the boundary as an estimation of the background level
-y_bg = median(Y, 1); % using the median of the whole field as background estimation
+y_bg = median(Y(tmp_corr(:)<min_corr, :), 1); % using the median of the whole field (except the center area) as background estimation
 
 % sort the data, take the differencing and estiamte ai
 thr_noise = 3;      % threshold the nonzero pixels to remove noise
