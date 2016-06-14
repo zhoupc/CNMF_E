@@ -2,6 +2,7 @@
 CNMF_dir = fileparts(which('run_setup.m'));
 addpath(sprintf('%s%sca_source_extraction%s', CNMF_dir, filesep, filesep));
 addpath(genpath(sprintf('%s%sca_source_extraction%sutilities%s', CNMF_dir, filesep, filesep, filesep)));
+addpath(genpath(sprintf('%s%sca_source_extraction%sendoscope', CNMF_dir, filesep, filesep, filesep)));
 addpath(sprintf('%s%sGUI', CNMF_dir, filesep));
 addpath(sprintf('%s%sGUI%sgui_callbacks', CNMF_dir, filesep, filesep));
 
