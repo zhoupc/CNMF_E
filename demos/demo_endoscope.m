@@ -134,12 +134,12 @@ if display_merge && ~isempty(merged_ROI)
         neuron.image(sum(Ain(:, merged_ROI{m}), 2));
         axis equal off tight;
         subplot(2,2,3:4);
-        plot(bsxfun(@times, Cin(merged_ROI{m}, :)', 1./max(Cin(merged_ROI{m}))'));
+        plot(bsxfun(@times, Cin(merged_ROI{m}, :)', 1./max(Cin(merged_ROI{m}, :)')));
         axis tight;
         pause;
     end
     
-    temp = input('undo this merge? (y/n)');
+    temp = input('undo this merge? (y/n)', 's');
     if strcmpi(temp, 'y')
         neuron = neuron_bk.copy();
     end

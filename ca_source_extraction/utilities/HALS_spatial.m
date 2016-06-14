@@ -16,6 +16,8 @@ if nargin<5;    maxIter = 1;    end;    %maximum iteration number
 if nargin<4;    active_pixel=true(size(A));
 elseif isempty(active_pixel)
     active_pixel = true(size(A)); 
+else
+    active_pixel = logical(active_pixel); 
 end;     %determine nonzero pixels 
 
 %% initialization 

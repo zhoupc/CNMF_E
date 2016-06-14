@@ -17,7 +17,7 @@ Ymean = mean(Y, 3);
 Y = Y - bsxfun(@minus, Ymean, ones(1, 1, T)); 
 
 % average neuron size
-if ~exist('r', 'var')|| isempty(r)
+if ~exist('rr', 'var')|| isempty(rr)
     rr = 15;
 end
 % spatial downsampling
