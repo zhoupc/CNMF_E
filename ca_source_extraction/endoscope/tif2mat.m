@@ -21,6 +21,8 @@ T = length(info);   % number of frames
 d1 = info.Height;   % height of the image 
 d2 = info.Width;    % width of the image 
 Ysiz = [d1, d2, T]'; 
+
+fprintf('CNMF_E is converting TIFF file to *.mat file'); 
 % create a mat file 
 Tchunk = min(T, round(2^29/d1/d2)); %each chunk uses at most 4GB
 Y = bigread2(nam, 1, Tchunk);  %#ok<*NASGU>
