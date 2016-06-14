@@ -312,7 +312,7 @@ while searching_flag
             axis equal off tight;
             title('spatial component');
             subplot(2,3,4:6); hold on;
-            plot(ci); title('temporal component'); axis tight;
+            plot(ci, 'r'); title('temporal component'); axis tight;
             legend('activity in the center', 'new estimation');
             if save_avi;
                 frame = getframe(gcf);
