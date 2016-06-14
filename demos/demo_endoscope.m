@@ -12,7 +12,7 @@ if ~exist('nam', 'var') || isempty(nam)
     if dir_nm~=0
         save .dir.mat dir_nm;
     else
-        fprintf('no file was selecteD. STOP!\N');
+        fprintf('no file was selected. STOP!\N');
         return;
     end
     nam = [dir_nm, file_nm];  % full name of the data file

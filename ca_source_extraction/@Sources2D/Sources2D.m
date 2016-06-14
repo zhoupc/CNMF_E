@@ -19,6 +19,7 @@ classdef Sources2D < handle
         options;    % options for model fitting
         P;          % some estimated parameters
         Fs = nan;    % frame rate
+        indicator = 'GCaMP6f'; 
     end
     
     %% methods

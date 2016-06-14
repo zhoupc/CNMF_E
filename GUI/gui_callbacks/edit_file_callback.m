@@ -8,11 +8,20 @@ else
     return; 
 end
 
-%% convert tif to mat file and map it to memory  
+%% convert tif to mat file and map it to memory, create Sources2D object 
 gui_load_mat; 
 set(edit_height, 'string', d1); 
 set(edit_width, 'string', d2); 
 set(edit_frame, 'string', numFrame); 
+
+neuron_raw = Sources2D('d1',d1,'d2',d2, 'bas_nonneg', 1, ...
+    'gSig', 4, 'gSiz', 15);   % dimensions of datasets
+sframe = 1; 
+eframe = numFrame; 
+num2read = eframe-sframe+1; 
+set(edit_begin, 'string', 1); 
+set(edit_end, 'string', eframe); 
+set(edit_total, 'string', num2read); 
 
 %% update file types and file names 
 file_type = '.mat'; 
