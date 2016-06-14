@@ -19,7 +19,7 @@ classdef Sources2D < handle
         options;    % options for model fitting
         P;          % some estimated parameters
         Fs = nan;    % frame rate
-        indicator = 'GCaMP6f'; 
+        indicator = 'GCaMP6f';
     end
     
     %% methods
@@ -281,8 +281,16 @@ classdef Sources2D < handle
             f1 = (Ybg-mean(Ybg))/std(Ybg);
         end
         %% play movie
-        function playMovie(obj, Y, min_max, t_pause)
+        function playMovie(obj, Y, min_max, col_map, avi_nm, t_pause)
             % play movies
+            if ~exist('col_map', 'var') || isempty(col_map)
+                col_map = jet;
+            end
+            if and(exist('avi_nm', 'var'), ischar(avi_nm))
+                avi_file = VideoWriter(avi_nm);
+                avi_file.open();
+                avi_flag = true;
+            end
             if ismatrix(Y); Y=obj.reshape(Y, 2); end
             [~, ~, T] = size(Y);
             if (nargin<3) || (isempty(min_max));
@@ -290,14 +298,58 @@ classdef Sources2D < handle
                 min_max = quantile(temp(:), [0.2, 0.9999]);
                 min_max(1) = max(min_max(1), 0);
             end
-            if nargin<4; t_pause=0.01; end
+            if ~exist('t_pause', 'var'); t_pause=0.01; end
             figure;
             for t=1:size(Y,3)
-                imagesc(Y(:, :, t), min_max);
+                imagesc(Y(:, :, t), min_max); colormap(col_map);
                 axis equal; axis off;
                 title(sprintf('Frame %d', t));
                 pause(t_pause);
+                if avi_flag
+                    temp = getframe(gcf);
+                    temp.cdata = imresize(temp.cdata, [420,560]);
+                    avi_file.writeVideo(temp);
+                end
             end
+            if avi_flag
+                avi_file.close();
+            end
+        end
+        
+        %% export AVI
+        function exportAVI(obj, Y, min_max, avi_nm, col_map)
+            % export matrix data to movie
+            %min_max: 1*2 vector, scale
+            %avi_nm: string, file name
+            %col_map: colormap
+            
+            T = size(Y, ndims(Y));
+            Y = Y(:);
+            if ~exist('col_map', 'var') || isempty(col_map)
+                col_map = jet;
+            end
+            if ~exist('avi_nm', 'var') || isempty(avi_nm)
+                avi_nm = 'a_movie_with_no_name.avi';
+            end
+            if ~exist('min_max', 'var') || isempty(min_max)
+                min_max = [min(Y(1:10:end)), max(Y(1:10:end))];
+            end
+            
+            Y = uint8(64*(Y-min_max(1))/diff(min_max));
+            Y(Y<1) = 1;
+            Y(Y>64) = 64;
+            col_map = uint8(255*col_map);
+            Y = reshape(col_map(Y, :), obj.options.d1, [], T, 3);
+            Y = permute(Y, [1,2,4,3]);
+            
+            avi_file = VideoWriter(avi_nm);
+            avi_file.open();
+            for m=1:T
+                %                 temp.cdata = squeeze(Y(:, :, :, m));
+                %                 temp.colormap = [];
+                avi_file.writeVideo(squeeze(Y(:, :, :, m)));
+            end
+            avi_file.close();
         end
         
         %% trim spatial components

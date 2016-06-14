@@ -1,6 +1,5 @@
 %% comp%% compute correlation image and peak-to-noise ratio image.
 tmp_h = msgbox('Please wait, I am working...'); 
-set(tmp_h, 'fontsize', 30); 
 [Cn, pnr] = neuron.correlation_pnr(Y);
 delete(tmp_h); 
 figure('position', [10, 500, 1776, 400]);
