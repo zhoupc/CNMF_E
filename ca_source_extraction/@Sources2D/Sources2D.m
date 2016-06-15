@@ -286,10 +286,12 @@ classdef Sources2D < handle
             if ~exist('col_map', 'var') || isempty(col_map)
                 col_map = jet;
             end
-            if and(exist('avi_nm', 'var'), ischar(avi_nm))
+            if exist('avi_nm', 'var') && ischar(avi_nm)
                 avi_file = VideoWriter(avi_nm);
                 avi_file.open();
                 avi_flag = true;
+            else 
+                avi_flag = false; 
             end
             if ismatrix(Y); Y=obj.reshape(Y, 2); end
             [~, ~, T] = size(Y);

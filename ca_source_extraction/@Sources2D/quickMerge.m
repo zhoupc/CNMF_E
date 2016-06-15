@@ -1,8 +1,8 @@
-function  merged_ROIs = quickMerge(obj, temporal_component)
+function  merged_ROIs = quickMerge(obj, X)
 %% merge neurons based on simple spatial and temporal correlation 
 % input: 
-%   temporal_component:     character, {'C', 'S'}, it compupte temporal
-%   correlation based on either calcium traces ('C') or spike counts ('S').
+%   X:     character, {'C', 'S', 'A'}, it compupte 
+%   correlation based on either calcium traces ('C') or spike counts ('S') or spatial shapes .
 % output: 
 %   merged_ROIs: cell arrarys, each element contains indices of merged
 %   components 
@@ -21,22 +21,25 @@ merge_thr = options.merge_thr;      % merging threshold
 
 %% find neuron pairs to merge
 % compute spatial correlation
-temp = bsxfun(@times, A, 1./sum(A,1)); 
+temp = bsxfun(@times, A, 1./sum(A.^2,1)); 
 A_overlap = temp'*temp; 
 
 % compute temporal correlation
-if ~exist('temporal_component', 'var')|| isempty(temporal_component)
-    temporal_component = 'C'; 
+if ~exist('X', 'var')|| isempty(X)
+    X = 'C'; 
 end
 
-if strcmpi(temporal_component, 'S')
+if strcmpi(X, 'S')
     S = obj.S; 
     if isempty(S) || (size(S, 1)~=size(obj.C, 1))
         S = diff(obj.C, 1, 2); 
         S(bsxfun(@lt, S, 2*get_noise_fft(S))) = 0; 
     end
     C_corr = corr(S') - eye(K); 
+elseif strcmpi(X, 'A')
+    C_corr = A_overlap;   % use correlation of the spatial components 
 else
+    strcmpi(X, 'C')
     C_corr = corr(C')-eye(K);
 end
 
