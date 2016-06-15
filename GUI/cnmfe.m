@@ -30,3 +30,4 @@ cnmfe_load;
 cnmfe_init; 
 
 %% update background 
+cnmfe_background; 
