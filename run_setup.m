@@ -5,6 +5,7 @@ addpath(genpath(sprintf('%s%sca_source_extraction%sutilities%s', CNMF_dir, files
 addpath(genpath(sprintf('%s%sca_source_extraction%sendoscope', CNMF_dir, filesep, filesep, filesep)));
 addpath(sprintf('%s%sGUI', CNMF_dir, filesep));
 addpath(sprintf('%s%sGUI%sgui_callbacks', CNMF_dir, filesep, filesep));
+addpath(sprintf('%s%sGUI%smodules', CNMF_dir, filesep, filesep));
 
 %% setup cvx
 if isempty(which('cvx_begin.m'))
