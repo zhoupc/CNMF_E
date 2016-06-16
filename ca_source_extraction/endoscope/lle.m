@@ -12,9 +12,9 @@ function Yest = lle(Y, ssub, rr, ACTIVE_PX, method)
 %% input arguments
 [d1, d2, T] = size(Y);
 
-% center the fluorescence intensity by its mean 
-Ymean = mean(Y, 3); 
-Y = Y - bsxfun(@minus, Ymean, ones(1, 1, T)); 
+% center the fluorescence intensity by its mean
+Ymean = mean(Y, 3);
+Y = Y - bsxfun(@minus, Ymean, ones(1, 1, T));
 
 % average neuron size
 if ~exist('rr', 'var')|| isempty(rr)
@@ -44,10 +44,10 @@ else
     ind_px = (1:(d1s*d2s));
 end
 
-% select method for approximation 
+% select method for approximation
 if ~exist('method', 'var') || isempty(method)
-    method = 'regression'; 
-end 
+    method = 'regression';
+end
 
 %% determine neibours of each pixel
 c_shift = (-rr:rr);
@@ -70,7 +70,7 @@ if strcmpi(method, 'mean')
     mean_kernel = zeros(length(c_shift));
     mean_kernel(sub2ind(size(mean_kernel), r_shift+rr+1, c_shift+rr+1)) = 1/length(c_shift);
     Yest = imfilter(Y, mean_kernel, 'replicate');
-    Yest = reshape(Yest, d1s, d2s, []); 
+    Yest = reshape(Yest, d1s, d2s, []);
 else
     gamma = 0.001; % add regularization
     Y = reshape(Y, d1s*d2s, []);
@@ -103,4 +103,7 @@ end
 if ssub>1 %up sampling
     Yest = imresize(Yest, [d1, d2]);
 end
-Yest = Yest + bsxfun(@times, Ymean-median(Yest, 3), ones(1, 1, T)); 
+
+clear Y;
+Ybaseline = Ymean - median(Yest, 3); 
+Yest = bsxfun(@plus, Yest, Ybaseline);

@@ -1,7 +1,7 @@
 %% clear workspace
 clear; clc; close all;
 
-%% select data and map it with the memory
+%% select data and map it to the RAM
 if ~exist('nam', 'var') || isempty(nam)
     try
         load .dir.mat; %load previous path
@@ -47,8 +47,7 @@ fprintf('\nThe data has been mapped to RAM. It has %d X %d pixels X %d frames. \
 
 %% create Source2D class object for storing results and parameters
 neuron_raw = Sources2D('d1',d1,'d2',d2);   % dimensions of datasets
-neuron_raw.Fs = 3;         % frame rate
-neuron_raw.options.Fs = 20;
+neuron_raw.Fs = 10;         % frame rate
 ssub = 1;           % spatial downsampling factor
 tsub = 1;           % temporal downsampling factor
 neuron_raw.updateParams('ssub', ssub,...  % spatial downsampling factor
@@ -83,7 +82,7 @@ fprintf('Time cost in downsapling data:     %.2f seconds\n', toc);
 %% compute correlation image and peak-to-noise ratio image.
 % this step is not necessary, but it can give you some ideas of how your
 % data look like
-[Cn, pnr] = neuron.correlation_pnr(Y);
+[Cn, pnr] = neuron.correlation_pnr(Y(:, round(linspace(1, T, 1000))));
 figure('position', [10, 500, 1776, 400]);
 subplot(131);
 imagesc(Cn, [0, 1]); colorbar;
@@ -101,9 +100,9 @@ axis equal off tight;
 title('Cn*PNR');
 %% initialization of A, C
 tic;
-debug_on = true;        % debug mode
-save_avi = true;
-neuron.options.min_corr = 0.9;
+debug_on = false;        % debug mode
+save_avi = false;
+neuron.options.min_corr = 0.8;
 neuron.options.min_pnr = 10;
 neuron.options.nk = 1; %round(T/(60*neuron.Fs)); % number of knots for spline basis, the interval between knots is 180 seconds
 patch_par = [3,3]; %1;  % divide the optical field into 3 X 3 patches and do initialization patch by patch
@@ -124,7 +123,7 @@ neuron_bk = neuron.copy();
 [Ain, Cin] = neuron.snapshot();   % keep the initialization results
 neuron.options.merge_thr = 0.5;     % threshold for merging neurons
 % merged_ROI = neuron.quickMerge('C');  %merge neurons based on their temporal correlation (calcium traces)
-merged_ROI = neuron.quickMerge('S');  %merge neurons based on their
+merged_ROI = neuron.quickMerge('A');  %merge neurons based on their
 % temporal correlation (spike count)
 display_merge = true;
 if display_merge && ~isempty(merged_ROI)
@@ -143,7 +142,7 @@ if display_merge && ~isempty(merged_ROI)
     if strcmpi(temp, 'y')
         neuron = neuron_bk.copy();
     end
-    clear(neuron_bk);
+    clear neuron_bk;
     
 end
 
@@ -175,17 +174,15 @@ IND = determine_search_location(neuron.A, [], neuron.options);
 tic;
 clear Ysignal;
 Ybg = Y-neuron.A*neuron.C;
-ssub = 2;   % downsample the data to improve the speed
+ssub = 3;   % downsample the data to improve the speed
 rr = neuron.options.gSiz;  % average neuron size, it will determine the neighbors for regressing each pixel's trace
-active_px = [];% (sum(IND, 2)>0);  %If some missing neurons are not covered by active_px, use [] to replace IND
+active_px = (sum(IND, 2)>0);  %If some missing neurons are not covered by active_px, use [] to replace IND
 Ybg = neuron.localBG(Ybg, ssub, rr, active_px); % estiamte local background.
 fprintf('Time cost in estimating the background:        %.2f seconds\n', toc);
 
 % subtract the background from the raw data.
 Ysignal = Y - Ybg;
-if ~isfield(neuron.P, 'sn')
-    neuron.preprocess(Ysignal, 2);
-end
+
 % neuron.playVideo(Ysignal); % play the video data after subtracting the background components.
 %% update spatial components (cell 2), we can iteratively run cell 2& 3 for few times and then run cell 1
 spatial_method = 'hals'; % methods for updating spatial components {'hals', 'lars'},
@@ -262,7 +259,7 @@ neuron.viewNeurons([], C, dir_neurons);
 figure;
 % neuron.viewContours(Cn, 0.9, 0);  % correlation image computed with
 % spatially filtered data
-[Cn, pnr] = neuron.correlation_pnr(Ysignal);
+% [Cn, pnr] = neuron.correlation_pnr(Ysignal);
 Cnn = correlation_image(Ysignal(:, 1:5:end), 4, d1, d2);
 neuron.viewContours(Cnn, 0.9, 0); % correlation image computed with background-subtracted data
 colormap winter;
@@ -288,7 +285,7 @@ Yac = neuron.reshape(neuron.A*neuron.C, 2);
 Ybg = neuron.reshape(Ybg, 2);
 % Y = neuron.reshape(Y, 2);
 Y = neuron.reshape(Y, 2);
-ctr = round( neuron.estCenter());
+% ctr = round( neuron.estCenter());
 % figure;
 % neuron.viewContours(Cn, .5, 0);
 % cell_IDs = [];
@@ -300,18 +297,20 @@ if save_avi
     avi_file = VideoWriter([dir_nm, file_nm, '_results.avi']);
     avi_file.open();
 end
-Ymax = quantile(Y(1:1000:(d1*d2*T)), 0.999);
+temp  = quantile(Y(1:1000:(d1*d2*T)), [0.0001, 0.9999]);
+Ymin = temp(1); 
+Ymax = temp(2); 
 ACmax = quantile(Yac(1:1000:(d1*d2*T)), 0.9999);
 
 %     subplot(4,6, [5,6,11,12]);
 for m=1:5:T
     subplot(4,6, [1,2, 7, 8]);
-    imagesc(Y(:, :,m), [0, Ymax]);
+    imagesc(Y(:, :,m), [Ymin, Ymax]);
     set(gca, 'children', flipud(get(gca, 'children')));
     axis equal; axis off tight; title('raw data'); hold on; colorbar;
     
     subplot(4, 6, [1,2, 7, 8]+12);
-    imagesc(Ybg(:, :, m), [0, Ymax]);
+    imagesc(Ybg(:, :, m), [Ymin, Ymax]);
     set(gca, 'children', flipud(get(gca, 'children')));
     axis equal; axis off tight; title('background');
     colorbar;
@@ -360,8 +359,9 @@ end
 nc = ceil((length(cell_id)+1)/2);
 ctr = round( neuron.estCenter());
 center = ctr(cell_id, :);
-r0 = max(1, min(center(:, 1))-20); r1 = min(d1, max(center(:, 1))+20);
-c0 = max(1, min(center(:, 2))-20); c1 = min(d2, max(center(:, 2))+20);
+bd = 10; 
+r0 = max(1, min(center(:, 1))-bd); r1 = min(d1, max(center(:, 1))+bd);
+c0 = max(1, min(center(:, 2))-bd); c1 = min(d2, max(center(:, 2))+bd);
 indr = r0:r1;
 indc = c0:c1;
 center = bsxfun(@minus, center, [r0, c0]-1);
@@ -372,7 +372,7 @@ figure('position', [100, 500, 1400, 480]);
 avi_file = VideoWriter([dir_nm, file_nm, '_patch_neurons_2.avi']);
 avi_file.open();
 ACmax = max(reshape(neuron.A(:, cell_id)*neuron.C(cell_id, :), 1, []))*0.5;
-ACmin = 1;
+ACmin = 100;
 subplot(2, round(nc/2)+1, 1);
 h_img = imagesc(Ysignal_box(:, :, 1), [ACmin, ACmax]); hold on;
 axis equal off tight;
@@ -385,7 +385,7 @@ for m=1:length(cell_id)
     yy(ind) = []; 
     temp = plot(xx-c0, yy-r0, 'r');
 end
-for t=1:1:T
+for t=1:2:T
     subplot(2, nc, 1); hold off;
     imagesc(Ysignal_box(:, :, t), [ACmin, ACmax]);hold on;
     axis equal off tight;
