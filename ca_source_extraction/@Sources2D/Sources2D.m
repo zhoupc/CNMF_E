@@ -478,7 +478,7 @@ classdef Sources2D < handle
             if Tbatch>=num2read
                 % load all data because the file is too small
                 if strcmpi(file_type, '.mat')
-                    Yraw = data.Y;
+                    Yraw = data.Y(:, :, (1:num2read)+sframe-1);
                 elseif strcmpi(file_type, '.tif') || strcmpi(file_type, '.tiff')
                     Yraw = bigread2(nam, sframe, num2read);
                 else
