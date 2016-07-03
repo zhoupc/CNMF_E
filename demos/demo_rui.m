@@ -102,7 +102,7 @@ title('Cn*PNR');
 tic;
 debug_on = false;        % debug mode
 save_avi = true;
-neuron.options.min_corr = 0.8;
+neuron.options.min_corr = 0.9;
 neuron.options.min_pnr = 10;
 neuron.options.nk = 10; %round(T/(60*neuron.Fs)); % number of knots for spline basis, the interval between knots is 180 seconds
 patch_par = [4, 4]; %1;  % divide the optical field into 3 X 3 patches and do initialization patch by patch

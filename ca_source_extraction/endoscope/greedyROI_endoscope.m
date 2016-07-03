@@ -1,4 +1,4 @@
-function [Ain, Cin, center, Cn, PNR, debug_on] = greedyROI_endoscope(Y, K, options,debug_on, save_avi)
+function [Ain, Cin, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, options,debug_on, save_avi)
 %% a greedy method for detecting ROIs and initializing CNMF. in each iteration,
 % it searches the one with large (peak-median)/noise level and large local
 % correlation. It's the same with greedyROI_corr.m, but with some features
@@ -14,13 +14,16 @@ function [Ain, Cin, center, Cn, PNR, debug_on] = greedyROI_endoscope(Y, K, optio
 %       min_corr: minimum threshold of correlation for segementing neurons
 %   sn:     d X 1 vector, noise level of each pixel
 %   debug_on: options for showing procedure of detecting neurons
-%   save_avi: save the video of initialization procedure
+%   save_avi: save the video of initialization procedure. string: save
+%   video; true: just play it; false: interactive mode. (the name of this
+%      argument is very misleading after several updates of the code. sorry)
 
 %% Output:
 %       Ain:  d X K' matrix, estimated spatial component
 %       Cin:  K'X T matrix, estimated temporal component
 %       center: K' X 2, coordinate of each neuron's center
 %       Cn:  d1*d2, correlation image
+%       save_avi:  options for saving avi.
 
 %% Author: Pengcheng Zhou, Carnegie Mellon University. zhoupc1988@gmail.com
 % the method is an modification of greedyROI method used in Neuron paper of Eftychios
@@ -39,7 +42,7 @@ gSiz = options.gSiz;    % average size of neurons
 min_corr = options.min_corr;    %minimum local correlations for determining seed pixels
 min_pnr = options.min_pnr;               % peak to noise ratio for determining seed pixels
 min_v_search = min_corr*min_pnr;
-seed_method = options.seed_method; % methods for selecting seed pixels 
+seed_method = options.seed_method; % methods for selecting seed pixels
 % boudnary to avoid for detecting seed pixels
 try
     bd = options.bd;
@@ -54,10 +57,8 @@ if ~exist('save_avi', 'var')||isempty(save_avi)
     save_avi = false;
 elseif ischar(save_avi)
     avi_name = save_avi;
-    save_avi = true;
     debug_on = true;
 elseif save_avi
-    avi_name = 'greedyROI_example.avi';
     debug_on = true; % turn on debug mode
 else
     save_avi = false; %don't save initialization procedure
@@ -119,7 +120,7 @@ if debug_on
     axis equal off tight; hold on;
     %     title('Cn * PNR');
     title('Cn');
-    if save_avi
+    if exist('avi_name', 'var')
         avi_file = VideoWriter(avi_name);
         avi_file.open();
     end
@@ -153,44 +154,44 @@ while searching_flag
     % set boundary to be 0
     v_search(ind_bd) = 0;
     
-    if strcmpi(seed_method, 'manual') %manually select seed pixels 
+    if strcmpi(seed_method, 'manual') %manually select seed pixels
         tmp_fig = figure('position', [200, 200, 1024, 412]);
-        subplot(121); cla; 
-        imagesc(Cn0.*PNR0); colorbar; hold on; 
-        title('Cn*PNR'); 
-        plot(center(1:k, 2), center(1:k, 1), '*r'); 
-        axis equal off tight; 
-        subplot(122); 
+        subplot(121); cla;
+        imagesc(Cn0.*PNR0); colorbar; hold on;
+        title('Cn*PNR');
+        plot(center(1:k, 2), center(1:k, 1), '*r');
+        axis equal off tight;
+        subplot(122);
         imagesc(v_search, [0, max(max(min_v_search(:)*0.99), min_v_search)]);
         hold on;
-        axis equal tight; colorbar; drawnow; 
-        set(gca, 'xtick', []); 
-        set(gca, 'ytick', []); 
+        axis equal tight; colorbar; drawnow;
+        set(gca, 'xtick', []);
+        set(gca, 'ytick', []);
         title('click neuron centers for initialziation');
         xlabel('click invalid pixels to stop', 'color', 'r');
         ind_localmax = zeros(K,1);
         for tmp_k=1:K
-            figure(tmp_fig); 
+            figure(tmp_fig);
             [tmp_x, tmp_y] = ginput(1);
             tmp_x = round(tmp_x); tmp_y = round(tmp_y);
             if isempty(tmp_x)||or(tmp_x<1, tmp_x>d2) || or(tmp_y<1, tmp_y>d1) ||(v_search(tmp_y, tmp_x)==0)
                 break;
             end
             plot(tmp_x, tmp_y, '*r');
-            drawnow(); 
+            drawnow();
             ind_localmax(tmp_k) = sub2ind([d1,d2], tmp_y, tmp_x);
         end
-
-        ind_localmax = ind_localmax(1:(tmp_k-1));       
+        
+        ind_localmax = ind_localmax(1:(tmp_k-1));
         if isempty(ind_localmax)
-            break; 
+            break;
         end
         close(tmp_fig);
     else
-        % automatically select seed pixels 
+        % automatically select seed pixels
         ind_search(v_search<min_v_search) = true;    % avoid generating new seed pixels after initialization
         ind_localmax = find(and(v_search(:)==v_max(:), v_max(:)>0));
-        if(isempty(ind_localmax)); break; end       
+        if(isempty(ind_localmax)); break; end
     end
     [~, ind_sort] = sort(v_search(ind_localmax), 'descend');
     ind_localmax = ind_localmax(ind_sort);
@@ -314,15 +315,17 @@ while searching_flag
             subplot(2,3,4:6); hold on;
             plot(ci, 'r'); title('temporal component'); axis tight;
             legend('activity in the center', 'new estimation');
-            if save_avi;
+            if exist('avi_file', 'var')
                 frame = getframe(gcf);
                 frame.cdata = imresize(frame.cdata, [646, 1290]);
                 avi_file.writeVideo(frame);
-            else
+            elseif ~save_avi
                 temp = input('type s to stop the debug mode:  ', 's');
                 if strcmpi(temp, 's')
-                    debug_on = false;
+                    save_avi = true;
                 end
+            else
+                drawnow();
             end
         end
         
@@ -343,5 +346,7 @@ Cin = Cin(1:k, :);
 % Cin(Cin<0) = 0;
 Cn = Cn0;
 PNR = PNR0;
-if save_avi; avi_file.close(); end
+if exist('avi_file', 'var');
+    avi_file.close();
+end
 end

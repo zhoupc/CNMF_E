@@ -54,6 +54,7 @@ MC(:, sum(MC,1)==1) = [];
 if isempty(MC)
     fprintf('All pairs of neurons are below the merging criterion!\n\n');
     merged_ROIs = []; 
+    newIDs = []; 
     return;
 else
     fprintf('%d neurons will be merged into %d new neurons\n\n', sum(MC(:)), size(MC,2));

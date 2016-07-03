@@ -100,10 +100,8 @@ for mr = 1:nr_patch
         % name of the video 
         if ischar(save_avi)
             tmp_save_avi = sprintf('%s_%d_%d_%d_%d.avi', save_avi, r0, c0, r1, c1);
-        elseif save_avi
-            tmp_save_avi = sprintf('patch_%d_%d_%d_%d.avi',r0, c0, r1, c1);
         else
-            tmp_save_avi = false;
+            tmp_save_avi = save_avi;
         end
         
         % take the patch from the raw data 
@@ -128,9 +126,9 @@ for mr = 1:nr_patch
         end
         if nk>1
             Ypatch_dt = detrend_data(Ypatch, nk); % detrend data
-            [tmp_Ain,tmp_Cin, tmp_center, tmp_Cn, tmp_PNR, debug_on] = greedyROI_endoscope(Ypatch_dt, K, tmp_options, debug_on, tmp_save_avi);
+            [tmp_Ain,tmp_Cin, tmp_center, tmp_Cn, tmp_PNR, save_avi] = greedyROI_endoscope(Ypatch_dt, K, tmp_options, debug_on, tmp_save_avi);
         else
-            [tmp_Ain,tmp_Cin, tmp_center, tmp_Cn, tmp_PNR, debug_on] = greedyROI_endoscope(Ypatch, K, tmp_options, debug_on, tmp_save_avi);
+            [tmp_Ain,tmp_Cin, tmp_center, tmp_Cn, tmp_PNR, save_avi] = greedyROI_endoscope(Ypatch, K, tmp_options, debug_on, tmp_save_avi);
         end
         close(gcf);
         

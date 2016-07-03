@@ -20,6 +20,7 @@ classdef Sources2D < handle
         P;          % some estimated parameters
         Fs = nan;    % frame rate
         indicator = 'GCaMP6f';
+        file = ''; 
     end
     
     %% methods
@@ -130,9 +131,9 @@ classdef Sources2D < handle
             if or(isempty(Cn), ~exist('Cn', 'var') )
                 Cn = reshape(obj.P.sn, obj.options.d1, obj.options.d2);
             end
-            if or(~exist('display', 'var'), isempty(display)); display=0; end
-            if or(~exist('ind', 'var'), isempty(ind)); ind=1:size(obj.A, 2); end
-            if or(~exist('ln_wd', 'var'), isempty(ln_wd)); ln_wd = 1; end
+            if (~exist('display', 'var') || isempty(display)); display=0; end
+            if (~exist('ind', 'var') || isempty(ind)); ind=1:size(obj.A, 2); end
+            if (~exist('ln_wd', 'var') || isempty(ln_wd)); ln_wd = 1; end
             [obj.Coor, json_file] = plot_contours(obj.A(:, ind), Cn, ...
                 contour_threshold, display, [], [], ln_wd);
             Coor = obj.Coor;
@@ -601,12 +602,11 @@ classdef Sources2D < handle
         end
         
         %% estimate local background
-        function Ybg = localBG(obj, Ybg, ssub, rr, IND, method)
+        function [Ybg, results] = localBG(obj, Ybg, ssub, rr, IND)
             if ~exist('rr', 'var')||isempty(rr); rr=obj.options.gSiz; end
             if ~exist('ssub', 'var')||isempty(ssub); ssub = 1; end
             if ~exist('IND', 'var'); IND = []; end
-            if ~exist('method', 'var'); method = 'regression'; end
-            Ybg = lle(obj.reshape(Ybg, 2), ssub, rr, IND, method);
+            [Ybg, results] = lle(obj.reshape(Ybg, 2), ssub, rr, IND);
             Ybg = obj.reshape(Ybg, 1);
         end
         

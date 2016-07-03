@@ -48,11 +48,12 @@ fprintf('\nThe data has been mapped to RAM. It has %d X %d pixels X %d frames. \
 %% create Source2D class object for storing results and parameters
 neuron_raw = Sources2D('d1',d1,'d2',d2);   % dimensions of datasets
 neuron_raw.Fs = 10;         % frame rate
+neuron_raw.file = nam_mat; 
 ssub = 1;           % spatial downsampling factor
 tsub = 1;           % temporal downsampling factor
 neuron_raw.updateParams('ssub', ssub,...  % spatial downsampling factor
     'tsub', tsub, ...  %temporal downsampling factor
-    'gSig', 4,... %width of the gaussian kernel, which can approximates the average neuron shape
+    'gSig', 3,... %width of the gaussian kernel, which can approximates the average neuron shape
     'gSiz', 15, ...% average size of a neuron
     'dist', 2, ... % maximum size of the neuron: dist*gSiz
     'search_method', 'ellipse', ... % searching method
@@ -105,9 +106,9 @@ save_avi = false;
 neuron.options.min_corr = 0.8;
 neuron.options.min_pnr = 10;
 neuron.options.nk = 1; %round(T/(60*neuron.Fs)); % number of knots for spline basis, the interval between knots is 180 seconds
-patch_par = [3,3]; %1;  % divide the optical field into 3 X 3 patches and do initialization patch by patch
-K = 500; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
-neuron.options.bd = []; % boundaries to be removed due to motion correction
+patch_par = [2,2]; %1;  % divide the optical field into 3 X 3 patches and do initialization patch by patch
+K = 200; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
+neuron.options.bd = 2; % boundaries to be removed due to motion correction
 [center, Cn, pnr] = neuron.initComponents_endoscope(Y, K, patch_par, debug_on, save_avi); %#ok<ASGLU>
 figure;
 imagesc(Cn);
@@ -121,29 +122,39 @@ neuron_init = neuron.copy();
 %% merge neurons, order neurons and delete some low quality neurons (cell 0, before running iterative udpates)
 neuron_bk = neuron.copy();
 [Ain, Cin] = neuron.snapshot();   % keep the initialization results
-neuron.options.merge_thr = 0.5;     % threshold for merging neurons
-% merged_ROI = neuron.quickMerge('C');  %merge neurons based on their temporal correlation (calcium traces)
-merged_ROI = neuron.quickMerge('A');  %merge neurons based on their
-% temporal correlation (spike count)
+neuron.options.merge_thr = 0.7;     % threshold for merging neurons
+[merged_ROI, newIDs] = neuron.quickMerge('C');  % merge neurons based on the correlation computed with {'A', 'S', 'C'}
+% A: spatial shapes; S: spike counts; C: calcium traces 
 display_merge = true;
 if display_merge && ~isempty(merged_ROI)
+    ind_before = false(size(neuron_bk.A, 2), 1); 
+    ind_after = false(size(neuron.A, 2), 1); 
     figure;
-    for m=1:length(merged_ROI)
+    m = 1; 
+    while m<=length(merged_ROI)
         subplot(221);
         neuron.image(sum(Ain(:, merged_ROI{m}), 2));
         axis equal off tight;
         subplot(2,2,3:4);
         plot(bsxfun(@times, Cin(merged_ROI{m}, :)', 1./max(Cin(merged_ROI{m}, :)')));
         axis tight;
-        pause;
+        temp = input('keep this merge? (y(default)/n(cancel)/b(back))/e(end)   ', 's'); 
+        if strcmpi(temp, 'n')
+            ind_after(newIDs(m)) = true; 
+            ind_before(merged_ROI{m}) = true; 
+            m = m+1; 
+        elseif strcmpi(temp, 'b')
+            m = m-1; 
+        elseif strcmpi(temp, 'e')
+            break; 
+        else
+            m = m+1; 
+        end
     end
     
-    temp = input('undo this merge? (y/n)', 's');
-    if strcmpi(temp, 'y')
-        neuron = neuron_bk.copy();
-    end
-    clear neuron_bk;
-    
+    neuron.A = [neuron.A(:, ~ind_after), Ain(:, ind_before)]; 
+    neuron.C = [neuron.C(~ind_after, :); Cin(ind_before, :)]; 
+    clear neuron_bk;  
 end
 
 % sort neurons
@@ -159,7 +170,7 @@ end
 
 %% display contours of the neurons
 figure;
-neuron.viewContours(Cn, 0.95, 0);
+neuron.viewContours(Cn, 0.95, 0, [], 2);
 colormap winter;
 axis equal; axis off;
 title('contours of estimated neurons');
@@ -174,10 +185,10 @@ IND = determine_search_location(neuron.A, [], neuron.options);
 tic;
 clear Ysignal;
 Ybg = Y-neuron.A*neuron.C;
-ssub = 3;   % downsample the data to improve the speed
+ssub = 1;   % downsample the data to improve the speed
 rr = neuron.options.gSiz;  % average neuron size, it will determine the neighbors for regressing each pixel's trace
 active_px = (sum(IND, 2)>0);  %If some missing neurons are not covered by active_px, use [] to replace IND
-Ybg = neuron.localBG(Ybg, ssub, rr, active_px); % estiamte local background.
+[Ybg, bg_results] = neuron.localBG(Ybg, ssub, rr, active_px); % estiamte local background.
 fprintf('Time cost in estimating the background:        %.2f seconds\n', toc);
 
 % subtract the background from the raw data.
@@ -214,7 +225,7 @@ C0 = neuron.C;
 if strcmpi(temporal_method, 'deconv')
     neuron.C = HALS_temporal(Ysignal, neuron.A, neuron.C, 10);
     neuron.options.temporal_iter = 1;  % number of iteratiosn for deconvolution. more iterations result better calcium traces, but it's slow
-    neuron.options.bas_nonneg = 1;  % allow negative baseline (0) or not (1)
+    neuron.options.bas_nonneg = 0;  % allow negative baseline (0) or not (1)
     neuron.updateTemporal_nb(Ysignal);
 else
     neuron.C = HALS_temporal(Ysignal, neuron.A, neuron.C, 10);
