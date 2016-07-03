@@ -126,14 +126,15 @@ classdef Sources2D < handle
         end
         
         %% view contours
-        function [Coor, json_file] = viewContours(obj, Cn, contour_threshold, display, ind)
+        function [Coor, json_file] = viewContours(obj, Cn, contour_threshold, display, ind, ln_wd)
             if or(isempty(Cn), ~exist('Cn', 'var') )
                 Cn = reshape(obj.P.sn, obj.options.d1, obj.options.d2);
             end
-            if nargin<4; display=0; end
-            if nargin<5; ind=1:size(obj.A, 2); end
+            if or(~exist('display', 'var'), isempty(display)); display=0; end
+            if or(~exist('ind', 'var'), isempty(ind)); ind=1:size(obj.A, 2); end
+            if or(~exist('ln_wd', 'var'), isempty(ln_wd)); ln_wd = 1; end
             [obj.Coor, json_file] = plot_contours(obj.A(:, ind), Cn, ...
-                contour_threshold, display);
+                contour_threshold, display, [], [], ln_wd);
             Coor = obj.Coor;
         end
         

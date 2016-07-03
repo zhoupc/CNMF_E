@@ -65,7 +65,7 @@ else
         temp =  cumsum(temp);
         ff = find(temp > (1-thr)*temp(end),1,'first');
         if ~isempty(ff)
-            CC{i} = contour(reshape(A_temp,d1,d2),[0,0]+A_temp(ind(ff)),'LineColor',cmap(i+size(Aor,2),:), 'linewidth', 1);
+            CC{i} = contour(reshape(A_temp,d1,d2),[0,0]+A_temp(ind(ff)),'LineColor',cmap(i+size(Aor,2),:), 'linewidth', ln_wd);
             fp = find(A_temp >= A_temp(ind(ff)));
             [ii,jj] = ind2sub([d1,d2],fp);
             CR{i,1} = [ii,jj]';
