@@ -178,7 +178,7 @@ classdef Sources2D < handle
         end
         
         %% quick merge neurons based on spatial and temporal correlation
-        merged_ROIs = quickMerge(obj, temporal_component)
+        [merged_ROIs, newIDs] = quickMerge(obj, temporal_component)
         
         
         %% quick view

@@ -279,7 +279,7 @@ else
                     Ytemp = YrA(:,ii) + Cin(ii,:)';
                     cc = max(Ytemp,0);                                        
                     YrA(:,ff) = YrA(:,ff) - (cc - C(ii,:)')*AA(ii,ff);
-                    C(ii,:) = full(cc');
+                    C(ii,:) = remove_baseline(full(cc'));
                     S(ii,:) = C(ii,:);
                 else
                     switch method

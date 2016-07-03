@@ -1,4 +1,4 @@
-function  merged_ROIs = quickMerge(obj, X)
+function  [merged_ROIs, newIDs] = quickMerge(obj, X)
 %% merge neurons based on simple spatial and temporal correlation 
 % input: 
 %   X:     character, {'C', 'S', 'A'}, it compupte 
@@ -6,6 +6,7 @@ function  merged_ROIs = quickMerge(obj, X)
 % output: 
 %   merged_ROIs: cell arrarys, each element contains indices of merged
 %   components 
+%   newIDs: vector, each element is the new index of the merged neurons 
 
 %% Author: Pengcheng Zhou, Carnegie Mellon University. 
 %  The basic idea is proposed by Eftychios A. Pnevmatikakis: high temporal
@@ -62,7 +63,7 @@ end
 [nr, n2merge] = size(MC);
 ind_del = false(nr, 1 );    % indicator of deleting corresponding neurons
 merged_ROIs = cell(n2merge,1); 
-
+newIDs = zeros(nr, 1); 
 for m=1:n2merge
     IDs = find(MC(:, m));   % IDs of neurons within this cluster
     merged_ROIs{m} = IDs; 
@@ -81,10 +82,11 @@ for m=1:n2merge
     max_ai = max(ai, [], 1);           
     A(active_pixel, IDs(1)) = ai/max_ai;
     C(IDs(1), :) = ci*max_ai; 
-    
+    newIDs(IDs(1)) = IDs(1); 
     % remove merged elements
     ind_del(IDs(2:end)) = true;
 end
+newIDs(newIDs==0) = []; 
 
 % remove merged neurons and update obj
 A(:, ind_del) = [];
