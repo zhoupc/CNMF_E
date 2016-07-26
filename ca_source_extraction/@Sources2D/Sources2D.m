@@ -513,6 +513,14 @@ classdef Sources2D < handle
             end
         end
         
+        %% estimate noise
+        function sn = estNoise(obj, Y)
+            fprintf('Estimating the noise power for each pixel from a simple PSD estimate...'); 
+            Y = obj.reshape(Y, 1);
+            sn = get_noise_fft(Y,obj.options);
+            obj.P.sn = sn(:);
+            fprintf('  done \n');
+        end
         %% merge neurons
         function img = overlapA(obj, ind, ratio)
             %merge all neurons' spatial components into one singal image
@@ -602,11 +610,22 @@ classdef Sources2D < handle
         end
         
         %% estimate local background
-        function [Ybg, results] = localBG(obj, Ybg, ssub, rr, IND)
+        function [Ybg, results] = localBG(obj, Ybg, ssub, rr, IND, sn, thresh)
             if ~exist('rr', 'var')||isempty(rr); rr=obj.options.gSiz; end
             if ~exist('ssub', 'var')||isempty(ssub); ssub = 1; end
-            if ~exist('IND', 'var'); IND = []; end
-            [Ybg, results] = lle(obj.reshape(Ybg, 2), ssub, rr, IND);
+            if ~exist('IND', 'var') ||isempty(IND); IND = []; end
+            if ~exist('sn', 'var')||isempty(sn); 
+                if isfield(obj.P, 'sn')
+                    sn = obj.reshape(obj.P.sn, 2); 
+                else
+                sn = [];
+                end
+            else
+                sn = obj.reshape(sn, 2); 
+            end
+            
+            if ~exist('thresh', 'var')||isempty(thresh); thresh = []; end
+            [Ybg, results] = local_background(obj.reshape(Ybg, 2), ssub, rr, IND, sn, thresh);
             Ybg = obj.reshape(Ybg, 1);
         end
         

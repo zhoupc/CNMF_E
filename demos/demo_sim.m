@@ -84,7 +84,7 @@ fprintf('Time cost in downsapling data:     %.2f seconds\n', toc);
 tic;
 debug_on = true;        % debug mode 
 save_avi = true;
-neuron.options.min_corr = 0.9;
+neuron.options.min_corr = 0.85;
 neuron.options.nk = 1; %round(T/(60*neuron.Fs)); % number of knots for spline basis, the interval between knots is 180 seconds
 patch_par = 1; %[3, 3];  % divide the optical field into 3 X 3 patches and do initialization patch by patch
 K = 100; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
@@ -132,15 +132,10 @@ axis equal; axis off;
 title('contours of estimated neurons');
 
 %% udpate background (cell 1, the following three cells can be run iteratively)
-% determine nonzero pixels for each neuron 
-max_min_ratio = 50;     % it thresholds the nonzero pixels to be bigger than max / max_min_ratio.
-neuron.trimSpatial(max_min_ratio);
-IND = determine_search_location(neuron.A, [], neuron.options);
-
 % start approximating theb background
 tic;
 Ybg = Y-neuron.A*neuron.C; 
-ssub = 1;   % downsample the data to improve the speed 
+ssub = 2;   % downsample the data to improve the speed 
 rr = round(neuron.options.gSiz*1.5);  % average neuron size, it will determine the neighbors for regressing each pixel's trace
 active_px = [];% (sum(IND, 2)>0);  %If some missing neurons are not covered by active_px, use [] to replace IND
 Ybg = neuron.localBG(Ybg, ssub, rr, active_px); % estiamte local background.
