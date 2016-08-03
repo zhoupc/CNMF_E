@@ -20,6 +20,7 @@ classdef Sources2D < handle
         P;          % some estimated parameters
         Fs = nan;    % frame rate
         indicator = 'GCaMP6f';
+        kernel; 
         file = ''; 
     end
     
@@ -32,6 +33,7 @@ classdef Sources2D < handle
             if nargin>0
                 obj.options = CNMFSetParms(obj.options, varargin{:});
             end
+            obj.kernel = create_kernel('exp2'); 
         end
         
         %% update parameters
@@ -70,6 +72,9 @@ classdef Sources2D < handle
                 Y, obj.A, obj.b, obj.C, obj.f, obj.P, obj.options);
         end
         
+        %% udpate temporal components with fast deconvolution 
+        C = updateTemporal_endoscope_endoscope(obj, Y)
+
         %% update temporal components without background
         function updateTemporal_nb(obj, Y)
             [obj.C, obj.P, obj.S] = update_temporal_components_nb(...

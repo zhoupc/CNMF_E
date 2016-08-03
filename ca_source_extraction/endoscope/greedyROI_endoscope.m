@@ -1,4 +1,4 @@
-function [Ain, Cin, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, options,debug_on, save_avi)
+function [results, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, options,debug_on, save_avi)
 %% a greedy method for detecting ROIs and initializing CNMF. in each iteration,
 % it searches the one with large (peak-median)/noise level and large local
 % correlation. It's the same with greedyROI_corr.m, but with some features
@@ -19,8 +19,12 @@ function [Ain, Cin, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, optio
 %      argument is very misleading after several updates of the code. sorry)
 
 %% Output:
-%       Ain:  d X K' matrix, estimated spatial component
-%       Cin:  K'X T matrix, estimated temporal component
+%`      results: struct variable with fields {'Ain', 'Cin', 'Sin', 'kernel_pars'}
+%           Ain:  d X K' matrix, estimated spatial component
+%           Cin:  K'X T matrix, estimated temporal component
+%           Sin:  K' X T matrix, inferred spike counts within each frame
+%           kernel_pars: K'X1 cell, parameters for the convolution kernel
+%           of each neuron
 %       center: K' X 2, coordinate of each neuron's center
 %       Cn:  d1*d2, correlation image
 %       save_avi:  options for saving avi.
@@ -43,6 +47,8 @@ min_corr = options.min_corr;    %minimum local correlations for determining seed
 min_pnr = options.min_pnr;               % peak to noise ratio for determining seed pixels
 min_v_search = min_corr*min_pnr;
 seed_method = options.seed_method; % methods for selecting seed pixels
+kernel = options.kernel;
+smin = 5; 
 % boudnary to avoid for detecting seed pixels
 try
     bd = options.bd;
@@ -133,6 +139,8 @@ else
 end
 Ain = zeros(d1*d2, K);  % spatial components
 Cin = zeros(K, T);      % temporal components
+Sin = zeros(K, T);    % spike counts
+kernel_pars = zeros(K, length(kernel.pars));    % parameters for the convolution kernels of all neurons
 center = zeros(K, 2);   % center of the initialized components
 
 %% do initialization in a greedy way
@@ -262,10 +270,15 @@ while searching_flag
         if or(any(isnan(ai)), any(isnan(ci))); ind_success=false; end
         if max(ci)/get_noise_fft(ci)<min_pnr; ind_success=false; end
         if ind_success
+            % deconv the temporal trace
+            ci_raw = ci; 
+            [ci, si, kernel] = deconvCa(ci_raw, kernel, smin, true, false);
             % save this initialization
             k = k+1;
             Ain(ind_nhood, k) = ai;
             Cin(k, :) = ci;
+            Sin(k, :) = si;
+            kernel_pars(k, :) = kernel.pars;
             center(k, :) = [r, c];
             
             % avoid searching nearby pixels that are highly correlated with this one
@@ -312,9 +325,10 @@ while searching_flag
             imagesc(reshape(ai, nr, nc));
             axis equal off tight;
             title('spatial component');
-            subplot(2,3,4:6); hold on;
-            plot(ci, 'r'); title('temporal component'); axis tight;
-            legend('activity in the center', 'new estimation');
+            subplot(2,3,4:6); cla; hold on;
+            plot(ci_raw); title('temporal component'); axis tight;
+            plot(ci, 'r');  axis tight;
+            legend('raw trace', 'denoised trace');
             if exist('avi_file', 'var')
                 frame = getframe(gcf);
                 frame.cdata = imresize(frame.cdata, [646, 1290]);
@@ -341,8 +355,10 @@ while searching_flag
     end
 end
 center = center(1:k, :);
-Ain = sparse(Ain(:, 1:k));
-Cin = Cin(1:k, :);
+results.Ain = sparse(Ain(:, 1:k));
+results.Cin = Cin(1:k, :);
+results.Sin = Sin(1:k, :);
+results.kernel_pars = kernel_pars(1:k, :);
 % Cin(Cin<0) = 0;
 Cn = Cn0;
 PNR = PNR0;

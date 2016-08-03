@@ -43,14 +43,16 @@ if ~exist('debug_on', 'var')
     debug_on = false;
 end
 
+options = obj.options; 
+options.kernel = obj.kernel; 
 % divide the optical fields into multiple patches
 if (~exist('patch_sz', 'var'))||(isempty(patch_sz))||(max(patch_sz(:))==1)
     % use the whole optical field directly
     if nk>1  % detrend data 
         Ydt = detrend_data(obj.reshape(double(Y), 1), nk); % detrend data
-        [Ain, Cin, center, Cn, PNR] = greedyROI_endoscope(Ydt, K, obj.options, debug_on, save_avi);
+        [Ain, Cin, center, Cn, PNR] = greedyROI_endoscope(Ydt, K, options, debug_on, save_avi);
     else    % without detrending 
-        [Ain, Cin, center, Cn, PNR] = greedyROI_endoscope(Y, K, obj.options, debug_on, save_avi);
+        [Ain, Cin, center, Cn, PNR] = greedyROI_endoscope(Y, K, options, debug_on, save_avi);
     end
     obj.A = Ain;
     obj.C = Cin;
@@ -75,12 +77,14 @@ end
 nr_patch = length(r0_patch)-1;  % number of patches in y axis
 nc_patch = length(c0_patch)-1;  % number of patches in x axis
 Y = obj.reshape(Y, 2);   % represent each frame with a matrix
-if ~isfield(obj.options, 'bd') || isempty(obj.options.bd')
-    obj.options.bd = obj.options.gSiz;   % boundary pixesl to be ignored during the process of detecting seed pixels
+if ~isfield(options, 'bd') || isempty(options.bd')
+    options.bd = options.gSiz;   % boundary pixesl to be ignored during the process of detecting seed pixels
 end
-bd = obj.options.bd;
+bd = options.bd;
 Ain = cell(nr_patch, nc_patch); % save spatial components of neurons in each patch
 Cin = cell(nr_patch, nc_patch); % save temporal components of neurons in each patch
+Sin = cell(nr_patch, nc_patch); % save temporal components of neurons in each patch
+kernel_pars = cell(nr_patch, nc_patch); % save temporal components of neurons in each patch
 center = cell(nr_patch, nc_patch);     % save centers of all initialized neurons
 Cn = zeros(d1, d2);
 PNR = zeros(d1, d2);
@@ -93,9 +97,10 @@ for mr = 1:nr_patch
     for mc = 1:nc_patch
         c0 = max(1, c0_patch(mc)-bd); % minimum column index of the patch 
         c1 = min(d2, c0_patch(mc+1)+bd-1); % maximum column index of the patch 
-        tmp_options = obj.options;
+        tmp_options = options;
         tmp_options.d1 = (r1-r0)+1;
         tmp_options.d2 = (c1-c0)+1;
+        tmp_options.kernel = obj.kernel; 
         
         % name of the video 
         if ischar(save_avi)
@@ -126,17 +131,22 @@ for mr = 1:nr_patch
         end
         if nk>1
             Ypatch_dt = detrend_data(Ypatch, nk); % detrend data
-            [tmp_Ain,tmp_Cin, tmp_center, tmp_Cn, tmp_PNR, save_avi] = greedyROI_endoscope(Ypatch_dt, K, tmp_options, debug_on, tmp_save_avi);
+            [tmp_results, tmp_center, tmp_Cn, tmp_PNR, save_avi] = greedyROI_endoscope(Ypatch_dt, K, tmp_options, debug_on, tmp_save_avi);
         else
-            [tmp_Ain,tmp_Cin, tmp_center, tmp_Cn, tmp_PNR, save_avi] = greedyROI_endoscope(Ypatch, K, tmp_options, debug_on, tmp_save_avi);
+            [tmp_results, tmp_center, tmp_Cn, tmp_PNR, save_avi] = greedyROI_endoscope(Ypatch, K, tmp_options, debug_on, tmp_save_avi);
         end
         close(gcf);
-        
+        tmp_Ain = tmp_results.Ain; 
+        tmp_Cin = tmp_results.Cin; 
+        tmp_Sin = tmp_results.Sin; 
+        tmp_kernel_pars = tmp_results.kernel_pars; 
         tmp_K = size(tmp_Ain, 2);   % number of neurons within the selected patch
         temp = zeros(d1, d2, tmp_K);  % spatial components of all neurosn
         temp(r0:r1, c0:c1, :) = reshape(full(tmp_Ain), tmp_options.d1, tmp_options.d2, []);
         Ain{mr, mc} = reshape(temp, d1*d2, tmp_K);
         Cin{mr, mc} = tmp_Cin;      % temporal components of all neurons
+        Sin{mr, mc} = tmp_Sin; 
+        kernel_pars{mr,mc} = tmp_kernel_pars; 
         center{mr, mc} = bsxfun(@plus, tmp_center, [r0-1, c0-1]); % centers
         Cn(r0:r1, c0:c1) = max(Cn(r0:r1, c0:c1), tmp_Cn);
         PNR(r0:r1, c0:c1) = max(PNR(r0:r1, c0:c1), tmp_PNR);
@@ -161,8 +171,12 @@ end
 %% export the results
 Ain = cell2mat(reshape(Ain, 1, []));
 Cin = cell2mat(reshape(Cin, [], 1));
+Sin = cell2mat(reshape(Sin, [], 1)); 
+kernel_pars = cell2mat(reshape(kernel_pars, [], 1)); 
 center = cell2mat(reshape(center, [], 1));
 obj.A = Ain;
 obj.C = Cin;
+obj.S = Sin; 
+obj.P.kernel_pars = kernel_pars; 
 obj.Cn = Cn;
 end

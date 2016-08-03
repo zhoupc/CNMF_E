@@ -59,6 +59,12 @@ neuron_raw.updateParams('ssub', ssub,...  % spatial downsampling factor
     'merge_thr', 0.7, ... % threshold for merging neurons
     'bas_nonneg', 1);   % 1: positive baseline of each calcium traces; 0: any baseline
 
+% create convolution kernel to model the shape of calcium transients 
+nframe_decay = 30; 
+tau_decay = 1;  % unit: second 
+tau_rise = 0.2; 
+bound_pars = false; 
+neuron_raw.kernel = create_kernel('exp2', [tau_decay, tau_rise]*neuron_raw.Fs, nframe_decay, [], [], bound_pars); 
 %% downsample data for fast and better initialization
 sframe=1;						% user input: first frame to read (optional, default:1)
 num2read= numFrame;             % user input: how many frames to read   (optional, default: until the end)
@@ -100,8 +106,8 @@ axis equal off tight;
 title('Cn*PNR');
 %% initialization of A, C
 tic;
-debug_on = false;        % debug mode
-save_avi = true;
+debug_on = true;        % debug mode
+save_avi = false;
 neuron.options.min_corr = 0.9;
 neuron.options.min_pnr = 10;
 neuron.options.nk = 10; %round(T/(60*neuron.Fs)); % number of knots for spline basis, the interval between knots is 180 seconds
@@ -173,31 +179,19 @@ neuron.viewContours(Cn, 0.95, 0, [], 2);
 colormap winter;
 axis equal; axis off;
 title('contours of estimated neurons');
-%% view neurons
-view_neurons = true;
-if view_neurons
-    neuron.viewNeurons();
-end
-
-%% display contours of the neurons
-figure;
-neuron.viewContours(Cn, 0.95, 0);
-colormap winter;
-axis equal; axis off;
-title('contours of estimated neurons');
 
 %% udpate background (cell 1, the following three blocks can be run iteratively)
 % determine nonzero pixels for each neuron
 if ~isfield(neuron.P, 'sn') || isempty(neuron.P.sn)
     sn = neuron.estNoise(Y);
 end
-thresh = 5;     % threshold for detecting large cellular activity in each pixel. (median + thresh*sn)
+thresh = 5;     % threshold for detecting large cellular activity in each pixel. (mean + thresh*sn)
 % start approximating theb background
 tic;
 clear Ysignal;
 Ybg = Y-neuron.A*neuron.C;
 ssub = 3;   % downsample the data to improve the speed
-rr = neuron.options.gSiz;  % average neuron size, it will determine the neighbors for regressing each pixel's trace
+rr = neuron.options.gSiz*2;  % average neuron size, it will determine the neighbors for regressing each pixel's trace
 active_px = []; %(sum(IND, 2)>0);  %If some missing neurons are not covered by active_px, use [] to replace IND
 Ybg = neuron.localBG(Ybg, ssub, rr, active_px, sn, 5); % estiamte local background.
 fprintf('Time cost in estimating the background:        %.2f seconds\n', toc);
@@ -212,7 +206,7 @@ spatial_method = 'hals'; % methods for updating spatial components {'hals', 'lar
 % results are sparse. LARS is very slow. so run LARS in the last step
 tic;
 % update spatial components with model Y = A*C
-neuron.options.dist = 3; 
+neuron.options.dist = 5; 
 if strcmpi(spatial_method, 'lars')
     if ~isfield(neuron.P, 'sn')||ieempty(neuron.P.sn)
         neuron.preprocess(Ysignal, 2);
@@ -224,42 +218,26 @@ else
     %         neuron.post_process_spatial(); % uncomment this line to postprocess
     ind = find(sum(neuron.A, 1)==0);
     neuron.delete(ind);
+    clear IND; 
     %     the results
 end
 fprintf('Time cost in updating neuronal spatial components:     %.2f seconds\n', toc);
 
 %% update C  (cell 3)
-temporal_method = 'deconv'; % methods for updating temporal components {'hals', 'deconv'}
-% use 'hals' in the first few iterations and then in the last step, run
-% 'deconv'
+% update temporal components. 
 tic;
-C0 = neuron.C;
-if strcmpi(temporal_method, 'deconv')
-    neuron.C = HALS_temporal(Ysignal, neuron.A, neuron.C, 10);
-    neuron.options.temporal_iter = 1;  % number of iteratiosn for deconvolution. more iterations result better calcium traces, but it's slow
-    neuron.options.bas_nonneg = 1;  % allow negative baseline (0) or not (1)
-    neuron.updateTemporal_nb(Ysignal);
-else
-    neuron.C = HALS_temporal(Ysignal, neuron.A, neuron.C, 10);
-end
-
+smin = 3;       % thresholding the amplitude of the spike counts as smin*noise level
+neuron.options.maxIter = 4;   % iterations to update C 
+neuron.updateTemporal_endoscope(Ysignal, smin); 
 fprintf('Time cost in updating neuronal temporal components:     %.2f seconds\n', toc);
 
-%% pick neurons from the residual (cell 3.5). It's not alway necessary
+%% pick neurons from the residual (cell 4). It's not alway necessary
 Yres = Ysignal - neuron.A*neuron.C;
-neuron.options.min_corr = .9;
+neuron.options.min_corr = 0.8;
 neuron.options.min_pnr = 10;
 patch_par = [4, 4];
-% [center_new, Cn_res, pnr_res] = neuron.pickNeurons(Yres, patch_par, 'auto'); % method can be either 'auto' or 'manual'
-[center_new, Cn_res, pnr_res] = neuron.pickNeurons(Yres, patch_par, 'manual'); % method can be either 'auto' or 'manual'
-
-%% Event detection (This should be the last step when you are satisfied with the neuron segmentation and the background estimation)
-% algorithm: find local maximum within a window of 1 seconds first; if the
-% difference between the local max and nearby minimum value is larger than
-% thr_factor*noise, then label this local max as an event
-% this algorithm depends on the two parameters: threshold, window size (unit: second)
-thr_factor = 10; % the minimum calcium transients should be larger than thr_factor*noise
-E = neuron.event_detection(thr_factor, 5*neuron.Fs);
+[center_new, Cn_res, pnr_res] = neuron.pickNeurons(Yres, patch_par, 'auto'); % method can be either 'auto' or 'manual'
+% [center_new, Cn_res, pnr_res] = neuron.pickNeurons(Yres, patch_par, 'manual'); % method can be either 'auto' or 'manual'
 
 %% save results
 result_nm = [dir_nm, file_nm, '_results.mat'];
@@ -282,7 +260,7 @@ neuron.viewNeurons([], C, dir_neurons);
 figure;
 % neuron.viewContours(Cn, 0.9, 0);  % correlation image computed with
 % spatially filtered data
-% [Cn, pnr] = neuron.correlation_pnr(Ysignal);
+% [Cn, pnr] = neuron.correlation_pnr(Ysignal); % very slow 
 Cnn = correlation_image(Ysignal(:, 1:5:end), 4, d1, d2);
 neuron.viewContours(Cnn, 0.9, 0); % correlation image computed with background-subtracted data
 colormap winter;
@@ -299,7 +277,7 @@ neuron.viewNeurons([], C, folder_nm);
 %% check spatial and temporal components by playing movies
 save_avi = false;
 avi_name = 'play_movie.avi';
-neuron.Cn = Cnn;
+neuron.Cn = Cn;
 neuron.runMovie(Ysignal, [0, 50], save_avi, avi_name);
 
 %%
@@ -323,7 +301,7 @@ end
 temp  = quantile(Y(1:1000:(d1*d2*T)), [0.0001, 0.9999]);
 Ymin = temp(1); 
 Ymax = temp(2); 
-ACmax = quantile(Yac(1:1000:(d1*d2*T)), 0.9999);
+ACmax = 100; %quantile(Yac(1:1000:(d1*d2*T)), 0.9999);
 
 %     subplot(4,6, [5,6,11,12]);
 for m=1:5:T
@@ -362,9 +340,7 @@ for m=1:5:T
         avi_file.writeVideo(temp);
     end
 end
-if save_avi
-    avi_file.close();
-end
+clc
 
 
 %% play videos to verify the demixing results
