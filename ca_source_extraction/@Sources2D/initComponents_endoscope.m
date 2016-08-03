@@ -50,12 +50,14 @@ if (~exist('patch_sz', 'var'))||(isempty(patch_sz))||(max(patch_sz(:))==1)
     % use the whole optical field directly
     if nk>1  % detrend data 
         Ydt = detrend_data(obj.reshape(double(Y), 1), nk); % detrend data
-        [Ain, Cin, center, Cn, PNR] = greedyROI_endoscope(Ydt, K, options, debug_on, save_avi);
+        [results, center, Cn, PNR] = greedyROI_endoscope(Ydt, K, options, debug_on, save_avi);
     else    % without detrending 
-        [Ain, Cin, center, Cn, PNR] = greedyROI_endoscope(Y, K, options, debug_on, save_avi);
+        [results, center, Cn, PNR] = greedyROI_endoscope(Y, K, options, debug_on, save_avi);
     end
-    obj.A = Ain;
-    obj.C = Cin;
+    obj.A = results.Ain;
+    obj.C = results.Cin;
+    obj.S = results.Sin; 
+    obj.P.kernel_pars = results.kernel_pars; 
     obj.Cn = Cn;
     return;
 elseif isscalar(patch_sz)

@@ -106,7 +106,7 @@ axis equal off tight;
 title('Cn*PNR');
 %% initialization of A, C
 tic;
-debug_on = true;        % debug mode
+debug_on = false;        % debug mode
 save_avi = false;
 neuron.options.min_corr = 0.9;
 neuron.options.min_pnr = 10;
