@@ -299,6 +299,7 @@ classdef Sources2D < handle
         %% play movie
         function playMovie(obj, Y, min_max, col_map, avi_nm, t_pause)
             % play movies
+            figure; 
             if ~exist('col_map', 'var') || isempty(col_map)
                 col_map = jet;
             end
@@ -317,7 +318,6 @@ classdef Sources2D < handle
                 min_max(1) = max(min_max(1), 0);
             end
             if ~exist('t_pause', 'var'); t_pause=0.01; end
-            figure;
             for t=1:size(Y,3)
                 imagesc(Y(:, :, t), min_max); colormap(col_map);
                 axis equal; axis off;

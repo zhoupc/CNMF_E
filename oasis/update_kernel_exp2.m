@@ -20,13 +20,13 @@ elseif ~strcmpi(kernel.type, 'exp2')
     kernel.nMax = kernel.nMax;
 end
 
-bound_pars = kernel.bound_pars; 
+bound_pars = kernel.bound_pars;
 if bound_pars
-lb = kernel.lb;
-ub = kernel.ub;
+    lb = kernel.lb;
+    ub = kernel.ub;
 else
-    lb = kernel.pars/2; 
-    ub = kernel.pars*2; 
+    lb = kernel.pars/2;
+    ub = kernel.pars*2;
 end
 nMax = kernel.nMax;
 fhandle = kernel.fhandle;
@@ -39,7 +39,7 @@ s = reshape(s, T, 1); % spike counts
 %% create regression matrix
 sind = reshape(find(s), 1, []); % indices of all spikes
 nspk = length(sind); %  number of vents
-if nspk==0 % no events, stop running
+if nspk<2 % no events, stop running
     return;
 end
 temp = bsxfun(@plus, (0:(nMax-1))', sind); % frames that are affected by s
@@ -68,13 +68,13 @@ while true
     tau_1 = linspace(lb(1), ub(1), K);
     tau_2 = linspace(lb(2), ub(2), K);
     rss = inf(K);
-
+    
     for m=1:K
-        tau_d = tau_1(m); 
+        tau_d = tau_1(m);
         for n=1:K
-            tau_r = tau_2(n); 
+            tau_r = tau_2(n);
             if tau_r>tau_d
-                break; 
+                break;
             end
             gt = fhandle([tau_d, tau_r], t);
             H = sparse(rsub, csub, gt(tmtp), ny, nspk);
@@ -88,34 +88,34 @@ while true
     [indr, indc] = find(rss==f1, 1);
     if (f0-f1)/f1 < thresh %improvement is small
         break;
-    elseif bound_pars  % shrink the searching area and parameters are bounded 
+    elseif bound_pars  % shrink the searching area and parameters are bounded
         f0 = f1;
         lb(1) = tau_1(max(1, indr-1));
         ub(1) = tau_1(min(K, indr+1));
         lb(2) = tau_2(max(1, indc-1));
-        ub(2) = tau_2(min(K, indc+1));  
-    else % searching areas are not bounded 
-        f0 = f1; 
+        ub(2) = tau_2(min(K, indc+1));
+    else % searching areas are not bounded
+        f0 = f1;
         if indr==1
-            lb(1) = lb(1)/2; 
-            ub(1) = tau_1(2); 
-        elseif indr==K 
-            lb(1) = tau_1(K-1); 
-            ub(1) = ub(1)*2; 
+            lb(1) = lb(1)/2;
+            ub(1) = tau_1(2);
+        elseif indr==K
+            lb(1) = tau_1(K-1);
+            ub(1) = ub(1)*2;
         else
-            lb(1) = tau_1(indr-1); 
-            ub(1) = tau_1(indr+1); 
+            lb(1) = tau_1(indr-1);
+            ub(1) = tau_1(indr+1);
         end
         
         if indc==1
-            lb(2) = lb(2)/2; 
-            ub(2) = tau_2(2); 
+            lb(2) = lb(2)/2;
+            ub(2) = tau_2(2);
         elseif indc==K
-            lb(2) = tau_2(K-1); 
-            ub(2) = ub(2)*2; 
+            lb(2) = tau_2(K-1);
+            ub(2) = ub(2)*2;
         else
-            lb(2) = tau_2(indc-1); 
-            ub(2) = tau_2(indc+1); 
+            lb(2) = tau_2(indc-1);
+            ub(2) = tau_2(indc+1);
         end
         
     end

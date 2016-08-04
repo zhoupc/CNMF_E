@@ -47,7 +47,7 @@ fprintf('\nThe data has been mapped to RAM. It has %d X %d pixels X %d frames. \
 
 %% create Source2D class object for storing results and parameters
 neuron_raw = Sources2D('d1',d1,'d2',d2);   % dimensions of datasets
-neuron_raw.Fs = 10;         % frame rate
+neuron_raw.Fs = 6;         % frame rate
 ssub = 1;           % spatial downsampling factor
 tsub = 1;           % temporal downsampling factor
 neuron_raw.updateParams('ssub', ssub,...  % spatial downsampling factor
@@ -61,10 +61,11 @@ neuron_raw.updateParams('ssub', ssub,...  % spatial downsampling factor
 
 % create convolution kernel to model the shape of calcium transients 
 nframe_decay = 30; 
-tau_decay = 1;  % unit: second 
-tau_rise = 0.2; 
+tau_decay = 0.6;  % unit: second 
+tau_rise = 0.1; 
 bound_pars = false; 
 neuron_raw.kernel = create_kernel('exp2', [tau_decay, tau_rise]*neuron_raw.Fs, nframe_decay, [], [], bound_pars); 
+
 %% downsample data for fast and better initialization
 sframe=1;						% user input: first frame to read (optional, default:1)
 num2read= numFrame;             % user input: how many frames to read   (optional, default: until the end)
@@ -126,7 +127,7 @@ neuron_init = neuron.copy();
 %% merge neurons, order neurons and delete some low quality neurons (cell 0, before running iterative udpates)
 neuron_bk = neuron.copy();
 [Ain, Cin] = neuron.snapshot();   % keep the initialization results
-merge_thr = [0., 0.7, 0];     % thresholds for merging neurons corresponding to
+merge_thr = [0.1, 0.6, 0];     % thresholds for merging neurons corresponding to
         %{sptial overlaps, temporal correlation of C, temporal correlation of S}
 [merged_ROI, newIDs] = neuron.quickMerge(merge_thr);  % merge neurons based on the correlation computed with {'A', 'S', 'C'}
 % A: spatial shapes; S: spike counts; C: calcium traces 
@@ -191,15 +192,14 @@ tic;
 clear Ysignal;
 Ybg = Y-neuron.A*neuron.C;
 ssub = 3;   % downsample the data to improve the speed
-rr = neuron.options.gSiz*2;  % average neuron size, it will determine the neighbors for regressing each pixel's trace
+rr = neuron.options.gSiz*1.5;  % average neuron size, it will determine the neighbors for regressing each pixel's trace
 active_px = []; %(sum(IND, 2)>0);  %If some missing neurons are not covered by active_px, use [] to replace IND
 Ybg = neuron.localBG(Ybg, ssub, rr, active_px, sn, 5); % estiamte local background.
 fprintf('Time cost in estimating the background:        %.2f seconds\n', toc);
 
 % subtract the background from the raw data.
 Ysignal = Y - Ybg;
-
-% neuron.playVideo(Ysignal); % play the video data after subtracting the background components.
+ neuron.playMovie(Ysignal); % play the video data after subtracting the background components.
 %% update spatial components (cell 2), we can iteratively run cell 2& 3 for few times and then run cell 1
 spatial_method = 'hals'; % methods for updating spatial components {'hals', 'lars'},
 % hals is fast, there is no sparse constraint; lars is very slow, but the
@@ -254,8 +254,7 @@ if exist('dir_neurons', 'dir')
 else
     mkdir(dir_neurons);
 end
-C = (neuron.A'*neuron.A)\(neuron.A'*Ysignal); % calcium traces estimated using regression
-neuron.viewNeurons([], C, dir_neurons);
+neuron.viewNeurons([], neuron.C_raw, dir_neurons);
 %% display contours of the neurons
 figure;
 % neuron.viewContours(Cn, 0.9, 0);  % correlation image computed with
@@ -268,11 +267,11 @@ axis equal; axis off;
 title('contours of estimated neurons');
 % plot contours with IDs
 figure;
-plot_contours(neuron.A, Cn, 0.9, 1, [], neuron.Coor);
+plot_contours(neuron.A, Cn, 0.9, 0, [], neuron.Coor);
 
 %% check results by visualizing all spatial and temporal components one by one
 folder_nm = [];%'neurons';
-neuron.viewNeurons([], C, folder_nm);
+neuron.viewNeurons([], neuron.C_raw, folder_nm);
 
 %% check spatial and temporal components by playing movies
 save_avi = false;
