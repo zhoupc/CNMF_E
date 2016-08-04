@@ -70,14 +70,13 @@ while and(m>=1, m<=length(ind))
     %% temporal components
     subplot(2,2,3:4);cla;
     if ~isempty(C2)
-        plot(t, C2(ind(m), :)*max(obj.A(:, ind(m)))); hold on;
+        plot(t, C2(ind(m), :)*max(obj.A(:, ind(m))), 'linewidth', 2); hold on;
         plot(t, obj.C(ind(m), :)*max(obj.A(:, ind(m))), 'r');
     else
         
         plot(t, obj.C(ind(m), :)*max(obj.A(:, ind(m))));
     end
     xlabel(str_xlabel);
-    axis tight;
     
     %% save images
     if save_img

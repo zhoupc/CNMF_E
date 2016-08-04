@@ -57,6 +57,7 @@ if (~exist('patch_sz', 'var'))||(isempty(patch_sz))||(max(patch_sz(:))==1)
     obj.A = results.Ain;
     obj.C = results.Cin;
     obj.S = results.Sin; 
+    obj.C_raw = results.Cin_raw; 
     obj.P.kernel_pars = results.kernel_pars; 
     obj.Cn = Cn;
     return;
@@ -84,8 +85,9 @@ if ~isfield(options, 'bd') || isempty(options.bd')
 end
 bd = options.bd;
 Ain = cell(nr_patch, nc_patch); % save spatial components of neurons in each patch
-Cin = cell(nr_patch, nc_patch); % save temporal components of neurons in each patch
-Sin = cell(nr_patch, nc_patch); % save temporal components of neurons in each patch
+Cin = cell(nr_patch, nc_patch); % save temporal components of neurons in each patch, denoised trace 
+Sin = cell(nr_patch, nc_patch); % save temporal components of neurons in each patch, deconvolved trace
+Cin_raw = cell(nr_patch, nc_patch); % save temporal components of neurons in each patch, raw trace 
 kernel_pars = cell(nr_patch, nc_patch); % save temporal components of neurons in each patch
 center = cell(nr_patch, nc_patch);     % save centers of all initialized neurons
 Cn = zeros(d1, d2);
@@ -141,6 +143,7 @@ for mr = 1:nr_patch
         tmp_Ain = tmp_results.Ain; 
         tmp_Cin = tmp_results.Cin; 
         tmp_Sin = tmp_results.Sin; 
+        tmp_Cin_raw = tmp_results.Cin_raw; 
         tmp_kernel_pars = tmp_results.kernel_pars; 
         tmp_K = size(tmp_Ain, 2);   % number of neurons within the selected patch
         temp = zeros(d1, d2, tmp_K);  % spatial components of all neurosn
@@ -148,6 +151,7 @@ for mr = 1:nr_patch
         Ain{mr, mc} = reshape(temp, d1*d2, tmp_K);
         Cin{mr, mc} = tmp_Cin;      % temporal components of all neurons
         Sin{mr, mc} = tmp_Sin; 
+        Cin_raw{mr, mc} = tmp_Cin_raw; 
         kernel_pars{mr,mc} = tmp_kernel_pars; 
         center{mr, mc} = bsxfun(@plus, tmp_center, [r0-1, c0-1]); % centers
         Cn(r0:r1, c0:c1) = max(Cn(r0:r1, c0:c1), tmp_Cn);
@@ -174,11 +178,13 @@ end
 Ain = cell2mat(reshape(Ain, 1, []));
 Cin = cell2mat(reshape(Cin, [], 1));
 Sin = cell2mat(reshape(Sin, [], 1)); 
+Cin_raw = cell2mat(reshape(Cin_raw, [], 1)); 
 kernel_pars = cell2mat(reshape(kernel_pars, [], 1)); 
 center = cell2mat(reshape(center, [], 1));
 obj.A = Ain;
 obj.C = Cin;
 obj.S = Sin; 
+obj.C_raw = Cin_raw; 
 obj.P.kernel_pars = kernel_pars; 
 obj.Cn = Cn;
 end

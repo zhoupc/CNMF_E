@@ -140,6 +140,7 @@ end
 Ain = zeros(d1*d2, K);  % spatial components
 Cin = zeros(K, T);      % temporal components
 Sin = zeros(K, T);    % spike counts
+Cin_raw = zeros(K, T); 
 kernel_pars = zeros(K, length(kernel.pars));    % parameters for the convolution kernels of all neurons
 center = zeros(K, 2);   % center of the initialized components
 
@@ -266,18 +267,18 @@ while searching_flag
         
         %% extract ai, ci
         sz = [nr, nc];
-        [ai, ci, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
-        if or(any(isnan(ai)), any(isnan(ci))); ind_success=false; end
-        if max(ci)/get_noise_fft(ci)<min_pnr; ind_success=false; end
+        [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
+        if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
+        if max(ci_raw)/get_noise_fft(ci_raw)<min_pnr; ind_success=false; end
         if ind_success
             % deconv the temporal trace
-            ci_raw = ci; 
             [ci, si, kernel] = deconvCa(ci_raw, kernel, smin, true, false);
             % save this initialization
             k = k+1;
             Ain(ind_nhood, k) = ai;
             Cin(k, :) = ci;
             Sin(k, :) = si;
+            Cin_raw(k, :) = ci_raw; 
             kernel_pars(k, :) = kernel.pars;
             center(k, :) = [r, c];
             
@@ -358,6 +359,7 @@ center = center(1:k, :);
 results.Ain = sparse(Ain(:, 1:k));
 results.Cin = Cin(1:k, :);
 results.Sin = Sin(1:k, :);
+results.Cin_raw = Cin_raw(1:k, :); 
 results.kernel_pars = kernel_pars(1:k, :);
 % Cin(Cin<0) = 0;
 Cn = Cn0;

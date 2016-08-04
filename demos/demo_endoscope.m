@@ -49,7 +49,7 @@ fprintf('\nThe data has been mapped to RAM. It has %d X %d pixels X %d frames. \
 neuron_raw = Sources2D('d1',d1,'d2',d2);   % dimensions of datasets
 neuron_raw.Fs = 10;         % frame rate
 ssub = 1;           % spatial downsampling factor
-tsub = 2;           % temporal downsampling factor
+tsub = 1;           % temporal downsampling factor
 neuron_raw.updateParams('ssub', ssub,...  % spatial downsampling factor
     'tsub', tsub, ...  %temporal downsampling factor
     'gSig', 4,... %width of the gaussian kernel, which can approximates the average neuron shape
@@ -106,15 +106,14 @@ axis equal off tight;
 title('Cn*PNR');
 %% initialization of A, C
 tic;
-debug_on = false;        % debug mode
-save_avi = false;
+debug_on = true; 
+save_avi = false; 
 neuron.options.min_corr = 0.9;
 neuron.options.min_pnr = 10;
-neuron.options.nk = 10; %round(T/(60*neuron.Fs)); % number of knots for spline basis, the interval between knots is 180 seconds
-patch_par = [4, 4]; %1;  % divide the optical field into 3 X 3 patches and do initialization patch by patch
-K = 500; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
+patch_par = [1, 1]; %1;  % divide the optical field into m X n patches and do initialization patch by patch
+K = 300; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
 neuron.options.bd = 1; % boundaries to be removed due to motion correction
-[center, Cn, pnr] = neuron.initComponents_endoscope(Y, K, patch_par, debug_on, save_avi); %#ok<ASGLU>
+[center, Cn, pnr] = neuron.initComponents_endoscope(Y, K, patch_par, debug_on, save_avi); 
 figure;
 imagesc(Cn);
 hold on; plot(center(:, 2), center(:, 1), 'or');
@@ -127,8 +126,9 @@ neuron_init = neuron.copy();
 %% merge neurons, order neurons and delete some low quality neurons (cell 0, before running iterative udpates)
 neuron_bk = neuron.copy();
 [Ain, Cin] = neuron.snapshot();   % keep the initialization results
-neuron.options.merge_thr = 0.7;     % threshold for merging neurons
-[merged_ROI, newIDs] = neuron.quickMerge('C');  % merge neurons based on the correlation computed with {'A', 'S', 'C'}
+merge_thr = [0., 0.7, 0];     % thresholds for merging neurons corresponding to
+        %{sptial overlaps, temporal correlation of C, temporal correlation of S}
+[merged_ROI, newIDs] = neuron.quickMerge(merge_thr);  % merge neurons based on the correlation computed with {'A', 'S', 'C'}
 % A: spatial shapes; S: spike counts; C: calcium traces 
 display_merge = true;
 if display_merge && ~isempty(merged_ROI)
@@ -170,7 +170,7 @@ neuron.orderROIs(srt);
 %% view neurons
 view_neurons = true;
 if view_neurons
-    neuron.viewNeurons();
+    neuron.viewNeurons([], neuron.C_raw);
 end
 
 %% display contours of the neurons
@@ -233,9 +233,9 @@ fprintf('Time cost in updating neuronal temporal components:     %.2f seconds\n'
 
 %% pick neurons from the residual (cell 4). It's not alway necessary
 Yres = Ysignal - neuron.A*neuron.C;
-neuron.options.min_corr = 0.8;
+neuron.options.min_corr = 0.9;
 neuron.options.min_pnr = 10;
-patch_par = [4, 4];
+patch_par = [2, 2];
 [center_new, Cn_res, pnr_res] = neuron.pickNeurons(Yres, patch_par, 'auto'); % method can be either 'auto' or 'manual'
 % [center_new, Cn_res, pnr_res] = neuron.pickNeurons(Yres, patch_par, 'manual'); % method can be either 'auto' or 'manual'
 

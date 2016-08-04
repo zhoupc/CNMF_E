@@ -11,6 +11,7 @@ classdef Sources2D < handle
         b;          % spatial components of backgrounds
         f;          % temporal components of backgrounds
         S;          % spike counts
+        C_raw;      % raw traces of temporal components
         Cn;         % correlation image
         Coor;       % neuron contours
         Df;         % background for each component to normalize the filtered raw data
@@ -20,8 +21,8 @@ classdef Sources2D < handle
         P;          % some estimated parameters
         Fs = nan;    % frame rate
         indicator = 'GCaMP6f';
-        kernel; 
-        file = ''; 
+        kernel;
+        file = '';
     end
     
     %% methods
@@ -33,7 +34,7 @@ classdef Sources2D < handle
             if nargin>0
                 obj.options = CNMFSetParms(obj.options, varargin{:});
             end
-            obj.kernel = create_kernel('exp2'); 
+            obj.kernel = create_kernel('exp2');
         end
         
         %% update parameters
@@ -72,9 +73,9 @@ classdef Sources2D < handle
                 Y, obj.A, obj.b, obj.C, obj.f, obj.P, obj.options);
         end
         
-        %% udpate temporal components with fast deconvolution 
+        %% udpate temporal components with fast deconvolution
         C = updateTemporal_endoscope_endoscope(obj, Y)
-
+        
         %% update temporal components without background
         function updateTemporal_nb(obj, Y)
             [obj.C, obj.P, obj.S] = update_temporal_components_nb(...
@@ -125,10 +126,16 @@ classdef Sources2D < handle
         function [srt] = orderROIs(obj, srt)
             %% order neurons
             % srt: sorting order
-            
+            nA = sqrt(sum(obj.A.^2));
+            nr = length(nA);
             if nargin<2; srt=[]; end
             [obj.A, obj.C, obj.S, obj.P, srt] = order_ROIs(obj.A, obj.C,...
                 obj.S, obj.P, srt);
+            
+            if ~isempty(obj.C_raw)
+                obj.C_raw = spdiags(nA(:),0,nr,nr)*obj.C_raw;
+                obj.C_raw = obj.C_raw(srt, :);
+            end
         end
         
         %% view contours
@@ -185,7 +192,7 @@ classdef Sources2D < handle
         end
         
         %% quick merge neurons based on spatial and temporal correlation
-        [merged_ROIs, newIDs] = quickMerge(obj, temporal_component)
+        [merged_ROIs, newIDs] = quickMerge(obj, merge_thr)
         
         
         %% quick view
@@ -198,6 +205,8 @@ classdef Sources2D < handle
             obj.C(ind, :) = [];
             try  %#ok<TRYNC>
                 obj.S(ind, :) = [];
+                obj.C_raw(ind, :) = [];
+                obj.P.kernel_pars(ind, :) = [];
                 obj.P.gn(ind) = [];
                 obj.P.b(ind) = [];
                 obj.P.c1(ind) = [];
@@ -297,8 +306,8 @@ classdef Sources2D < handle
                 avi_file = VideoWriter(avi_nm);
                 avi_file.open();
                 avi_flag = true;
-            else 
-                avi_flag = false; 
+            else
+                avi_flag = false;
             end
             if ismatrix(Y); Y=obj.reshape(Y, 2); end
             [~, ~, T] = size(Y);
@@ -520,7 +529,7 @@ classdef Sources2D < handle
         
         %% estimate noise
         function sn = estNoise(obj, Y)
-            fprintf('Estimating the noise power for each pixel from a simple PSD estimate...'); 
+            fprintf('Estimating the noise power for each pixel from a simple PSD estimate...');
             Y = obj.reshape(Y, 1);
             sn = get_noise_fft(Y,obj.options);
             obj.P.sn = sn(:);
@@ -603,6 +612,9 @@ classdef Sources2D < handle
             [center, Cn, pnr] = neuron.initComponents_endoscope(Y, [], patch_par, false, false);
             obj.A = [obj.A, neuron.A];
             obj.C = [obj.C; neuron.C];
+            obj.S = [obj.S; neuron.S];
+            obj.C_raw = [obj.C_raw; neuron.C_raw];
+            obj.P.kernel_pars = [obj.P.kernel_pars; neuron.P.kernel_pars];
         end
         
         %% post process spatial component
@@ -619,14 +631,14 @@ classdef Sources2D < handle
             if ~exist('rr', 'var')||isempty(rr); rr=obj.options.gSiz; end
             if ~exist('ssub', 'var')||isempty(ssub); ssub = 1; end
             if ~exist('IND', 'var') ||isempty(IND); IND = []; end
-            if ~exist('sn', 'var')||isempty(sn); 
+            if ~exist('sn', 'var')||isempty(sn);
                 if isfield(obj.P, 'sn')
-                    sn = obj.reshape(obj.P.sn, 2); 
+                    sn = obj.reshape(obj.P.sn, 2);
                 else
-                sn = [];
+                    sn = [];
                 end
             else
-                sn = obj.reshape(sn, 2); 
+                sn = obj.reshape(sn, 2);
             end
             
             if ~exist('thresh', 'var')||isempty(thresh); thresh = []; end

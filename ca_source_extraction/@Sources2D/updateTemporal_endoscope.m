@@ -1,10 +1,10 @@
-function [C, C_offset] = updateTemporal_endoscope(obj, Y, smin)
+function [C_offset] = updateTemporal_endoscope(obj, Y, smin)
 %% run HALS by fixating all spatial components
 % input:
 %   Y:  d*T, fluorescence data
 %   smin: scalar, threshold for detecting one spikes (>smin*sigma)
 % output:
-%   C: K*T, updated temporal components
+%   C_raw: K*T, temporal components without being deconvolved
 
 % Author: Pengcheng Zhou, Carnegie Mellon University, adapted from Johannes
 
@@ -17,6 +17,7 @@ end
 A = obj.A;
 K = size(A, 2);     % number of components
 C = obj.C;
+C_raw = zeros(size(C)); 
 C_offset = zeros(K, 1);
 S = zeros(size(C));
 A = full(A);
@@ -61,9 +62,11 @@ for miter=1:maxIter
         % save the spike count in the last iteration
         if miter==maxIter
             S(k, :) = sk;
+            C_raw(k, :) = temp; 
         end
     end
 end
 obj.P.kernel_pars = kernel_pars(~ind_del, :);
 obj.C = C(~ind_del, :); 
 obj.S = S(~ind_del, :); 
+obj.C_raw = C_raw; 
