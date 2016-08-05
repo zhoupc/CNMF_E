@@ -66,9 +66,13 @@ end
 % lower and upper bounds for parameters 
 if ~exist('lb', 'var') || isempty(lb)
     kernel.lb = 0.5*kernel.pars;
+else
+    kernel.lb = lb; 
 end
 if ~exist('ub', 'var') || isempty(ub)
     kernel.ub = 2*kernel.pars;
+else
+    kernel.ub = ub; 
 end
 
 % bound the parameters of not 
