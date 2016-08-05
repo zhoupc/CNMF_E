@@ -2,11 +2,11 @@
 clear; clc; close all; 
 T = 1000; 
 s = double(rand(1, T)>0.98); 
-sig = 0.02; 
+sig = 0.04; 
 
 % example
 tau_d = 5; 
-tau_r = .2; 
+tau_r = 1; 
 nMax = 100; 
 pars = [tau_d, tau_r]; 
 kernel = create_kernel('exp2', pars, nMax); 

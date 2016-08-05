@@ -158,8 +158,11 @@ if display_merge && ~isempty(merged_ROI)
         end
     end
     
-    neuron.A = [neuron.A(:, ~ind_after), Ain(:, ind_before)]; 
-    neuron.C = [neuron.C(~ind_after, :); Cin(ind_before, :)]; 
+    neuron.A = [neuron.A(:, ~ind_after), neuron_bk.A(:, ind_before)]; 
+    neuron.C = [neuron.C(~ind_after, :); neuron_bk.C(ind_before, :)]; 
+    neuron.C_raw = [neuron.C_raw(~ind_after, :); neuron_bk.C_raw(ind_before, :)]; 
+    neuron.S = [neuron.S(~ind_after, :); neuron_bk.S(ind_before, :)]; 
+    neuron.P.kernel_pars = [neuron.P.kernel_pars(~ind_after, :); neuron_bk.P.kernel_pars(ind_before, :)]; 
     clear neuron_bk;  
 end
 

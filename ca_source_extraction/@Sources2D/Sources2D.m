@@ -203,15 +203,10 @@ classdef Sources2D < handle
         function delete(obj, ind)
             obj.A(:, ind) = [];
             obj.C(ind, :) = [];
-            try  %#ok<TRYNC>
-                obj.S(ind, :) = [];
-                obj.C_raw(ind, :) = [];
+            if ~isempty(obj.S); obj.S(ind, :) = []; end
+            if ~isempty(obj.C_raw); obj.C_raw(ind, :) = []; end
+            if and(isfield(obj.P, 'kernel_pars'),  ~isempty(obj.P.kernel_pars))
                 obj.P.kernel_pars(ind, :) = [];
-                obj.P.gn(ind) = [];
-                obj.P.b(ind) = [];
-                obj.P.c1(ind) = [];
-                obj.P.neuron_sn(ind) = [];
-                obj.Coor(ind) = [];
             end
         end
         
