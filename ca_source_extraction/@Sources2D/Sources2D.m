@@ -539,9 +539,9 @@ classdef Sources2D < handle
                 AA = obj.A(:, ind);
             end
             if nargin<3
-                ratio = 0.1;
+                ratio = 0.3;
             end
-            AA = bsxfun(@times, AA, 1./sum(AA,1));
+            AA = bsxfun(@times, AA, 1./max(AA,1));
             AA(bsxfun(@lt, AA, max(AA, [], 1)*ratio)) = 0;
             [d, K] = size(AA);
             

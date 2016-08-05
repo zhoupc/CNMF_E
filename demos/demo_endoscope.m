@@ -125,9 +125,9 @@ neuron.orderROIs(srt);
 neuron_init = neuron.copy();
 
 %% merge neurons, order neurons and delete some low quality neurons (cell 0, before running iterative udpates)
+neuron = neuron_init.copy(); 
 neuron_bk = neuron.copy();
-[Ain, Cin] = neuron.snapshot();   % keep the initialization results
-merge_thr = [0.1, 0.6, 0];     % thresholds for merging neurons corresponding to
+merge_thr = [0.0, 0.6, 0];     % thresholds for merging neurons corresponding to
         %{sptial overlaps, temporal correlation of C, temporal correlation of S}
 [merged_ROI, newIDs] = neuron.quickMerge(merge_thr);  % merge neurons based on the correlation computed with {'A', 'S', 'C'}
 % A: spatial shapes; S: spike counts; C: calcium traces 
@@ -139,11 +139,22 @@ if display_merge && ~isempty(merged_ROI)
     m = 1; 
     while m<=length(merged_ROI)
         subplot(221);
-        neuron.image(sum(Ain(:, merged_ROI{m}), 2));
-        axis equal off tight;
+        tmp_img = neuron_bk.overlapA(merged_ROI{m}); 
+        imagesc(tmp_img);
+        axis equal off tight; 
+        subplot(222); 
+        imagesc(tmp_img); 
+        axis equal off tight; 
+        [tmp_r, tmp_c, ~] = find(sum(tmp_img, 3)>0); 
+        xlim([min(tmp_c)-10, max(tmp_c)+10]); 
+        ylim([min(tmp_r)-10, max(tmp_r)+10]); 
+%         neuron.image(sum(Ain(:, merged_ROI{m}), 2));
+        axis off;
         subplot(2,2,3:4);
-        plot(bsxfun(@times, Cin(merged_ROI{m}, :)', 1./max(Cin(merged_ROI{m}, :)')));
-        axis tight;
+        tmp_C = neuron_bk.C_raw(merged_ROI{m}, :)'; 
+        tmp_C = bsxfun(@times, tmp_C, 1./max(tmp_C, [], 1)); 
+        plot(tmp_C, 'linewidth', 2);
+
         temp = input('keep this merge? (y(default)/n(cancel)/b(back))/e(end)   ', 's'); 
         if strcmpi(temp, 'n')
             ind_after(newIDs(m)) = true; 
