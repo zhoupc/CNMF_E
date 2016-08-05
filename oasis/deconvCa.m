@@ -55,6 +55,11 @@ if ~exist('fit_gt', 'var') || isempty(fit_gt)
 end
 thresh = 1e-3;
 
+% debug mode 
+if ~exist('debug_on', 'var') || isempty(debug_on)
+    debug_on = false;
+end
+
 % maximum iterations for running OASIS 
 if ~exist('maxIter', 'var') || isempty(maxIter)
     maxIter = 5; 

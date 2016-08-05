@@ -53,7 +53,7 @@ tsub = 1;           % temporal downsampling factor
 neuron_raw.updateParams('ssub', ssub,...  % spatial downsampling factor
     'tsub', tsub, ...  %temporal downsampling factor
     'gSig', 4,... %width of the gaussian kernel, which can approximates the average neuron shape
-    'gSiz', 15, ...% average size of a neuron
+    'gSiz', 15, ...% maximum diameter of neurons in the image plane. larger values are preferred. 
     'dist', 2, ... % maximum size of the neuron: dist*gSiz
     'search_method', 'ellipse', ... % searching method
     'merge_thr', 0.7, ... % threshold for merging neurons
