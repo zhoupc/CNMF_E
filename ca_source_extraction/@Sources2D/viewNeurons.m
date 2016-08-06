@@ -105,9 +105,11 @@ while and(m>=1, m<=length(ind))
                     obj.A(:, end+1) = tmpA.*tmp_ind(:); 
                     obj.C(end+1, :) = obj.C(ind(m), :); 
                     obj.A(:, ind(m)) = tmpA.*(1-tmp_ind(:)); 
-                    
+                                        obj.S(end+1, :) = obj.S(ind(m), :); 
+                    obj.C_raw(end+1, :) = obj.C_raw(ind(m), :); 
+                    obj.P.kernel_pars(end+1, :) = obj.P.kernel_pars(ind(m), :);                   
             catch 
-                sprintf('the neuron is not split\n'); 
+                sprintf('the neuron was not split\n'); 
             end 
         elseif strcmpi(temp, 'e')
             break; 
