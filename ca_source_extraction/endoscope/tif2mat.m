@@ -35,7 +35,7 @@ else
     while t0<=T
         num2read = min(t0+Tchunk-1, T) - t0 + 1; 
         tmpY = bigread2(nam, t0, num2read); 
-        data.Y(:, :, (1:num2read)+t0) = tmpY; 
+        data.Y(:, :, (1:num2read)+t0-1) = tmpY; 
         t0 = t0 + num2read; 
     end 
 end 
