@@ -199,6 +199,8 @@ title('contours of estimated neurons');
 % determine nonzero pixels for each neuron
 if ~isfield(neuron.P, 'sn') || isempty(neuron.P.sn)
     sn = neuron.estNoise(Y);
+else
+    sn = neuron.P.sn; 
 end
 thresh = 5;     % threshold for detecting large cellular activity in each pixel. (mean + thresh*sn)
 % start approximating theb background
@@ -222,7 +224,7 @@ tic;
 % update spatial components with model Y = A*C
 neuron.options.dist = 5; 
 if strcmpi(spatial_method, 'lars')
-    if ~isfield(neuron.P, 'sn')||ieempty(neuron.P.sn)
+    if ~isfield(neuron.P, 'mis_values')||isempty(neuron.P.mis_values)
         neuron.preprocess(Ysignal, 2);
     end
     neuron.updateSpatial_nb(Ysignal);
