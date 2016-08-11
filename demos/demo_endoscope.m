@@ -125,7 +125,6 @@ neuron.orderROIs(srt);
 neuron_init = neuron.copy();
 
 %% merge neurons, order neurons and delete some low quality neurons (cell 0, before running iterative udpates)
-neuron = neuron_init.copy(); 
 neuron_bk = neuron.copy();
 merge_thr = [0.0, 0.6, 0];     % thresholds for merging neurons corresponding to
         %{sptial overlaps, temporal correlation of C, temporal correlation of S}
@@ -217,26 +216,14 @@ fprintf('Time cost in estimating the background:        %.2f seconds\n', toc);
 Ysignal = Y - Ybg;
  neuron.playMovie(Ysignal); % play the video data after subtracting the background components.
 %% update spatial components (cell 2), we can iteratively run cell 2& 3 for few times and then run cell 1
-spatial_method = 'hals'; % methods for updating spatial components {'hals', 'lars'},
-% hals is fast, there is no sparse constraint; lars is very slow, but the
-% results are sparse. LARS is very slow. so run LARS in the last step
-tic;
-% update spatial components with model Y = A*C
-neuron.options.dist = 5; 
-if strcmpi(spatial_method, 'lars')
-    if ~isfield(neuron.P, 'mis_values')||isempty(neuron.P.mis_values)
-        neuron.preprocess(Ysignal, 2);
-    end
-    neuron.updateSpatial_nb(Ysignal);
-else
-    IND = determine_search_location(neuron.A, 'dilate', neuron.options);
-    neuron.A = HALS_spatial(Ysignal, neuron.A, neuron.C, IND, 10);
-    %         neuron.post_process_spatial(); % uncomment this line to postprocess
-    ind = find(sum(neuron.A, 1)==0);
-    neuron.delete(ind);
-    clear IND; 
-    %     the results
-end
+% use HALS to update the spatial components
+neuron.options.dist = 5;
+IND = determine_search_location(neuron.A, 'ellipse', neuron.options);
+neuron.A = HALS_spatial(Ysignal, neuron.A, neuron.C, IND, 10);
+%         neuron.post_process_spatial(); % uncomment this line to postprocess
+ind = find(sum(neuron.A, 1)==0);
+neuron.delete(ind);
+clear IND;
 fprintf('Time cost in updating neuronal spatial components:     %.2f seconds\n', toc);
 
 %% update C  (cell 3)
@@ -346,7 +333,7 @@ for m=1:5:T
     imagesc(neuron.reshape(neuron.A*neuron.C(:, m), 2), [0, ACmax]);
     %     imagesc(Ybg(:, :, m), [-50, 50]);
     text(d2/2-30, 10, sprintf('Time: %.2f Sec', m/neuron.Fs), 'color', 'w');
-    axis equal off tight; title('A\cdot C'); colorbar;
+    axis equal off tight; title('denoised'); colorbar;
     
     drawnow();
     if save_avi
