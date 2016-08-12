@@ -70,3 +70,4 @@ obj.P.kernel_pars = kernel_pars(~ind_del, :);
 obj.C = C(~ind_del, :); 
 obj.S = S(~ind_del, :); 
 obj.C_raw = C_raw(~ind_del, :); 
+obj.A = A(:, ~ind_del); 
