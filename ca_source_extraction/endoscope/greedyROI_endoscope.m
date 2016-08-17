@@ -48,6 +48,7 @@ min_pnr = options.min_pnr;               % peak to noise ratio for determining s
 min_v_search = min_corr*min_pnr;
 seed_method = options.seed_method; % methods for selecting seed pixels
 kernel = options.kernel;
+min_pixel = options.min_pixel;  % minimum number of pixels to be a neuron
 smin = 5; 
 % boudnary to avoid for detecting seed pixels
 try
@@ -55,7 +56,6 @@ try
 catch
     bd = gSig*2;
 end
-% min_pixel = 5;  % minimum number of pixels to be a neuron
 sig = 5;    % thresholding noise by sig*std()
 
 % exporting initialization procedures as a video
@@ -270,6 +270,7 @@ while searching_flag
         [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
         if max(ci_raw)/get_noise_fft(ci_raw)<min_pnr; ind_success=false; end
+        if sum(ai(:))>min_pixel; ind_success=false; end
         if ind_success
             % deconv the temporal trace
             [ci, si, kernel] = deconvCa(ci_raw, kernel, smin, true, false);

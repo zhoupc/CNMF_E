@@ -96,6 +96,7 @@ Names = [
     % parameters for microendoscope 
     'min_pnr            '
     'seed_method        '    
+    'min_pixel          ' % minimum number of nonzero pixels for a neuron 
     ];
 
 [m,n] = size(Names);
@@ -264,6 +265,7 @@ Values = [
     {5}
     {10}
     {'auto'}
+    {5}
     ];
 
 for j = 1:m

@@ -47,8 +47,8 @@ fprintf('\nThe data has been mapped to RAM. It has %d X %d pixels X %d frames. \
 
 %% create Source2D class object for storing results and parameters
 neuron_raw = Sources2D('d1',d1,'d2',d2);   % dimensions of datasets
-neuron_raw.Fs = 6;         % frame rate
-ssub = 1;           % spatial downsampling factor
+neuron_raw.Fs = 5;         % frame rate
+ssub = 2;           % spatial downsampling factor
 tsub = 1;           % temporal downsampling factor
 neuron_raw.updateParams('ssub', ssub,...  % spatial downsampling factor
     'tsub', tsub, ...  %temporal downsampling factor
@@ -60,9 +60,10 @@ neuron_raw.updateParams('ssub', ssub,...  % spatial downsampling factor
     'bas_nonneg', 1);   % 1: positive baseline of each calcium traces; 0: any baseline
 
 % create convolution kernel to model the shape of calcium transients 
-nframe_decay = 30; 
-tau_decay = 0.6;  % unit: second 
+tau_decay = 1;  % unit: second 
 tau_rise = 0.1; 
+nframe_decay = ceil(6*tau_decay*neuron_raw.Fs); 
+
 bound_pars = false; 
 neuron_raw.kernel = create_kernel('exp2', [tau_decay, tau_rise]*neuron_raw.Fs, nframe_decay, [], [], bound_pars); 
 
@@ -111,7 +112,7 @@ debug_on = true;
 save_avi = false; 
 neuron.options.min_corr = 0.9;
 neuron.options.min_pnr = 10;
-patch_par = [1, 1]; %1;  % divide the optical field into m X n patches and do initialization patch by patch
+patch_par = [2,2]; %1;  % divide the optical field into m X n patches and do initialization patch by patch
 K = 300; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
 neuron.options.bd = 1; % boundaries to be removed due to motion correction
 [center, Cn, pnr] = neuron.initComponents_endoscope(Y, K, patch_par, debug_on, save_avi); 
@@ -126,7 +127,7 @@ neuron_init = neuron.copy();
 
 %% merge neurons, order neurons and delete some low quality neurons (cell 0, before running iterative udpates)
 neuron_bk = neuron.copy();
-merge_thr = [0.0, 0.6, 0];     % thresholds for merging neurons corresponding to
+merge_thr = [0.1, 0.7, 0];     % thresholds for merging neurons corresponding to
         %{sptial overlaps, temporal correlation of C, temporal correlation of S}
 [merged_ROI, newIDs] = neuron.quickMerge(merge_thr);  % merge neurons based on the correlation computed with {'A', 'S', 'C'}
 % A: spatial shapes; S: spike counts; C: calcium traces 
@@ -207,7 +208,7 @@ tic;
 clear Ysignal;
 Ybg = Y-neuron.A*neuron.C;
 ssub = 3;   % downsample the data to improve the speed
-rr = neuron.options.gSiz*1.5;  % average neuron size, it will determine the neighbors for regressing each pixel's trace
+rr = neuron.options.gSiz*1;  % average neuron size, it will determine the neighbors for regressing each pixel's trace
 active_px = []; %(sum(IND, 2)>0);  %If some missing neurons are not covered by active_px, use [] to replace IND
 Ybg = neuron.localBG(Ybg, ssub, rr, active_px, sn, 5); % estiamte local background.
 fprintf('Time cost in estimating the background:        %.2f seconds\n', toc);
@@ -220,8 +221,8 @@ Ysignal = Y - Ybg;
 neuron.options.dist = 5;
 IND = determine_search_location(neuron.A, 'ellipse', neuron.options);
 neuron.A = HALS_spatial(Ysignal, neuron.A, neuron.C, IND, 10);
-%         neuron.post_process_spatial(); % uncomment this line to postprocess
-ind = find(sum(neuron.A, 1)==0);
+%neuron.post_process_spatial(); % uncomment this line to postprocess
+ind = find(sum(neuron.A, 1)<=neuron.options.min_pixel);
 neuron.delete(ind);
 clear IND;
 fprintf('Time cost in updating neuronal spatial components:     %.2f seconds\n', toc);
@@ -229,7 +230,7 @@ fprintf('Time cost in updating neuronal spatial components:     %.2f seconds\n',
 %% update C  (cell 3)
 % update temporal components. 
 tic;
-smin = 3;       % thresholding the amplitude of the spike counts as smin*noise level
+smin = 5;       % thresholding the amplitude of the spike counts as smin*noise level
 neuron.options.maxIter = 4;   % iterations to update C 
 neuron.updateTemporal_endoscope(Ysignal, smin); 
 fprintf('Time cost in updating neuronal temporal components:     %.2f seconds\n', toc);
@@ -300,10 +301,10 @@ if save_avi
     avi_file = VideoWriter([dir_nm, file_nm, '_results.avi']);
     avi_file.open();
 end
-temp  = quantile(Y(1:1000:(d1*d2*T)), [0.0001, 0.9999]);
+temp  = quantile(Y(1:1000:(d1*d2*T)), [0.0001, 0.99999]);
 Ymin = temp(1); 
 Ymax = temp(2); 
-ACmax = 100; %quantile(Yac(1:1000:(d1*d2*T)), 0.9999);
+ACmax = quantile(Yac(1:1000:(d1*d2*T)), 0.99999);
 
 %     subplot(4,6, [5,6,11,12]);
 for m=1:5:T
@@ -343,7 +344,7 @@ for m=1:5:T
     end
 end
 clc
-
+avi_file.close(); 
 
 %% play videos to verify the demixing results
 cell_id = []; 

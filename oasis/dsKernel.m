@@ -20,7 +20,7 @@ if nargin<2 || isempty(tsub)
 end
 
 %% kernel size 
-kernel_new.nMax = kernel.nMax/tsub; 
+kernel_new.nMax = ceil(kernel.nMax/tsub); 
 
 %% kernel type 
 kernel_type = kernel.type; 
