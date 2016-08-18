@@ -128,7 +128,7 @@ neuron_init = neuron.copy();
 %% merge neurons, order neurons and delete some low quality neurons (cell 0, before running iterative udpates)
 neuron_bk = neuron.copy();
 merge_thr = [0.1, 0.7, 0];     % thresholds for merging neurons corresponding to
-        %{sptial overlaps, temporal correlation of C, temporal correlation of S}
+%{sptial overlaps, temporal correlation of C, temporal correlation of S}
 [merged_ROI, newIDs] = neuron.quickMerge(merge_thr);  % merge neurons based on the correlation computed with {'A', 'S', 'C'}
 % A: spatial shapes; S: spike counts; C: calcium traces 
 display_merge = true;

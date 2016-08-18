@@ -270,7 +270,7 @@ while searching_flag
         [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
         if max(ci_raw)/get_noise_fft(ci_raw)<min_pnr; ind_success=false; end
-        if sum(ai(:))>min_pixel; ind_success=false; end
+        if sum(ai(:))<min_pixel; ind_success=false; end
         if ind_success
             % deconv the temporal trace
             [ci, si, kernel] = deconvCa(ci_raw, kernel, smin, true, false);
