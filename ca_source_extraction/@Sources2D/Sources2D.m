@@ -294,7 +294,7 @@ classdef Sources2D < handle
         %% play movie
         function playMovie(obj, Y, min_max, col_map, avi_nm, t_pause)
             % play movies
-            figure; 
+            figure;
             if ~exist('col_map', 'var') || isempty(col_map)
                 col_map = jet;
             end
@@ -685,6 +685,15 @@ classdef Sources2D < handle
             [Cn, PNR] = correlation_image_endoscope(Y, obj.options);
             %             obj.Cn = Cn;
             %             obj.PNR = PNR;
+        end
+        
+        function obj = struct2obj(obj, var_struct)
+            temp = fieldnames(var_struct);
+            for m=1:length(temp)
+                try
+                    eval(sprintf('obj.%s=var_struct.%s;', temp{m}, temp{m}));
+                end
+            end
         end
     end
     

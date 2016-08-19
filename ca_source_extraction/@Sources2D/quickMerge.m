@@ -94,11 +94,13 @@ for m=1:n2merge
     % remove merged elements
     ind_del(IDs(2:end)) = true;
 end
-newIDs(newIDs==0) = [];
+newIDs(ind_del) = []; 
+newIDs = find(newIDs);
 
 % remove merged neurons and update obj
-obj.A(:, ind_del) = [];
-obj.C_raw(ind_del, :) = [];
-obj.C(ind_del, :) = []; 
-obj.S(ind_del, :) = [];
-obj.P.kernel_pars(ind_del, :) = []; 
+obj.delete(ind_del); 
+% obj.A(:, ind_del) = [];
+% obj.C_raw(ind_del, :) = [];
+% obj.C(ind_del, :) = []; 
+% obj.S(ind_del, :) = [];
+% obj.P.kernel_pars(ind_del, :) = []; 
