@@ -67,6 +67,23 @@ classdef Sources2D < handle
             [obj.A, obj.C] = update_spatial_components_nb(Y, ...
                 obj.C, obj.A, obj.P, obj.options);
         end
+        
+        %% update temporal components for endoscope data 
+        function updateSpatial_endoscope(obj, Y, numIter)
+            % number of iterations 
+            if ~exist('numIter', 'var')||isempty(numIter)
+                numIter = 10; 
+            end
+            % determine the search locations 
+            IND = determine_search_location(obj.A);  
+            % run HALS 
+            obj.A = HALS_spatial(Y, obj.A, obj.C, IND, numIter);
+           
+            % thresholding the minimum number of neurons 
+            obj.delete(sum(obj.A, 1)<=obj.options.min_pixel);
+        end
+        
+        
         %% update temporal components
         function updateTemporal(obj, Y)
             [obj.C, obj.f, obj.P, obj.S] = update_temporal_components(...
@@ -74,7 +91,7 @@ classdef Sources2D < handle
         end
         
         %% udpate temporal components with fast deconvolution
-        C = updateTemporal_endoscope_endoscope(obj, Y)
+        updateTemporal_endoscope(obj, Y, smin)
         
         %% update temporal components without background
         function updateTemporal_nb(obj, Y)
@@ -520,6 +537,7 @@ classdef Sources2D < handle
                     sframe = sframe + size(Yraw,3);
                 end
             end
+            neuron.options.min_pixel = ceil(obj.options.min_pixel/(ssub^2)); 
         end
         
         %% estimate noise

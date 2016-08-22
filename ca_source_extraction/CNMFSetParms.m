@@ -97,6 +97,7 @@ Names = [
     'min_pnr            '
     'seed_method        '    
     'min_pixel          ' % minimum number of nonzero pixels for a neuron 
+    'bd                 ' % number of pixels to be ignored in the boundary 
     ];
 
 [m,n] = size(Names);
@@ -266,6 +267,7 @@ Values = [
     {10}
     {'auto'}
     {5}
+    {3}
     ];
 
 for j = 1:m

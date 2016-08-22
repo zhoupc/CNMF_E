@@ -48,7 +48,7 @@ fprintf('\nThe data has been mapped to RAM. It has %d X %d pixels X %d frames. \
 %% create Source2D class object for storing results and parameters
 neuron_raw = Sources2D('d1',d1,'d2',d2);   % dimensions of datasets
 neuron_raw.Fs = 5;         % frame rate
-ssub = 2;           % spatial downsampling factor
+ssub = 1;           % spatial downsampling factor
 tsub = 1;           % temporal downsampling factor
 neuron_raw.updateParams('ssub', ssub,...  % spatial downsampling factor
     'tsub', tsub, ...  %temporal downsampling factor
@@ -110,7 +110,7 @@ title('Cn*PNR');
 tic;
 debug_on = true; 
 save_avi = false; 
-neuron.options.min_corr = 0.9;
+neuron.options.min_corr = 0.85;
 neuron.options.min_pnr = 10;
 patch_par = [2,2]; %1;  % divide the optical field into m X n patches and do initialization patch by patch
 K = 300; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
