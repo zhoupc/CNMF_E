@@ -3,9 +3,9 @@ A0 = neuron_ds.reshape(neuron_ds.A, 2);
 C0 = neuron_ds.C; 
 C0_raw = neuron_ds.C_raw; 
 kernel_pars = neuron_ds.P.kernel_pars; 
-K = size(C, 1);     % number of the neuron 
+K = size(C0, 1);     % number of the neuron 
 
-neuron.A = neuron.reshape(imresize(A, ssub), 1); 
+neuron.A = neuron.reshape(imresize(A0, ssub), 1); 
 C = zeros(K, num2read); 
 C(:, 1:T*tsub) = resample(C0', tsub, 1)';
 temp = num2read - T*tsub; 
@@ -31,7 +31,7 @@ else
 end
 
 %% estimate the background 
-rr = rr_factor * neuron.options.gSiz; 
+rr = bg_neuron_ratio * neuron.options.gSiz; 
 cnmfe_update_BG; 
 
 %% update the spatial and components

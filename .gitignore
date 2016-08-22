@@ -9,24 +9,10 @@ cvx/
 
 demos.xml
 
-demos/demo_susanne.m
-
-demos/save_video.m
-
-demos/test_a.m
-
-demos/checkIC.m
-
-demos/raw.tif
-
 oasis/test_trace.txt
 
 oasis/simAR.m
 
 users.html
 
-demos/demo_Jessica_auto.m
-
-demos/demo_Jessica_auto.m
-
-demos/demo_jose_auto.m
+demos/data_endoscope_neurons/

@@ -9,8 +9,8 @@ cnmfe_choose_data;
 
 %% create Source2D class object for storing results and parameters
 Fs = 6;             % frame rate
-ssub = 1;           % spatial downsampling factor
-tsub = 1;           % temporal downsampling factor
+ssub = 2;           % spatial downsampling factor
+tsub = 2;           % temporal downsampling factor
 gSig = 4;           %width of the gaussian kernel, which can approximates the average neuron shape
 gSiz = 15;          % maximum diameter of neurons in the image plane. larger values are preferred.
 neuron_full = Sources2D('d1',d1,'d2',d2, ... % dimensions of datasets
@@ -178,15 +178,18 @@ close(gcf);
 
 %% display contours of the neurons
 figure;
-Cnn = correlation_image(Ysignal(:, 1:5:end), 4, d1s, d2s);
+Cnn = correlation_image(Ysignal(:, 1:5:end), 4, d1, d2);
 neuron.viewContours(Cnn, 0.9, 0); % correlation image computed with background-subtracted data
 colormap winter;
 axis equal; axis off;
 title('contours of estimated neurons');
+
 % plot contours with IDs
+[Cn, pnr] = neuron.correlation_pnr(Y(:, round(linspace(1, T, min(T, 1000)))));
 figure;
 plot_contours(neuron.A, Cn, 0.9, 1, [], neuron.Coor, 2);
 colormap winter;
+title('contours of estimated neurons');
 
 %% check spatial and temporal components by playing movies
 % save_avi = false;
