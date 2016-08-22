@@ -38,7 +38,7 @@ if isempty(Cn)
     fprintf('Please assign obj.Cn with correlation image!\n'); 
     return; 
 end 
-if isempty(obj.Coor)    % contours of the neuron has not been calculated 
+if isempty(obj.Coor) || (size(obj.A, 2)~=length(obj.Coor))   % contours of the neuron has not been calculated 
     figure; obj.viewContours(obj.Cn, 0.8, 0); close; 
 end 
 Coor = obj.Coor;        % contours of all extracted neurons 
@@ -54,10 +54,12 @@ else
 end
 
 % start displaying neurons 
-for m=1:length(ind)
+figure('position', [100, 100, 1024, 512]);
+m=1;
+while and(m>=1, m<=length(ind))
     %% contours + correlation image 
     subplot(221); cla;
-    obj.image(Cn, [0,1]); hold on;
+    obj.image(Cn, [0,1]); hold on; colormap winter; 
     axis equal off tight;
     % plot contour
     tmp_con = Coor{ind(m)};
@@ -66,40 +68,70 @@ for m=1:length(ind)
     if isempty(tmp_con)
         plot(ctr(m, 2), ctr(m, 2));
     else
-        plot(tmp_con(1, 1:end), tmp_con(2, 1:end), 'r');
+        plot(tmp_con(1, 1:end), tmp_con(2, 1:end), 'r', 'linewidth', 3);
     end
     title(sprintf('Neuron %d', ind(m)));
     
-    %% display spatial component 
+
+    %% zoomed-in view
     subplot(222);
     imagesc(reshape(obj.A(:, ind(m)), obj.options.d1, obj.options.d2));
-    axis equal; axis off;
+    colormap(gca, jet); 
+    axis equal; axis off;  
     x0 = ctr(ind(m), 2);
     y0 = ctr(ind(m), 1);
     xlim(x0+[-gSiz, gSiz]*2);
     ylim(y0+[-gSiz, gSiz]*2);
     
-    %% display temporal traces 
+    
+    %% temporal components
     subplot(2,2,3:4);cla;
     if ~isempty(C2)
-        plot(t, C2(ind(m), :)*max(obj.A(:, ind(m)))); hold on;
+        plot(t, C2(ind(m), :)*max(obj.A(:, ind(m))), 'linewidth', 2); hold on;
         plot(t, obj.C(ind(m), :)*max(obj.A(:, ind(m))), 'r');
     else
         
         plot(t, obj.C(ind(m), :)*max(obj.A(:, ind(m))));
     end
-    axis tight; 
-    xlabel(str_xlabel); 
+    xlabel(str_xlabel);
     
-    %% save images 
+    %% save images
     if save_img
         saveas(gcf, sprintf('neuron_%d.png', ind(m)));
+        m = m+1; 
     else
-        fprintf('Neuron %d, type ''d'' to delete:   ', ind(m));
+        fprintf('Neuron %d, keep(k, default)/delete(d)/split(s)/delete all(da)/backward(b)/end(e):    ', ind(m));
         temp = input('', 's');
         if temp=='d'
             ind_del(m) = true;
-            disp(m); 
+            m = m+1;
+        elseif strcmpi(temp, 'b')
+            m = m-1;
+        elseif strcmpi(temp, 'da')
+            ind_del(m:end) = true;
+            break;
+        elseif strcmpi(temp, 'k')
+            ind_del(m) = false;
+            m= m+1;
+        elseif strcmpi(temp, 's')
+            try 
+                    subplot(222); 
+                    temp = imfreehand();
+                    tmp_ind = temp.createMask(); 
+                    tmpA = obj.A(:, ind(m)); 
+                    obj.A(:, end+1) = tmpA.*tmp_ind(:); 
+                    obj.C(end+1, :) = obj.C(ind(m), :); 
+                    obj.A(:, ind(m)) = tmpA.*(1-tmp_ind(:)); 
+                                        obj.S(end+1, :) = obj.S(ind(m), :); 
+                    obj.C_raw(end+1, :) = obj.C_raw(ind(m), :); 
+                    obj.P.kernel_pars(end+1, :) = obj.P.kernel_pars(ind(m), :);                   
+            catch 
+                sprintf('the neuron was not split\n'); 
+            end 
+        elseif strcmpi(temp, 'e')
+            break; 
+        else
+            m = m+1;
         end
     end
 end

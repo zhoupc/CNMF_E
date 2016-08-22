@@ -9,8 +9,8 @@ cnmfe_choose_data;
 
 %% create Source2D class object for storing results and parameters
 Fs = 6;             % frame rate
-ssub = 2;           % spatial downsampling factor
-tsub = 2;           % temporal downsampling factor
+ssub = 1;           % spatial downsampling factor
+tsub = 1;           % temporal downsampling factor
 gSig = 4;           %width of the gaussian kernel, which can approximates the average neuron shape
 gSiz = 15;          % maximum diameter of neurons in the image plane. larger values are preferred.
 neuron_full = Sources2D('d1',d1,'d2',d2, ... % dimensions of datasets
