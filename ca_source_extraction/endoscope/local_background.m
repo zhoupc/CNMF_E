@@ -94,6 +94,8 @@ csub(ind) = nan;
 rsub(ind) = nan;
 
 %% run approximation
+warning('off','MATLAB:nearlySingularMatrix'); 
+warning('off','MATLAB:SingularMatrix'); 
 % gamma = 0.001; % add regularization
 Y = reshape(Y, d1s*d2s, []);
 Yest = zeros(size(Y));
@@ -121,7 +123,8 @@ if ~isempty(ind)
     Yest(ind, :) = temp(ind, :); % without approximation
 end
 Yest = reshape(Yest, d1s, d2s, []);
-
+warning('on','MATLAB:nearlySingularMatrix'); 
+warning('on','MATLAB:SingularMatrix'); 
 %% return the result
 if ssub>1 %up sampling
     Yest = imresize(Yest, [d1, d2]);

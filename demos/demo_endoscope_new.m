@@ -17,7 +17,7 @@ neuron_full = Sources2D('d1',d1,'d2',d2, ... % dimensions of datasets
     'ssub', ssub, 'tsub', tsub, ...  % downsampleing
     'gSig', gSig,...
     'gSiz', gSiz);
-neuron_full.Fs = 5;         % frame rate
+neuron_full.Fs = Fs;         % frame rate
 
 % create convolution kernel to model the shape of calcium transients
 tau_decay = 1;  %
