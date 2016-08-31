@@ -55,23 +55,29 @@ end
 
 % start displaying neurons
 figure('position', [100, 100, 1024, 512]);
-m=1;
+m = 1;
 while and(m>=1, m<=length(ind))
     %% contours + correlation image
-    subplot(221); cla;
+    subplot(221); cla; 
     obj.image(Cn, [0,1]); hold on; colormap winter;
     axis equal off tight;
-    % plot contour
-    tmp_con = Coor{ind(m)};
-    cont_del = (sum(tmp_con<=1, 1)>0);
-    tmp_con(:, cont_del) = [];
-    if isempty(tmp_con)
-        plot(ctr(m, 2), ctr(m, 2));
-    else
-        plot(tmp_con(1, 1:end), tmp_con(2, 1:end), 'r', 'linewidth', 3);
+    for k=1:m
+        % plot contour
+        tmp_con = Coor{ind(k)};
+        cont_del = (sum(tmp_con<=1, 1)>0);
+        tmp_con(:, cont_del) = [];
+        if isempty(tmp_con)
+            plot(ctr(m, 2), ctr(m, 2));
+        else           
+            if and(k<m, ~ind_del(k))
+                plot(tmp_con(1, 1:end), tmp_con(2, 1:end), 'color','k', 'linewidth', 2);          
+            elseif k==m
+                plot(tmp_con(1, 1:end), tmp_con(2, 1:end), 'r', 'linewidth', 3);
+            end
+        end
+        
+        title(sprintf('Neuron %d', ind(m)));
     end
-    title(sprintf('Neuron %d', ind(m)));
-    
     
     %% zoomed-in view
     subplot(222);
@@ -101,19 +107,19 @@ while and(m>=1, m<=length(ind))
         m = m+1;
     else
         fprintf('Neuron %d, keep(k, default)/delete(d)/split(s)/delete all(da)/backward(b)/end(e):    ', ind(m));
-        temp = input('', 's');
-        if temp=='d'
+        tmp_option = input('', 's');
+        if tmp_option=='d'
             ind_del(m) = true;
             m = m+1;
-        elseif strcmpi(temp, 'b')
+        elseif strcmpi(tmp_option, 'b')
             m = m-1;
-        elseif strcmpi(temp, 'da')
+        elseif strcmpi(tmp_option, 'da')
             ind_del(m:end) = true;
             break;
-        elseif strcmpi(temp, 'k')
+        elseif strcmpi(tmp_option, 'k')
             ind_del(m) = false;
             m= m+1;
-        elseif strcmpi(temp, 's')
+        elseif strcmpi(tmp_option, 's')
             try
                 subplot(222);
                 temp = imfreehand();
@@ -128,7 +134,7 @@ while and(m>=1, m<=length(ind))
             catch
                 sprintf('the neuron was not split\n');
             end
-        elseif strcmpi(temp, 't')
+        elseif strcmpi(tmp_option, 't')
             try
                 subplot(222);
                 temp = imfreehand();
@@ -137,7 +143,7 @@ while and(m>=1, m<=length(ind))
             catch
                 sprintf('the neuron was not trimmed\n');
             end
-        elseif strcmpi(temp, 'e')
+        elseif strcmpi(tmp_option, 'e')
             break;
         else
             m = m+1;
