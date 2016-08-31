@@ -81,9 +81,9 @@ while and(m>=1, m<=length(ind))
     %% save images
     if save_img
         saveas(gcf, sprintf('neuron_%d.png', ind(m)));
-        m = m+1; 
+        m = m+1;
     else
-        fprintf('Neuron %d, keep(k, default)/delete(d)/split(s)/delete all(da)/backward(b)/end(e):    ', ind(m));
+        fprintf('Neuron %d, keep(k, default)/delete(d)/split(s)/trim(t)/delete all(da)/backward(b)/end(e):    ', ind(m));
         temp = input('', 's');
         if temp=='d'
             ind_del(m) = true;
@@ -97,22 +97,31 @@ while and(m>=1, m<=length(ind))
             ind_del(m) = false;
             m= m+1;
         elseif strcmpi(temp, 's')
-            try 
-                    subplot(222); 
-                    temp = imfreehand();
-                    tmp_ind = temp.createMask(); 
-                    tmpA = obj.A(:, ind(m)); 
-                    obj.A(:, end+1) = tmpA.*tmp_ind(:); 
-                    obj.C(end+1, :) = obj.C(ind(m), :); 
-                    obj.A(:, ind(m)) = tmpA.*(1-tmp_ind(:)); 
-                                        obj.S(end+1, :) = obj.S(ind(m), :); 
-                    obj.C_raw(end+1, :) = obj.C_raw(ind(m), :); 
-                    obj.P.kernel_pars(end+1, :) = obj.P.kernel_pars(ind(m), :);                   
-            catch 
-                sprintf('the neuron was not split\n'); 
-            end 
+            try
+                subplot(222);
+                temp = imfreehand();
+                tmp_ind = temp.createMask();
+                tmpA = obj.A(:, ind(m));
+                obj.A(:, end+1) = tmpA.*tmp_ind(:);
+                obj.C(end+1, :) = obj.C(ind(m), :);
+                obj.A(:, ind(m)) = tmpA.*(1-tmp_ind(:));
+                obj.S(end+1, :) = obj.S(ind(m), :);
+                obj.C_raw(end+1, :) = obj.C_raw(ind(m), :);
+                obj.P.kernel_pars(end+1, :) = obj.P.kernel_pars(ind(m), :);
+            catch
+                sprintf('the neuron was not split\n');
+            end
+        elseif strcmpi(temp, 't')
+            try
+                subplot(222);
+                temp = imfreehand();
+                tmp_ind = temp.createMask();
+                obj.A(:, ind(m)) = obj.A(:, ind(m)).*tmp_ind(:);
+            catch
+                sprintf('the neuron was not trimmed\n');
+            end
         elseif strcmpi(temp, 'e')
-            break; 
+            break;
         else
             m = m+1;
         end
