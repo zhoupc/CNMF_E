@@ -66,11 +66,8 @@ for miter=1:maxIter
         end
     end
 end
-A = bsxfun(@times, A, sn); 
-C = bsxfun(@times, C, 1./sn'); 
-C_raw = bsxfun(@times, C_raw, 1./sn'); 
-obj.P.kernel_pars = kernel_pars(~ind_del, :);
-obj.C = C(~ind_del, :); 
-obj.S = S(~ind_del, :); 
-obj.C_raw = C_raw(~ind_del, :); 
-obj.A = A(:, ~ind_del); 
+obj.A = bsxfun(@times, A, sn); 
+obj.C = bsxfun(@times, C, 1./sn'); 
+obj.C_raw = bsxfun(@times, C_raw, 1./sn'); 
+obj.S = bsxfun(@times, S, 1./sn'); 
+obj.delete(ind_del); 

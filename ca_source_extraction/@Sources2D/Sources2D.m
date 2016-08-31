@@ -69,20 +69,7 @@ classdef Sources2D < handle
         end
         
         %% update temporal components for endoscope data
-        function updateSpatial_endoscope(obj, Y, numIter)
-            % number of iterations
-            if ~exist('numIter', 'var')||isempty(numIter)
-                numIter = 10;
-            end
-            % determine the search locations
-            IND = determine_search_location(obj.A);
-            % run HALS
-            obj.A = HALS_spatial(Y, obj.A, obj.C, IND, numIter);
-            
-            % thresholding the minimum number of neurons
-            obj.delete(sum(obj.A, 1)<=obj.options.min_pixel);
-        end
-        
+        updateSpatial_endoscope(obj, Y, numIter); 
         
         %% update temporal components
         function updateTemporal(obj, Y)

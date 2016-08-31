@@ -86,7 +86,7 @@ end
 bg_neuron_ratio = 2;  % spatial range / diameter of neurons
 
 % parameters, estimate the spatial components
-numIter = 10;       % number of iterations required
+maxIter_spatial = 10;       % number of iterations required
 with_dendrites = false;
 if with_dendrites
     % determine the search locations by dilating the current neuron shapes
@@ -105,9 +105,9 @@ neuron.options.maxIter = 4;   % iterations to update C
 
 % parameters for running iteratiosn 
 nC = size(neuron.C, 2);    % number of neurons 
+
 maxIter = 5;        % maximum number of iterations 
 miter = 1; 
-
 while miter <= maxIter
     %% merge neurons, order neurons and delete some low quality neurons
     % parameters
@@ -131,7 +131,7 @@ while miter <= maxIter
     
     %% update spatial components
     tic;
-    neuron.updateSpatial_endoscope(Ysignal, numIter);
+    neuron.updateSpatial_endoscope(Ysignal, maxIter_spatial);
     fprintf('Time cost in updating neuronal spatial components:     %.2f seconds\n', toc);
     
     %% update temporal components.
