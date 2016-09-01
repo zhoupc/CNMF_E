@@ -22,7 +22,7 @@ end
 if dir_nm~=0
     save .dir.mat dir_nm;
 else
-    fprintf('no file was selected. STOP!\N');
+    fprintf('no file was selected. STOP!\n');
     return;
 end
 
