@@ -703,6 +703,55 @@ classdef Sources2D < handle
                 end
             end
         end
+        
+        function Coor = get_contours(obj, thr, ind)
+            A_ = obj.A;
+            if exist('ind', 'var')
+                A_ = A_(:, ind);
+            end
+            if ~exist('thr', 'var') || isempty(thr)
+                thr = 0.995;
+            end
+            num_neuron = size(A_,2);
+            if num_neuron==0
+                Coor ={};
+                return;
+            else
+                Coor = cell(num_neuron,1);
+            end
+            for m=1:num_neuron
+                % smooth the image with median filter
+                img = medfilt2(obj.reshape(full(A_(:, m)),2), [3, 3]);
+                % find the threshold for detecting nonzero pixels
+                temp = sort(img(img>1e-9));
+                temp_sum = cumsum(temp);
+                ind = find(temp_sum>temp_sum(end)*(1-thr),1);
+                v_thr = temp(ind);
+                
+                % find the connected components
+                [~, ind_max] = max(img(:));
+                temp = bwlabel(img>v_thr);
+                img = double(temp==temp(ind_max));
+                v_nonzero = imfilter(img, [0,-1/4,0;-1/4,1,-1/4; 0,-1/4,0]);
+                [y, x] = find(v_nonzero>1e-9);
+                xmx = bsxfun(@minus, x, x');
+                ymy = bsxfun(@minus, y, y');
+                dist_pair = xmx.^2 + ymy.^2;
+                dist_pair(diag(true(length(x),1))) = inf;
+                seq = ones(length(x)+1,1);
+                seq(1) = 1;
+                for mm=1:length(x)-1
+                    [v_min, seq(mm+1)] = min(dist_pair(seq(mm), :));
+                    dist_pair(:,seq(mm)) = inf;
+                    if v_min>2
+                        seq(mm+1) = 1; 
+                        break;
+                    end
+                end
+                Coor{m} = [smooth(x(seq), 2)'; smooth(y(seq),2)'];
+            end
+            
+        end
     end
     
 end
