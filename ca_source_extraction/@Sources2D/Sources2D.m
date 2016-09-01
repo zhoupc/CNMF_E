@@ -69,7 +69,7 @@ classdef Sources2D < handle
         end
         
         %% update temporal components for endoscope data
-        updateSpatial_endoscope(obj, Y, numIter); 
+        updateSpatial_endoscope(obj, Y, numIter);
         
         %% update temporal components
         function updateTemporal(obj, Y)
@@ -377,6 +377,8 @@ classdef Sources2D < handle
             tmp_A = obj.A;
             ind_nonzero = bsxfun(@gt, tmp_A, max(tmp_A, [], 1)/ratio);
             obj.A(~ind_nonzero) = 0;
+            ind_small = bsxfun(@lt, sum(obj.A>0), obj.options.min_pixel);
+            obj.delete(ind_small);
         end
         
         %% solve A & C with regression

@@ -29,6 +29,8 @@ if exist('folder_nm', 'var')&&(~isempty(folder_nm))
 else
     save_img = false;
 end
+%% delete neurons with too few pixels 
+obj.delete(sum(obj.A>0, 1)<max(obj.options.min_pixel, 1)); 
 
 ind_del = false(size(ind));     % indicator of deleting neurons
 ctr = obj.estCenter();       % estimate neurons center
