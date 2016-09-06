@@ -733,6 +733,7 @@ classdef Sources2D < handle
                 temp = bwlabel(img>v_thr);
                 img = double(temp==temp(ind_max));
                 v_nonzero = imfilter(img, [0,-1/4,0;-1/4,1,-1/4; 0,-1/4,0]);
+                vv = v_nonzero(v_nonzero>1e-9)'; 
                 [y, x] = find(v_nonzero>1e-9);
                 xmx = bsxfun(@minus, x, x');
                 ymy = bsxfun(@minus, y, y');
@@ -741,7 +742,7 @@ classdef Sources2D < handle
                 seq = ones(length(x)+1,1);
                 seq(1) = 1;
                 for mm=1:length(x)-1
-                    [v_min, seq(mm+1)] = min(dist_pair(seq(mm), :));
+                    [v_min, seq(mm+1)] = min(dist_pair(seq(mm), :)+vv);
                     dist_pair(:,seq(mm)) = inf;
                     if v_min>2
                         seq(mm+1) = 1; 
