@@ -30,7 +30,7 @@ else
     save_img = false;
 end
 
-obj.delete(sum(obj.A, 1)<max(obj.options.min_pixel, 1));
+% obj.delete(sum(obj.A>0, 1)<max(obj.options.min_pixel, 1));
 
 ind_del = false(size(ind));     % indicator of deleting neurons
 ctr = obj.estCenter();      %neuron's center
