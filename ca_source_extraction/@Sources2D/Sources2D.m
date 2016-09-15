@@ -740,11 +740,10 @@ classdef Sources2D < handle
                 dist_pair = xmx.^2 + ymy.^2;
                 dist_pair(diag(true(length(x),1))) = inf;
                 seq = ones(length(x)+1,1);
-                seq(1) = 1;
                 for mm=1:length(x)-1
                     [v_min, seq(mm+1)] = min(dist_pair(seq(mm), :)+vv);
                     dist_pair(:,seq(mm)) = inf;
-                    if v_min>2
+                    if v_min>3
                         seq(mm+1) = 1; 
                         break;
                     end

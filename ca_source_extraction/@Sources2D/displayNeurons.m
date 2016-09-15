@@ -41,7 +41,8 @@ if isempty(Cn)
     return;
 end
 if isempty(obj.Coor) || (size(obj.A, 2)~=length(obj.Coor))   % contours of the neuron has not been calculated
-    figure; obj.viewContours(obj.Cn, 0.8, 0); close;
+    figure;
+    obj.Coor = obj.get_contours();
 end
 Coor = obj.Coor;        % contours of all extracted neurons
 

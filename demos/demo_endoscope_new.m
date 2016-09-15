@@ -104,7 +104,7 @@ smin = 4;       % thresholding the amplitude of the spike counts as smin*noise l
 neuron.options.maxIter = 4;   % iterations to update C
 
 % parameters for running iteratiosn 
-nC = size(neuron.C, 2);    % number of neurons 
+nC = size(neuron.C, 1);    % number of neurons 
 
 maxIter = 5;        % maximum number of iterations 
 miter = 1; 
