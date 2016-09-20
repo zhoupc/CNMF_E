@@ -85,10 +85,10 @@ for m=1:n2merge
         ci = ai'*data/(ai'*ai);
     end
     % normalize ai to make its maximum to be 1
-    max_ai = max(ai, [], 1);
-    A(active_pixel, IDs(1)) = ai/max_ai;
-    obj.C_raw(IDs(1), :) = ci*max_ai;
-    [obj.C(IDs(1), :), obj.S(IDs(1), :), tmp_kernel] = deconvCa(ci*max_ai, obj.kernel, 3, true, false); 
+    sn = get_noise_fft(ci); 
+    A(active_pixel, IDs(1)) = ai*sn;
+    obj.C_raw(IDs(1), :) = ci/sn;
+    [obj.C(IDs(1), :), obj.S(IDs(1), :), tmp_kernel] = deconvCa(ci, obj.kernel, 3, true, false); 
     obj.P.kernel_pars(IDs(1), :) = tmp_kernel.pars; 
     newIDs(IDs(1)) = IDs(1);
     % remove merged elements

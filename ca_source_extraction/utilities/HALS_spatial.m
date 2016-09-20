@@ -23,8 +23,11 @@ end;     %determine nonzero pixels
 %% initialization 
 A(~active_pixel) = 0; 
 K = size(A, 2);     % number of components 
-U = Y*C'; 
-V = C*C'; 
+Cmean = mean(C,2); 
+Ymean = mean(Y,2); 
+T = size(C,2); 
+U = Y*C'-T*(Ymean*Cmean'); 
+V = C*C'-T*(Cmean*Cmean'); 
 cc = diag(V);   % squares of l2 norm all all components 
 
 %% updating 

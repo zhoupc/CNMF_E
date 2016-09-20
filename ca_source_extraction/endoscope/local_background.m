@@ -109,7 +109,8 @@ for m=1:length(ind_px)
     tmp_ind = ~ind_event(px, 2:end);
     X = Y(ind_nhood, tmp_ind);
     y = Y(px, tmp_ind);
-    w = (X*X')\(X*y');
+    tmpXX = X*X'; 
+    w = (tmpXX+eye(size(tmpXX))*sum(diag(tmpXX))*(1e-5)) \ (X*y');
     Yest(px, :) = w'*Y(ind_nhood, :);
     weights{px} = [ind_nhood; w'];
 end
@@ -131,5 +132,5 @@ if ssub>1 %up sampling
 end
 %
 % clear Y;
-Ybaseline = Ymean; % medfilt2(Ymean, [3,3]); % - median(Yest, 3);
+Ybaseline = Ymean-mean(Yest,3); % medfilt2(Ymean, [3,3]); % - median(Yest, 3);
 Yest = bsxfun(@plus, Yest, Ybaseline);

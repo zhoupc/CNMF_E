@@ -6,12 +6,13 @@ function [A_or,C_or,S_or,P_or,srt] = order_ROIs(A,C,S,P, srt)
 
 nA = sqrt(sum(A.^2));
 nr = length(nA);
-A = A/spdiags(nA(:),0,nr,nr);
-C = spdiags(nA(:),0,nr,nr)*C;
-mA = sum(A.^4).^(1/4);
-%sA = sum(A);
-mC = max(C,[],2);
+
 if ~exist('srt', 'var')||isempty(srt)
+    A = A/spdiags(nA(:),0,nr,nr);
+    C = spdiags(nA(:),0,nr,nr)*C;
+    mA = sum(A.^4).^(1/4);
+    %sA = sum(A);
+    mC = max(C,[],2);
     [~,srt] = sort(mC.*mA','descend');
 end
 A_or = A(:,srt);

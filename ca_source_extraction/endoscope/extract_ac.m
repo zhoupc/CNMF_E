@@ -2,12 +2,15 @@ function [ai, ci, ind_success] = extract_ac(HY, Y, ind_ctr, sz)
 %% given a patch of raw & high-pass filtered calcium imaging data, extract
 % spatial and temporal component of one neuron (ai, ci). if succeed, then
 % return an indicator ind_succes with value 1; otherwise, 0.
-%% input:
+%% inputs:
 %       HY:     d X T matrix, filtered patch data
 %       Y:      d X T matrix, raw data
 %       ind_ctr:        scalar, location of the center
 %       sz:         2 X 1 vector, size of the patch
 
+%% Author: Pengcheng Zhou, Carnegie Mellon University.
+
+%% parameters 
 nr = sz(1);
 nc = sz(2);
 min_corr = 0.7;
@@ -32,10 +35,6 @@ end
 
 %% extract spatial component
 % estiamte the background level using the boundary
-% indr = [ones(1, nc), ones(1, nc)*nr, 1:nr, 1:nr];
-% indc = [1:nc, 1:nc, ones(1, nr)*nc, ones(1,nr)];
-% ind_bd = sub2ind([nr, nc], indr, indc);     % indices for boundary pixels
-% y_bg = median(Y(ind_bd, :), 1);  % take the mean in the boundary as an estimation of the background level
 y_bg = median(Y(tmp_corr(:)<min_corr, :), 1); % using the median of the whole field (except the center area) as background estimation
 
 % sort the data, take the differencing and estiamte ai
@@ -71,7 +70,10 @@ end
 % set the baseline to be 0
 dci = [0, 0, ci(4:end)-ci(1:(end-3))];
 ci = ci - median(ci(dci>0));
-ci(ci<-get_noise_fft(ci)*thr_noise) = 0;
+sn = get_noise_fft(ci);
+ci = ci / sn;
+ai = ai * sn;
+ci(ci < -thr_noise) = 0;
 % return results
 if norm(ai)==0
     ind_success= false;

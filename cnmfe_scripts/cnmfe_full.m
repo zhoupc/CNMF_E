@@ -5,7 +5,7 @@ C0_raw = neuron_ds.C_raw;
 kernel_pars = neuron_ds.P.kernel_pars; 
 K = size(C0, 1);     % number of the neuron 
 
-neuron.A = neuron.reshape(imresize(A0, ssub), 1); 
+neuron.A = neuron.reshape(imresize(A0, [d1, d2]), 1); 
 C = zeros(K, num2read); 
 C(:, 1:T*tsub) = resample(C0', tsub, 1)';
 temp = num2read - T*tsub; 
@@ -42,7 +42,6 @@ for miter=1:maxIter
     neuron.updateSpatial_endoscope(Ysignal, maxIter_spatial);
     fprintf('Time cost in updating neuronal spatial components:     %.2f seconds\n', toc);
     
-    tic;
     neuron.updateTemporal_endoscope(Ysignal, smin);
     fprintf('Time cost in updating neuronal temporal components:     %.2f seconds\n', toc);   
 end

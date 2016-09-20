@@ -137,7 +137,9 @@ classdef Sources2D < handle
                 obj.S, obj.P, srt);
             
             if ~isempty(obj.C_raw)
-                obj.C_raw = spdiags(nA(:),0,nr,nr)*obj.C_raw;
+                if isempty(srt)
+                    obj.C_raw = spdiags(nA(:),0,nr,nr)*obj.C_raw;
+                end
                 obj.C_raw = obj.C_raw(srt, :);
             end
         end
@@ -371,13 +373,27 @@ classdef Sources2D < handle
         end
         
         %% trim spatial components
-        function [ind_nonzero] = trimSpatial(obj, ratio)
+        function [ind_small] = trimSpatial(obj, thr)
             % remove small nonzero pixels
-            if nargin<2;    ratio = 50; end;
-            tmp_A = obj.A;
-            ind_nonzero = bsxfun(@gt, tmp_A, max(tmp_A, [], 1)/ratio);
-            obj.A(~ind_nonzero) = 0;
-            ind_small = bsxfun(@lt, sum(obj.A>0), obj.options.min_pixel);
+            if nargin<2;    thr = 0.01; end;
+            
+            ind_small = false(size(obj.A, 2), 1); 
+            for m=1:size(obj.A,2)
+                ai = obj.A(:, m); 
+                temp = full(ai>max(ai)*thr);
+                l = bwlabel(obj.reshape(temp,2), 4);   % remove disconnected components
+                
+                [tmp_count, tmp_l] = hist(l(l>0), unique(l(l>0))); 
+                [~, ind] = max(tmp_count); 
+                lmax = tmp_l(ind); 
+                
+                ai(l(:)~=lmax) = 0;
+                if sum(ai(:)>0) < obj.options.min_pixel %the ROI is too small
+                    ind_small(m) = true; 
+                end
+                obj.A(:, m) = ai(:); 
+            end
+            ind_small = find(ind_small); 
             obj.delete(ind_small);
         end
         
@@ -725,7 +741,7 @@ classdef Sources2D < handle
                 % find the threshold for detecting nonzero pixels
                 temp = sort(img(img>1e-9));
                 temp_sum = cumsum(temp);
-                ind = find(temp_sum>temp_sum(end)*(1-thr),1);
+                ind = find(temp_sum>=temp_sum(end)*(1-thr),1);
                 v_thr = temp(ind);
                 
                 % find the connected components
@@ -733,7 +749,7 @@ classdef Sources2D < handle
                 temp = bwlabel(img>v_thr);
                 img = double(temp==temp(ind_max));
                 v_nonzero = imfilter(img, [0,-1/4,0;-1/4,1,-1/4; 0,-1/4,0]);
-                vv = v_nonzero(v_nonzero>1e-9)'; 
+                vv = v_nonzero(v_nonzero>1e-9)';
                 [y, x] = find(v_nonzero>1e-9);
                 xmx = bsxfun(@minus, x, x');
                 ymy = bsxfun(@minus, y, y');
@@ -744,7 +760,7 @@ classdef Sources2D < handle
                     [v_min, seq(mm+1)] = min(dist_pair(seq(mm), :)+vv);
                     dist_pair(:,seq(mm)) = inf;
                     if v_min>3
-                        seq(mm+1) = 1; 
+                        seq(mm+1) = 1;
                         break;
                     end
                 end

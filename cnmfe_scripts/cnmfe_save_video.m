@@ -14,10 +14,10 @@ if save_avi
     avi_file = VideoWriter([dir_nm, file_nm, '_results.avi']);
     avi_file.open();
 end
-temp  = quantile(Ybg(1:1000:numel(Ybg)), [0.0001, 0.99999]);
+temp  = quantile(Ybg(1:1000:numel(Ybg)), [0.0001, y_quantile]);
 Ymin = temp(1);
 Ymax = temp(2);
-ACmax = quantile(Yac(1:1000:numel(Yac)), 0.99999);
+ACmax = quantile(Yac(1:1000:numel(Yac)), ac_quantile);
 
 %     subplot(4,6, [5,6,11,12]);
 for m=1:kt:T
