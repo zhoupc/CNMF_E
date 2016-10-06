@@ -750,6 +750,10 @@ classdef Sources2D < handle
                 img = medfilt2(obj.reshape(full(A_(:, m)),2), [3, 3]);
                 % find the threshold for detecting nonzero pixels
                 temp = sort(img(img>1e-9));
+                if ~any(temp)
+                    Coor{m} = []; 
+                    continue; 
+                end
                 temp_sum = cumsum(temp);
                 ind = find(temp_sum>=temp_sum(end)*(1-thr),1);
                 v_thr = temp(ind);
