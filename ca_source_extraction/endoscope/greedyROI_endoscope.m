@@ -49,7 +49,8 @@ min_v_search = min_corr*min_pnr;
 seed_method = options.seed_method; % methods for selecting seed pixels
 kernel = options.kernel;
 min_pixel = options.min_pixel;  % minimum number of pixels to be a neuron
-smin = 5; 
+deconv_flag = options.deconv_flag;
+smin = 5;
 % boudnary to avoid for detecting seed pixels
 try
     bd = options.bd;
@@ -140,7 +141,7 @@ end
 Ain = zeros(d1*d2, K);  % spatial components
 Cin = zeros(K, T);      % temporal components
 Sin = zeros(K, T);    % spike counts
-Cin_raw = zeros(K, T); 
+Cin_raw = zeros(K, T);
 kernel_pars = zeros(K, length(kernel.pars));    % parameters for the convolution kernels of all neurons
 center = zeros(K, 2);   % center of the initialized components
 
@@ -272,15 +273,23 @@ while searching_flag
         if max(ci_raw)/get_noise_fft(ci_raw)<min_pnr; ind_success=false; end
         if sum(ai(:))<min_pixel; ind_success=false; end
         if ind_success
-            % deconv the temporal trace
-            [ci, si, kernel] = deconvCa(ci_raw, kernel, smin, true, false);
-            % save this initialization
             k = k+1;
-            Ain(ind_nhood, k) = ai;
-            Cin(k, :) = ci;
-            Sin(k, :) = si;
-            Cin_raw(k, :) = ci_raw; 
-            kernel_pars(k, :) = kernel.pars;
+            
+            if deconv_flag
+                % deconv the temporal trace
+                [ci, si, kernel] = deconvCa(ci_raw, kernel, smin, true, false);
+                % save this initialization
+                Ain(ind_nhood, k) = ai;
+                Cin(k, :) = ci;
+                Sin(k, :) = si;
+                Cin_raw(k, :) = ci_raw;
+                kernel_pars(k, :) = kernel.pars;
+            else
+                ci = ci_raw;
+                Ain(ind_nhood, k) = ai;
+                Cin(k, :) = ci_raw;
+                Cin_raw(k, :) = ci_raw;
+            end
             center(k, :) = [r, c];
             
             % avoid searching nearby pixels that are highly correlated with this one
@@ -329,8 +338,10 @@ while searching_flag
             title('spatial component');
             subplot(2,3,4:6); cla; hold on;
             plot(ci_raw); title('temporal component'); axis tight;
-            plot(ci, 'r');  axis tight;
-            legend('raw trace', 'denoised trace');
+            if deconv_flag
+                plot(ci, 'r');  axis tight;
+                legend('raw trace', 'denoised trace');
+            end
             if exist('avi_file', 'var')
                 frame = getframe(gcf);
                 frame.cdata = imresize(frame.cdata, [646, 1290]);
@@ -359,9 +370,11 @@ end
 center = center(1:k, :);
 results.Ain = sparse(Ain(:, 1:k));
 results.Cin = Cin(1:k, :);
-results.Sin = Sin(1:k, :);
-results.Cin_raw = Cin_raw(1:k, :); 
-results.kernel_pars = kernel_pars(1:k, :);
+results.Cin_raw = Cin_raw(1:k, :);
+if deconv_flag
+    results.Sin = Sin(1:k, :);
+    results.kernel_pars = kernel_pars(1:k, :);
+end
 % Cin(Cin<0) = 0;
 Cn = Cn0;
 PNR = PNR0;

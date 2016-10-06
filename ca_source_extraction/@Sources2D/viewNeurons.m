@@ -135,5 +135,4 @@ else
     obj.delete(ind(ind_del));
     obj.Coor = obj.get_contours(0.9);
 end
-figure; obj.viewContours(obj.Cn, 0.8, 0); close;
 

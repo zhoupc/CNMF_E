@@ -17,7 +17,7 @@ end
 A = obj.A;
 K = size(A, 2);     % number of components
 C = obj.C;
-C_raw = zeros(size(C)); 
+C_raw = zeros(size(C));
 C_offset = zeros(K, 1);
 S = zeros(size(C));
 A = full(A);
@@ -29,11 +29,11 @@ kernel = obj.kernel;
 kernel_pars = zeros(K, 2);
 
 %% updating
-ind_del = false(K, 1); 
+ind_del = false(K, 1);
 for miter=1:maxIter
     for k=1:K
         if ind_del
-            continue; 
+            continue;
         end
         temp = C(k, :) + (U(k, :)-V(k, :)*C)/aa(k);
         % estimate noise
@@ -45,29 +45,36 @@ for miter=1:maxIter
         [temp, C_offset(k)] = remove_baseline(temp, sn(k));
         
         % deconvolution
-        if miter==1
-            [ck, sk, kernel] = deconvCa(temp, kernel, smin, true, false, sn(k));
-            kernel_pars(k, :) = kernel.pars;
+        if obj.options.deconv_flag
+            if miter==1
+                [ck, sk, kernel] = deconvCa(temp, kernel, smin, true, false, sn(k));
+                kernel_pars(k, :) = kernel.pars;
+            else
+                kernel.pars = kernel_pars(k, :);
+                [ck, sk, kernel] = deconvCa(temp, kernel, smin, false, false, sn(k));
+            end
         else
-            kernel.pars = kernel_pars(k, :);
-            [ck, sk, kernel] = deconvCa(temp, kernel, smin, false, false, sn(k));
+            ck = max(0, temp);
         end
         
         % save convolution kernels and deconvolution results
         C(k, :) = ck;
         
         if sum(ck(2:end))==0
-            ind_del(k) = true; 
+            ind_del(k) = true;
         end
         % save the spike count in the last iteration
         if miter==maxIter
-            S(k, :) = sk;
-            C_raw(k, :) = temp; 
+            if obj.options.deconv_flag
+                S(k, :) = sk;
+            end
+            C_raw(k, :) = temp;
         end
     end
 end
-obj.A = bsxfun(@times, A, sn); 
-obj.C = bsxfun(@times, C, 1./sn'); 
-obj.C_raw = bsxfun(@times, C_raw, 1./sn'); 
-obj.S = bsxfun(@times, S, 1./sn'); 
-obj.delete(ind_del); 
+obj.A = bsxfun(@times, A, sn);
+obj.C = bsxfun(@times, C, 1./sn');
+obj.C_raw = bsxfun(@times, C_raw, 1./sn');
+obj.S = bsxfun(@times, S, 1./sn');
+obj.P.kernel_pars = kernel_pars;
+obj.delete(ind_del);

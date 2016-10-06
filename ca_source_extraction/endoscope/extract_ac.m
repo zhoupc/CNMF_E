@@ -60,12 +60,12 @@ end
 
 % refine ci again
 ind_nonzero = (ai>0);
-ci0 = ci;
+% ci0 = ci;
 ai_mask = mean(ai(ind_nonzero))*ind_nonzero;
 ci = (ai-ai_mask)'*ai\((ai-ai_mask)'*Y);
-if get_noise_fft(ci)>get_noise_fft(ci0) % refined ci should have smaller noise
-    ci = ci0;
-end
+% if get_noise_fft(ci)>get_noise_fft(ci0) % refined ci should have smaller noise
+%     ci = ci0;
+% end
 
 % set the baseline to be 0
 dci = [0, 0, ci(4:end)-ci(1:(end-3))];
@@ -73,7 +73,7 @@ ci = ci - median(ci(dci>0));
 sn = get_noise_fft(ci);
 ci = ci / sn;
 ai = ai * sn;
-ci(ci < -thr_noise) = 0;
+% ci(ci < -thr_noise) = 0;
 % return results
 if norm(ai)==0
     ind_success= false;

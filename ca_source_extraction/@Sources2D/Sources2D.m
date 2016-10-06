@@ -67,9 +67,14 @@ classdef Sources2D < handle
             [obj.A, obj.C] = update_spatial_components_nb(Y, ...
                 obj.C, obj.A, obj.P, obj.options);
         end
+        %% udpate spatial components using NNLS and thresholding
+        function updateSpatial_nnls(obj, Y)
+            [obj.A, obj.C] = update_spatial_nnls(Y, ...
+                obj.C, obj.A, obj.P, obj.options);
+        end
         
         %% update temporal components for endoscope data
-        updateSpatial_endoscope(obj, Y, numIter);
+        updateSpatial_endoscope(obj, Y, numIter, method, IND_thresh);
         
         %% update temporal components
         function updateTemporal(obj, Y)
@@ -211,7 +216,7 @@ classdef Sources2D < handle
             obj.C(ind, :) = [];
             if ~isempty(obj.S); obj.S(ind, :) = []; end
             if ~isempty(obj.C_raw); obj.C_raw(ind, :) = []; end
-            if and(isfield(obj.P, 'kernel_pars'),  ~isempty(obj.P.kernel_pars))
+            if isfield(obj.P, 'kernel_pars')&&(  ~isempty(obj.P.kernel_pars))
                 obj.P.kernel_pars(ind, :) = [];
             end
         end
@@ -373,27 +378,32 @@ classdef Sources2D < handle
         end
         
         %% trim spatial components
-        function [ind_small] = trimSpatial(obj, thr)
+        function [ind_small] = trimSpatial(obj, thr, sz)
             % remove small nonzero pixels
             if nargin<2;    thr = 0.01; end;
+            if nargin<3;    sz = 5; end;
             
-            ind_small = false(size(obj.A, 2), 1); 
+            se = strel('square', sz);
+            ind_small = false(size(obj.A, 2), 1);
             for m=1:size(obj.A,2)
-                ai = obj.A(:, m); 
-                temp = full(ai>max(ai)*thr);
+                ai = obj.A(:,m);
+                ai_open = imopen(obj.reshape(ai,2), se);
+                
+                temp = full(ai_open>max(ai)*thr);
                 l = bwlabel(obj.reshape(temp,2), 4);   % remove disconnected components
+                %
+                %                 [tmp_count, tmp_l] = hist(l(l>0), unique(l(l>0)));
+                %                 [~, ind] = max(tmp_count);
+                %                 lmax = tmp_l(ind);
+                [~, ind_max] = max(ai_open(:));
                 
-                [tmp_count, tmp_l] = hist(l(l>0), unique(l(l>0))); 
-                [~, ind] = max(tmp_count); 
-                lmax = tmp_l(ind); 
-                
-                ai(l(:)~=lmax) = 0;
+                ai(l(:)~=l(ind_max)) = 0;
                 if sum(ai(:)>0) < obj.options.min_pixel %the ROI is too small
-                    ind_small(m) = true; 
+                    ind_small(m) = true;
                 end
-                obj.A(:, m) = ai(:); 
+                obj.A(:, m) = ai(:);
             end
-            ind_small = find(ind_small); 
+            ind_small = find(ind_small);
             obj.delete(ind_small);
         end
         

@@ -98,6 +98,7 @@ Names = [
     'seed_method        '    
     'min_pixel          ' % minimum number of nonzero pixels for a neuron 
     'bd                 ' % number of pixels to be ignored in the boundary 
+    'deconv_flag        ' % perform deconvolution or not 
     ];
 
 [m,n] = size(Names);
@@ -268,6 +269,7 @@ Values = [
     {'auto'}
     {5}
     {3}
+    {true}
     ];
 
 for j = 1:m

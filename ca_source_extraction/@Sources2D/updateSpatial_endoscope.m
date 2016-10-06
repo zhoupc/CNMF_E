@@ -1,4 +1,4 @@
-function updateSpatial_endoscope(obj, Y, num, method)
+function updateSpatial_endoscope(obj, Y, num, method, smin)
 %% udpate spatial components
 
 %% inputs:
@@ -22,7 +22,9 @@ if ~exist('num', 'var')||isempty(num)
         num = 10;
     end
 end
-
+if ~exist('IND_thresh', 'var')||isempty(IND_thresh)
+    IND_thresh = [];
+end
 %% determine the search locations
 search_method = obj.options.search_method;
 params = obj.options;
@@ -34,6 +36,15 @@ IND = logical(determine_search_location(obj.A, search_method, params));
 %% update spatial components
 if strcmpi(method, 'hals')
     obj.A = HALS_spatial(Y, obj.A, obj.C, IND, num);
+elseif strcmpi(method, 'nnls_thresh')&&(~isempty(IND_thresh))
+    try 
+        sn = obj.P.sn; 
+    catch
+        sn = get_noise_fft(Y); 
+        obj.P.sn = sn; 
+    end
+            
+    obj.A = nnls_spatial_thresh(Y, obj.A, obj.C, IND, num, smin, sn); 
 else
     obj.A = nnls_spatial(Y, obj.A, obj.C, IND, num);
 end

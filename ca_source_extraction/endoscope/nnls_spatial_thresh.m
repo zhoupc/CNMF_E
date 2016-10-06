@@ -1,4 +1,4 @@
-function A = nnls_spatial(Y, A, C, active_pixel, maxN)
+function A = nnls_spatial_thresh(Y, A, C, active_pixel, maxN, smin, sn)
 %% run HALS by fixating all spatial components
 % input:
 %   Y:  d*T, fluorescence data
@@ -19,14 +19,15 @@ elseif isempty(active_pixel)
 else
     active_pixel = logical(active_pixel);
 end;     %determine nonzero pixels
+ind_fit = find(sum(active_pixel,2)>1e-9);
+
 
 %% initialization
 Ymean = mean(Y,2); 
-Y = bsxfun(@minus, Y, Ymean); 
-C = bsxfun(@minus, C, mean(C,2)); 
+Y(bsxfun(@lt, Y, Ymean+smin*sn)) = 0; 
+C(C<smin) = 0; 
 CC = C*C';
 YC = C*Y';
-ind_fit = find(sum(active_pixel,2)>1e-9);
 A = zeros(size(A)); 
 
 %% updating
@@ -34,8 +35,6 @@ for m=1:length(ind_fit)
     ind = active_pixel(ind_fit(m), :);
     A(ind_fit(m), ind) = nnls(CC(ind, ind), YC(ind, ind_fit(m)), [], 1e-4, maxN);
 end
-
-
 function s = nnls(A, b, s, tol, maxIter)
 %% fast algorithm for solving nonnegativity constrained least squared
 % problem minize norm(y-K*s, 2), s.t. s>=0.
