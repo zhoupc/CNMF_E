@@ -39,7 +39,7 @@ maxIter = 3;
 for miter=1:maxIter
     fprintf('Iteration %d/%d to update spatial and temporal components\n', miter, maxIter); 
     tic;
-    neuron.updateSpatial_endoscope(Ysignal, maxIter_spatial);
+    neuron.updateSpatial_endoscope(Ysignal, max_overlap);
     fprintf('Time cost in updating neuronal spatial components:     %.2f seconds\n', toc);
     
     neuron.updateTemporal_endoscope(Ysignal, smin);

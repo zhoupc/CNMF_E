@@ -50,7 +50,7 @@ seed_method = options.seed_method; % methods for selecting seed pixels
 kernel = options.kernel;
 min_pixel = options.min_pixel;  % minimum number of pixels to be a neuron
 deconv_flag = options.deconv_flag;
-smin = 5;
+smin = 2;
 % boudnary to avoid for detecting seed pixels
 try
     bd = options.bd;

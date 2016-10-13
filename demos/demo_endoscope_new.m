@@ -28,8 +28,8 @@ if with_dendrites
     neuron_full.options.bSiz = 20;
 else
     % determine the search locations by selecting a round area
-    neuron.options.search_method = 'ellipse';
-    neuron.options.dist = 3;
+    neuron_full.options.search_method = 'ellipse';
+    neuron_full.options.dist = 3;
 end
 % create convolution kernel to model the shape of calcium transients
 tau_decay = 1;  %
