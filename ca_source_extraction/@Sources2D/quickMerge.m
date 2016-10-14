@@ -32,7 +32,8 @@ S_thr = merge_thr(3);
 
 %% find neuron pairs to merge
 % compute spatial correlation
-temp = bsxfun(@times, A, 1./sum(A.^2,1));
+% temp = bsxfun(@times, A, 1./sum(A.^2,1));
+temp = bsxfun(@times, A>0, 1./sqrt(sum(A>0)));
 A_overlap = temp'*temp;
 
 % compute temporal correlation
