@@ -28,7 +28,7 @@ function [c,b,c1,g,sn,sp] = constrained_foopsi(y,b,c1,g,sn,options)
 %                       'cvx' uses the cvx package available from cvxr.com (default)
 %                      'lars' uses the least regression algorithm 
 %                     'spgl1' uses the spgl1 package available from
-%                     math.ucdavis.edu/~mpf/spgl1/  (usually fastest)
+%                     math.ucdavis.edu/~mpf/spgl1/  (can be faster)
 %   bas_nonneg:   flag for setting the baseline lower bound. if 1, then b >= 0 else b >= min(y)
 %   noise_range:  frequency range over which the noise power is estimated. Default [Fs/4,Fs/2]
 %   noise_method: method to average the PSD in order to obtain a robust noise level estimate
@@ -233,7 +233,7 @@ end
             [psd_Y,ff]=pwelch(Y,round(L/8),[],1000,1);
         else
             xdft = fft(Y);
-            xdft = xdft(:,1:round(L/2)+1);
+            xdft = xdft(1:round(L/2)+1);
             psd_Y = (1/L) * abs(xdft).^2;
             ff = 0:1/L:1/2;
             psd_Y(2:end-1) = 2*psd_Y(2:end-1);

@@ -17,6 +17,7 @@ if ~isfield(options,'beta'); options.beta = defoptions.beta; end
     beta = options.beta;
 if ~isfield(options,'nb'), options.nb = defoptions.nb; end 
     nb = options.nb;
+if ~isfield(options,'rem_prct') || isempty(options.rem_prct); options.rem_prct = defoptions.rem_prct; end
     
 C = rand(K,T);
 
@@ -35,7 +36,7 @@ if flag_optim
 end
 
 % remove median
-medY = median(Y, 2);
+medY = prctile(Y,options.rem_prct,2);
 Y = bsxfun(@minus, Y, medY);
 
 while (iter <= max_iter) && repeat
@@ -52,11 +53,11 @@ while (iter <= max_iter) && repeat
     iter = iter + 1;
     if mod(iter,10) == 0;
         A = threshold_components(A,options);
-        nC = sum(C.^2,2);
+        nC = double(sum(C.^2,2));
         AA = A'*A;
-        mine = @(e) min_e(e,beta,eta,nC,A,AA);
+        mine = @(e) min_e(e,double(beta),double(eta),nC,A,AA);
         
-        e = (eta*nC./(beta*A'*sum(A,2))).^(1/4);
+        e = double(eta*nC./full(beta*A'*sum(A,2))).^(1/4);
         if flag_optim
             e = fmincon(mine,max(e,1e-4),[],[],[],[],1e-4*ones(K,1),[],[],min_options);
         end
@@ -73,6 +74,8 @@ fprintf('Algorithm converged after %i iterations. \n',iter-1);
 
 [Ain,Cin] = order_components(A,C);
 [bin,fin] = nnmf(max(Y - Ain*Cin + repmat(medY,1,T),0),nb);
+Ain = sparse(double(Ain));
+bin = double(bin);
 
     function [f,grad] = min_e(e,beta,eta,nC,A,AA)
         f = eta*norm(sqrt(nC)./e)^2 + beta*norm(A*e)^2;
@@ -83,9 +86,9 @@ fprintf('Algorithm converged after %i iterations. \n',iter-1);
     function [A_or,C_or] = order_components(A,C)
         nA = sqrt(sum(A.^2));
         nr = length(nA);
-        A = A/spdiags(nA(:),0,nr,nr);
+        A = bsxfun(@times,A,1./nA(:)'); %A/spdiags(nA(:),0,nr,nr);
         mA = max(A);
-        C = spdiags(nA(:),0,nr,nr)*C;
+        C = bsxfun(@times,C,nA(:)); %spdiags(nA(:),0,nr,nr)*C;
         nC2 = sqrt(sum(C.^2,2));
         mC = max(C,[],2);
         [~,srt] = sort(mC.*mA'./nC2,'descend');

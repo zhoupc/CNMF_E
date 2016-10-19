@@ -35,9 +35,8 @@ if ~isfield(params,'d3'); d3 = 1; params.d3 = d3; else d3 = params.d3; end
 if ~isfield(params,'min_size') || isempty(params.min_size); min_size = 3; else min_size = params.min_size; end    % minimum size of ellipse axis 
 if ~isfield(params,'max_size') || isempty(params.max_size); max_size = 8; else max_size = params.max_size; end    % maximum size of ellipse axis
 if ~isfield(params,'dist')  || isempty(params.dist); dist = 3; else dist = params.dist; end                              % expansion factor of ellipse
-if ~isfield(params,'bSiz')  || isempty(params.dist); bSiz = 4; else bSiz = params.bSiz; end                              % expansion factor of ellipse
 if ~isfield(params,'se')  || isempty(params.se);  % morphological element (for 'dilate')
-    if d3 == 1; expandCore = strel('disk',bSiz,0); else expandCore = strel(ones(bSiz,bSiz,2)); end
+    if d3 == 1; expandCore = strel('disk',4,0); else expandCore = strel(ones(4,4,2)); end
 else
     expandCore = params.se; 
 end     
@@ -47,7 +46,7 @@ elseif strcmpi(method,'dilate'); method = 'dilate';
 else fprintf('Method not recongnized. Search location equals the entire field of view. \n');
 end
 
-IND = false(d,nr);
+IND = logical(sparse(d,nr));
 switch method 
     case 'ellipse'
         Coor.x = kron(ones(d2*d3,1),(1:d1)'); 
@@ -60,7 +59,6 @@ switch method
                cm = [cm,ones(nr,1)];
            end
            Vr = cell(nr,1);
-           IND = zeros(d,nr);       % indicator for distance								   
            %cm(:,1) = Coor.x'*A(:,1:nr)./sum(A(:,1:nr)); 
            %cm(:,2) = Coor.y'*A(:,1:nr)./sum(A(:,1:nr));          % center of mass for each components
            parfor i = 1:nr            % calculation of variance for each component and construction of ellipses
