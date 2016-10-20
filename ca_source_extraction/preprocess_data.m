@@ -11,7 +11,14 @@ function [P,Y] = preprocess_data(Y,p,options)
 % Author: Eftychios A. Pnevmatikakis
 %           Simons Foundation, 2015
 
-defoptions = CNMFSetParms;
+defoptions.noise_range = [0.25,0.5];            % frequency range over which to estimate the noise
+defoptions.noise_method = 'logmexp';            % method for which to estimate the noise level
+defoptions.block_size = [64,64];
+defoptions.flag_g = false;                         % compute global AR coefficients
+defoptions.lags = 5;                               % number of extra lags when computing the AR coefficients
+defoptions.include_noise = 0;                      % include early lags when computing AR coefs
+defoptions.split_data = 0;                         % split data into patches for memory reasons
+defoptions.cluster_pixels = true;                  % cluster pixels into active or inactive
 
 if nargin < 3 || isempty(options); options = defoptions; end
 if nargin < 2 || isempty(p); p = 2; end
@@ -25,9 +32,7 @@ if ~isfield(options,'lags'); options.lags = defoptions.lags; end
 if ~isfield(options,'include_noise'); options.include_noise = defoptions.include_noise; end; include_noise = options.include_noise;
 if ~isfield(options,'split_data'); split_data = defoptions.split_data; else split_data = options.split_data; end
 if ~isfield(options,'cluster_pixels'); cluster_pixels = defoptions.cluster_pixels; else cluster_pixels = options.cluster_pixels; end
-if ~isfield(options,'extract_max'); extract_max = defoptions.extract_max; else extract_max = options.extract_max; end
-if ~isfield(options,'max_nlocs'); options.max_nlocs = defoptions.max_nlocs; end
-if ~isfield(options,'max_width'); options.max_width = defoptions.max_width; end
+
 
 %% interpolate missing data
 
@@ -88,13 +93,6 @@ if cluster_pixels
         P.W = W;
         P.H = H;
     end
-end
-
-%% extract maximum activity for each pixel
-if extract_max
-    [LOCS,Ym] = extract_max_activity(Y,options.max_nlocs,options.max_width);
-    P.max_locs = LOCS;
-    P.max_data = Ym;
 end
 %% estimate global time constants
 

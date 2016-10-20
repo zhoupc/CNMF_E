@@ -31,6 +31,7 @@ if (~flag_norm)
     Y = bsxfun(@minus, Y, mY);
     % normalizing
     sY = sqrt(mean(Y.*Y, 3));
+    sY(sY==0) = 1; % avoid nan values 
     Y = bsxfun(@times, Y, 1./sY);
 end
 

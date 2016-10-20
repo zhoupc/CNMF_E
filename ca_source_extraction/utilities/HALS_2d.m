@@ -1,4 +1,4 @@
-function [A, C, b, f] = HALS_2d(Y, A, C, b, f, params)
+function [A, C, b, f, ID_IND] = HALS_2d(Y, A, C, b, f, params)
 %% Hierarchical alternating least square method for solving NMF problem
 % Y = A*C + b*f
 
@@ -15,8 +15,9 @@ function [A, C, b, f] = HALS_2d(Y, A, C, b, f, params)
 %       pixels will be picked as pixels to be updated, and the rest will be
 %       forced to be 0.
 %       maxIter: maximum iteration of iterating HALS.
-
-% Author: Pengcheng Zhou, Columbia University, based on a python
+%output: 
+%   A:  
+% Author: Pengcheng Zhou, Carnegie Mellon University, based on a python
 % implementation from Johannes Friedrich, Columbia University, 2015.
 
 %% parameters
@@ -25,11 +26,12 @@ if isfield(params, 'search_method'); method=params.search_method; else method='e
 if and(isfield(params, 'bSiz'), strcmpi(method, 'dilate'))
     params.se = strel('disk', params.bSiz);
 end
+Y = reshape(Y, size(A, 1), []); 
 % search locations
 IND = determine_search_location(A, method, params);
 
 %% update spatial and temporal components neuron by neurons
-
+ID_IND = (1:size(C, 1)); 
 for miter=1:maxIter
     %% update neurons
     Yac = Y - b*f;
@@ -37,6 +39,7 @@ for miter=1:maxIter
     A(:, ind_del) = []; 
     C(ind_del, :) = []; 
     IND(:, ind_del) = []; 
+    ID_IND(ind_del) = []; 
     %   temporal
     C = HALS_temporal(Yac, A, C, 5);
     
@@ -44,6 +47,8 @@ for miter=1:maxIter
     A(:, ind_del) = []; 
     C(ind_del, :) = []; 
     IND(:, ind_del) = []; 
+    ID_IND(ind_del) = []; 
+    
     %   spatial
     A = HALS_spatial(Yac, A, C, IND, 5);
     

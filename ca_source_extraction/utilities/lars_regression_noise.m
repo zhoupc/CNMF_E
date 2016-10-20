@@ -80,8 +80,8 @@ while 1
         [lambda, new] = max(dQa(:));
     
         if lambda < 0
-            disp('All negative directions!')
-            break
+%             disp('All negative directions!'); 
+            break; 
         end
         
     else
@@ -136,7 +136,7 @@ while 1
         
         if gz_min < g_min            
             if verbose
-                fprintf('DROPPING active weight: %d.\n', gz_min_ind)
+                fprintf('DROPPING active weight: %d.\n', gz_min_ind); 
             end
             active_set(gz_min_ind) = 0;
             dropped = gz_min_ind;
@@ -203,7 +203,7 @@ end
 %% final calculation of mus
 if flag == 0
     if i > 1
-        Ws= squeeze(Ws(:,:,1:length(lambdas)));
+        Ws= reshape(Ws(:,:,1:length(lambdas)), size(Ws, 1), []);
         w_dir = -(Ws(:,i) - Ws(:,i-1))/(lambdas(i)-lambdas(i-1));
         Aw = X*w_dir;
         y_res = Y - X*(Ws(:,i-1) + w_dir*lambdas(i-1));
@@ -219,7 +219,7 @@ if flag == 0
             minimize(sum(W_lam));
             subject to
                 W_lam >= 0;
-                norm(double(Y)-double(X)*W_lam)<= sqrt(double(noise));
+                norm(Y-X*W_lam)<= sqrt(noise);
         cvx_end
         lam = 10;
     end

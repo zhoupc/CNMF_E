@@ -29,15 +29,16 @@ function [Ain, Cin,  bin, fin, center, res] = greedyROI_corr(Y, K, options, sn, 
 % local correlation.
 
 %% parameters
-if exist('sn', 'var')
+if exist('sn', 'var')&& ~(isempty(sn))
     Y_std = sn;
 else
     Y_std = std(Y, 0, ndims(Y));
 end
 Y_std = Y_std(:);
 if ~exist('debug_on', 'var'); debug_on = false; end
-
-[d1,d2, ~] = size(Y);
+if ~exist('save_avi', 'var'); save_avi=false; end
+d1 = options.d1;
+d2 = options.d2;
 gSig = options.gSig;
 gSiz = options.gSiz;
 if and(isempty(gSiz), isempty(gSig)); gSig = 3; gSiz = 10; end
@@ -52,30 +53,29 @@ psf = ones(gSig)/(gSig^2);
 min_snr = 3;        % minimum value of (peak-median)/sig 
 maxIter = 5;            % iterations for refining results
 sz = 4;            %distance of neighbouring pixels for computing local correlation
+
 if ~ismatrix(Y); Y = reshape(Y, d1*d2, []); end;
 [~, T] = size(Y);       % number of frames
 Ain = zeros(d1*d2, K);  % spatial components
 Cin = zeros(K, T);      % temporal components
 center = zeros(K, 2);   % center of the initialized components
 
-if ~isfield(options,'rem_prct') || isempty(options.rem_prct); options.rem_prct = 20; end
-
 %% compute correlation image and (max-median)/std ratio
 ind_frame = round(linspace(1, T, min(T, 1000)));    % select few frames for speed issues
-tmp_noise = randn(d1*d2, length(ind_frame)); 
-C1 = correlation_image(full(Y(:, ind_frame))+tmp_noise, sz, d1, d2);
+%tmp_noise = randn(d1*d2, length(ind_frame)); 
+C1 = correlation_image(full(Y(:, ind_frame)), sz, d1, d2);
 Cb =  zeros(size(C1)); %correlation_image(full(Y(:, ind_frame(1:3:end)))+tmp_noise(:, 1:3:end), [gSiz, gSiz+1], d1, d2);  %backgroung correlatin 
 Cn = C1-Cb; %here Cb is the background correlation. for 2photon imaging results. It might be useful when the background signal is large 
-Y_median = prctile(Y(:, ind_frame),options.rem_prct,2);
+Y_median = median(Y(:, ind_frame), 2);
 Y = bsxfun(@minus, Y, Y_median);
 % Y_std = sqrt(mean(Y.*Y, 2));
 
 %% find local maximum
 k = 0;      %number of found components
-min_pixel = gSig^2/2;  % minimum number of peaks to be a neuron
+min_pixel = floor(gSig^2/2);  % minimum number of peaks to be a neuron
 peak_ratio = full(max(Y, [], 2))./Y_std; %(max-median)/std
 peak_ratio(isinf(peak_ratio)) = 0;  % avoid constant values
-save_avi = false;   %save procedures for demo
+% save_avi = false;   %save procedures for demo
 if debug_on
     figure('position', [100, 100, 800, 650]); %#ok<*UNRCH>
     subplot(331);
@@ -83,7 +83,7 @@ if debug_on
     axis equal off tight; hold on;
     title('correlation image');
     if save_avi
-        avi_file = VideoWriter('greedyROI_example.avi', 'FPS', 10);
+        avi_file = VideoWriter('greedyROI_example.avi');
         avi_file.open();
     end
 end
@@ -119,7 +119,7 @@ while k<K
     
     % compute the correlation between the peak and its neighbours
     temp = reshape(corr(y0', Y_box'), nr, nc);
-    active_pixel = full(temp>min_corr);
+    active_pixel = full(temp>min_corr/2);
     l = bwlabel(active_pixel, 8);   % remove disconnected components
     active_pixel(l~=mode(l(ind_peak))) = false;
     tmp_v = sum(active_pixel(:));    %number of pixels with above-threshold correlation
@@ -170,7 +170,11 @@ while k<K
         title('spatial component');
         subplot(3,3,7:9); cla;
         plot(ci); title('temporal component');
-        if save_avi; avi_file.writeVideo(getframe(gcf)); else pause; end
+        if save_avi; 
+            temp = getframe(gcf); 
+            temp.cdata = imresize(temp.cdata, [800, 640]); 
+            avi_file.writeVideo(temp); 
+        else pause; end
     end
     
     if mod(k, 10)==0

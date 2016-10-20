@@ -358,7 +358,7 @@ while searching_flag
         
         
         if mod(k, 10)==0
-            fprintf('%d neurons have been detected\n', k);
+            fprintf('%d/%d neurons have been detected\n', k, K);
         end
         
         if k==K;

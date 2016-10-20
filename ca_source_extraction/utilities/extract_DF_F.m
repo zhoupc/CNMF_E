@@ -1,11 +1,12 @@
-function [C_df,Df] = extract_DF_F(Y,A,C,P,options)
+function [C_df,Df,S_df] = extract_DF_F(Y,A,C,S,i,options)
 
 % extract DF/F signals after performing NMF
 % inputs:  Y raw data (d X T matrix, d # number of pixels, T # of timesteps)
 %          A matrix of spatial components (d x K matrix, K # of components)
 %          C matrix of temporal components (K x T matrix)
-%          P neuron structure, used to read the baseline activity for each
-%                    component of C
+%          S matrix of deconvolved activity ((K-1) x T matrix) (optional)
+%          i index of component that represent the background (optional, if not
+%          given it's estimated)
 %          options structure used for specifying method for determining DF
 %           default method is the median of the trace. By changing
 %           options.df_prctile an arbitray percentile can be used (between 0 and 100).
@@ -13,13 +14,13 @@ function [C_df,Df] = extract_DF_F(Y,A,C,P,options)
 
 % outputs:  C_df temporal components in the DF/F domain
 %           Df   background for each component to normalize the filtered raw data    
+%           S_df deconvolved activity/spikes in the DF/F domain
 
 % Written by: 
-% Eftychios A. Pnevmatikakis, Simons Foundation, 2016
+% Eftychios A. Pnevmatikakis, Simons Foundation, 2015
 
-memmaped = isobject(Y);
 defoptions = CNMFSetParms;
-if nargin < 5 || isempty(options)
+if nargin < 6 || isempty(options)
     options = defoptions;
 end
 if ~isfield(options,'df_prctile') || isempty(options.df_prctile)
@@ -28,71 +29,51 @@ end
 if ~isfield(options,'df_window') || isempty(options.df_window)
     options.df_window = defoptions.df_window;
 end
-if ~isfield(options,'full_A') || isempty(options.full_A); full_A = defoptions.full_A; else full_A = options.full_A; end
-
-[K,T] = size(C);
-
-step = 5e3;
-if memmaped
-    AY = zeros(K,T);
-    for i = 1:step:d
-        AY = AY + A(i:min(i+step-1,d),:)'*double(Y.Yr(i:min(i+step-1,d),:));
-    end
-else
-    if issparse(A) && isa(Y,'single')  
-        if full_A
-            AY = full(A)'*Y;
-        else
-            AY = A'*double(Y);
-        end
-    else
-        AY = A'*Y;
-    end
-end
-
-Bas = zeros(K,T);
-
-if ~(nargin < 5 || isempty(P))
-    bas_val = cell2mat(P.b);
-    Ntr = size(bas_val,2);
-    if Ntr > 1
-        ln = diff(P.cs_frtrs);
-        for i = 1:Ntr
-            Bas(:,:,P.cs_frtrs(i)+1:P.cs_frtrs(i+1)) = repmat(bas_val(:,i),1,ln(i));
-        end
-    else
-        Bas = repmat(bas_val,1,T);
-    end
-end
 
 nA = sqrt(sum(A.^2))';
-AA = A'*A;
-AA(1:K+1:end) = 0;
+[K,~] = size(C);
+A = A/spdiags(nA,0,K,K);    % normalize spatial components to unit energy
+C = spdiags(nA,0,K,K)*C;
 
-Cf = bsxfun(@times,C - Bas,nA(:));
-C2 = AY - AA*C;
+if nargin < 5 || isempty(i)
+    [~,i] = min(sum(A.^6)); % identify background component
+end
+
+non_bg = true(1,K); 
+non_bg(i) = false;      % non-background components
+Yf = A'*Y - (A'*A(:,non_bg))*C(non_bg,:);
 
 if isempty(options.df_window) || (options.df_window > size(C,2))
     if options.df_prctile == 50
-        Df = median(C2,2);
+        Df = median(Yf,2);
     else
-        Df = prctile(C2,options.df_prctile,2);
+        Df = prctile(Yf,options.df_prctile,2);
     end
-    C_df = bsxfun(@times,Cf,1./Df(:));
+    C_df = spdiags(Df,0,K,K)\C;
 else
     if options.df_prctile == 50
-        if verLessThan('matlab','2015b')
-            warning('Median filtering at the boundaries might be inaccurate due to zero padding.')
-            Df = medfilt1(C2,options.df_window,[],2);
-        else
-            Df = medfilt1(C2,options.df_window,[],2,'truncate');
-        end
+        Df = medfilt1(Yf,options.df_window,[],2,'truncate');
     else
-        Df = zeros(size(C2));
+        Df = zeros(size(Yf));
         for i = 1:size(Df,1);
-            df_temp = running_percentile(C2(i,:), options.df_window, options.df_prctile);
+            df_temp = running_percentile(Yf(i,:), options.df_window, options.df_prctile);
             Df(i,:) = df_temp(:)';
         end
     end
-    C_df = Cf./Df;
-end           
+    C_df = C./Df;
+end
+            
+C_df(i,:) = 0;
+
+if nargin < 4 || isempty(S) || nargout < 3
+    S_df = [];
+    if nargout == 3
+        warning('Merged spikes matrix is returned as empty because the original matrix was not provided.');
+    end
+else
+    if isempty(options.df_window) || (options.df_window > size(C,2))
+        S_df = spdiags(Df(non_bg(:)),0,sum(non_bg),sum(non_bg))\S;
+    else
+        S_df = S./Df(non_bg,:);
+    end
+end
