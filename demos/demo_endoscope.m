@@ -33,13 +33,12 @@ else
 end
 
 %% choose deconvolution algorithm 
-neuron_full.options_deconv 
-% create convolution kernel to model the shape of calcium transients
-% tau_decay = 1;  %
-% tau_rise = 0.1;
-% nframe_decay = ceil(10*tau_decay*neuron_full.Fs);  % number of frames in decaying period
-% bound_pars = false;     % bound tau_decay/tau_rise or not
-% neuron_full.kernel = create_kernel('exp2', [tau_decay, tau_rise]*neuron_full.Fs, nframe_decay, [], [], bound_pars);
+create convolution kernel to model the shape of calcium transients
+tau_decay = 1;  %
+tau_rise = 0.1;
+nframe_decay = ceil(10*tau_decay*neuron_full.Fs);  % number of frames in decaying period
+bound_pars = false;     % bound tau_decay/tau_rise or not
+neuron_full.kernel = create_kernel('exp2', [tau_decay, tau_rise]*neuron_full.Fs, nframe_decay, [], [], bound_pars);
 
 %% downsample data for fast and better initialization
 sframe=1;						% user input: first frame to read (optional, default:1)
