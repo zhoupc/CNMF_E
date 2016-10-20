@@ -99,6 +99,7 @@ Names = [
     'min_pixel          ' % minimum number of nonzero pixels for a neuron 
     'bd                 ' % number of pixels to be ignored in the boundary 
     'deconv_flag        ' % perform deconvolution or not 
+    'smin               ' % mimimum spike size
     ];
 
 [m,n] = size(Names);
@@ -270,6 +271,7 @@ Values = [
     {5}
     {3}
     {true}
+    {5}
     ];
 
 for j = 1:m
