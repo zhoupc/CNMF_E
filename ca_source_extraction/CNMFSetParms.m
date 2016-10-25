@@ -99,6 +99,7 @@ Names = [
     'min_pixel          ' % minimum number of nonzero pixels for a neuron 
     'bd                 ' % number of pixels to be ignored in the boundary 
     'deconv_flag        ' % perform deconvolution or not 
+    'deconv_options     ' % options for running deconvolution 
     'smin               ' % mimimum spike size
     ];
 
@@ -271,6 +272,7 @@ Values = [
     {5}
     {3}
     {true}
+    {[]}
     {5}
     ];
 

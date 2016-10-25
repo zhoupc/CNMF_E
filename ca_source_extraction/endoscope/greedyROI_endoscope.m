@@ -47,7 +47,7 @@ min_corr = options.min_corr;    %minimum local correlations for determining seed
 min_pnr = options.min_pnr;               % peak to noise ratio for determining seed pixels
 min_v_search = min_corr*min_pnr;
 seed_method = options.seed_method; % methods for selecting seed pixels
-kernel = options.kernel;
+kernel_0 = options.kernel;
 min_pixel = options.min_pixel;  % minimum number of pixels to be a neuron
 deconv_flag = options.deconv_flag;
 smin = options.smin;
@@ -142,7 +142,7 @@ Ain = zeros(d1*d2, K);  % spatial components
 Cin = zeros(K, T);      % temporal components
 Sin = zeros(K, T);    % spike counts
 Cin_raw = zeros(K, T);
-kernel_pars = zeros(K, length(kernel.pars));    % parameters for the convolution kernels of all neurons
+kernel_pars = zeros(K, length(kernel_0.pars));    % parameters for the convolution kernels of all neurons
 center = zeros(K, 2);   % center of the initialized components
 
 %% do initialization in a greedy way
@@ -277,7 +277,7 @@ while searching_flag
             
             if deconv_flag
                 % deconv the temporal trace
-                [ci, si, kernel] = deconvCa(ci_raw, kernel, smin, true, false);
+                [ci, si, kernel] = deconvCa(ci_raw, kernel_0, smin, true, false);
                 % save this initialization
                 Ain(ind_nhood, k) = ai;
                 Cin(k, :) = ci;

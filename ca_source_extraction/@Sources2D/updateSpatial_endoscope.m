@@ -36,6 +36,11 @@ IND = logical(determine_search_location(obj.A, search_method, params));
 %% update spatial components
 if strcmpi(method, 'hals')
     obj.A = HALS_spatial(Y, obj.A, obj.C, IND, num);
+elseif strcmpi(method, 'hals_thresh')
+    sn = get_noise_fft(obj.C_raw); 
+    obj.A = HALS_spatial_threshold(Y, obj.A, obj.C, IND, num, sn); 
+elseif strcmpi(method, 'lars')
+     [obj.A, obj.C] = update_spatial_components_nb(Y,obj.C,obj.A, [], obj.options); 
 elseif strcmpi(method, 'nnls_thresh')&&(~isempty(IND_thresh))
     try 
         sn = obj.P.sn; 
