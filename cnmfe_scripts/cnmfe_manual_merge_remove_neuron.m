@@ -42,7 +42,7 @@ while true
         tmp_C = bsxfun(@times, tmp_C, 1./max(tmp_C, [], 1));
         axes(ax_trace); cla; hold on; 
         for m=1:length(IDs)
-            plot(tmp_C(m,:), 'color', color_all(IDs(m),:),  'linewidth', 2);
+            plot(tmp_C(:,m), 'color', color_all(IDs(m),:),  'linewidth', 2);
         end
     end
     
