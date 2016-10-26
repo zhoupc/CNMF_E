@@ -565,7 +565,7 @@ classdef Sources2D < handle
             fprintf('  done \n');
         end
         %% merge neurons
-        function img = overlapA(obj, ind, ratio)
+        function [img, col0, AA] = overlapA(obj, ind, ratio)
             %merge all neurons' spatial components into one singal image
             if nargin<2 || isempty(ind)
                 AA = obj.A;
@@ -580,10 +580,11 @@ classdef Sources2D < handle
             [d, K] = size(AA);
             
             col = randi(6, 1, K);
+            col0 = col; 
             img = zeros(d, 3);
             for m=1:3
                 img(:, m) = sum(bsxfun(@times, AA, mod(col, 2)), 2);
-                col = round(col/2);
+                col = floor(col/2);
             end
             img = obj.reshape(img, 2);
             img = img/max(img(:))*(2^16);
