@@ -131,6 +131,39 @@ classdef Sources2D < handle
             
         end
         
+        %% extract DF/F signal for microendoscopic data 
+        function [C_df,C_raw_df, Df] = extract_DF_F_endoscope(obj, Ybg)
+            options_ = obj.options; 
+            A_ = obj.A; 
+            C_ = obj.C; 
+            [K,T] = size(obj.C);  % number of frames 
+            Ybg = bsxfun(@times, A_, 1./sum(A_.^2, 1))' * Ybg;   % estimate the background for each neurons  
+            if isempty(options_.df_window) || (options_.df_window > T)
+                % use quantiles of the whole recording session as the
+                % baseline 
+                if options_.df_prctile == 50
+                    Df = median(Ybg,2);
+                else
+                    Df = prctile(Ybg,options_.df_prctile,2);
+                end
+                C_df = spdiags(Df,0,K,K)\C_;
+                C_raw_df = spdiags(Df,0,K,K)\obj.C_raw; 
+            else
+                % estimate the baseline for each short period 
+                if options_.df_prctile == 50
+                    Df = medfilt1(Ybg,options_.df_window,[],2,'truncate');
+                else
+                    Df = zeros(size(Ybg));
+                    for i = 1:size(Df,1);
+                        df_temp = running_percentile(Ybg(i,:), options_.df_window, options_.df_prctile);
+                        Df(i,:) = df_temp(:)';
+                    end
+                end
+                C_df = C_./Df;
+                C_raw_df = obj.C_raw./Df; 
+            end
+        end
+            
         %% order_ROIs
         function [srt] = orderROIs(obj, srt)
             %% order neurons
