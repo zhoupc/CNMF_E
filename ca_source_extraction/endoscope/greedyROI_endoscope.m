@@ -47,10 +47,11 @@ min_corr = options.min_corr;    %minimum local correlations for determining seed
 min_pnr = options.min_pnr;               % peak to noise ratio for determining seed pixels
 min_v_search = min_corr*min_pnr;
 seed_method = options.seed_method; % methods for selecting seed pixels
-kernel_0 = options.kernel;
+% kernel_0 = options.kernel;
+deconv_options_0= options.deconv_options;
 min_pixel = options.min_pixel;  % minimum number of pixels to be a neuron
 deconv_flag = options.deconv_flag;
-smin = options.smin;
+% smin = options.smin;
 % boudnary to avoid for detecting seed pixels
 try
     bd = options.bd;
@@ -142,7 +143,7 @@ Ain = zeros(d1*d2, K);  % spatial components
 Cin = zeros(K, T);      % temporal components
 Sin = zeros(K, T);    % spike counts
 Cin_raw = zeros(K, T);
-kernel_pars = zeros(K, length(kernel_0.pars));    % parameters for the convolution kernels of all neurons
+kernel_pars = cell(K,1);    % parameters for the convolution kernels of all neurons
 center = zeros(K, 2);   % center of the initialized components
 
 %% do initialization in a greedy way
@@ -222,7 +223,7 @@ while searching_flag
         % roughly check whether this is a good starting point
         y0 = HY(ind_p, :);
         y0_std = std(diff(y0));
-        y0(y0<median(y0)) = 0;
+%         y0(y0<median(y0)) = 0;
         if (k>=1) && any(corr(Cin(1:k, :)', y0')>0.9) %already found similar temporal traces
             continue;
         end
@@ -241,7 +242,7 @@ while searching_flag
         Y_box = Y(ind_nhood, :);    % extract spatial component from Y_box
         ind_ctr = sub2ind([nr, nc], r-rsub(1)+1, c-csub(1)+1);   % subscripts of the center
         
-        % a larger neighbours for updating HY after initialization of one
+        % neighbouring pixels to update after initialization of one
         % neuron
         rsub = max(1, -2*gSiz+r):min(d1, 2*gSiz+r);
         csub = max(1, -2*gSiz+c):min(d2, 2*gSiz+c);
@@ -270,26 +271,28 @@ while searching_flag
         sz = [nr, nc];
         [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
-        if max(ci_raw)/get_noise_fft(ci_raw)<min_pnr; ind_success=false; end
+        if max(ci_raw)<min_pnr; ind_success=false; end
         if sum(ai(:))<min_pixel; ind_success=false; end
         if ind_success
             k = k+1;
             
             if deconv_flag
                 % deconv the temporal trace
-                [ci, si, kernel] = deconvCa(ci_raw, kernel_0, smin, true, false);
+                [ci, si, deconv_options] = deconvolveCa(ci_raw, deconv_options_0, 'sn', 1);  % sn is 1 because i normalized c_raw already 
                 % save this initialization
                 Ain(ind_nhood, k) = ai;
                 Cin(k, :) = ci;
                 Sin(k, :) = si;
                 Cin_raw(k, :) = ci_raw;
-                kernel_pars(k, :) = kernel.pars;
+%                 kernel_pars(k, :) = kernel.pars;
+                kernel_pars{k} = reshape(deconv_options.pars, 1, []); 
             else
                 ci = ci_raw;
                 Ain(ind_nhood, k) = ai;
                 Cin(k, :) = ci_raw;
                 Cin_raw(k, :) = ci_raw;
             end
+            ci = reshape(ci, 1,[]);
             center(k, :) = [r, c];
             
             % avoid searching nearby pixels that are highly correlated with this one
@@ -373,7 +376,7 @@ results.Cin = Cin(1:k, :);
 results.Cin_raw = Cin_raw(1:k, :);
 if deconv_flag
     results.Sin = Sin(1:k, :);
-    results.kernel_pars = kernel_pars(1:k, :);
+    results.kernel_pars = cell2mat(kernel_pars(1:k));
 end
 % Cin(Cin<0) = 0;
 Cn = Cn0;

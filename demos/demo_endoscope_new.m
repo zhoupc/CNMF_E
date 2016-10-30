@@ -8,7 +8,7 @@ global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
 cnmfe_choose_data;
 
 %% create Source2D class object for storing results and parameters
-Fs = 5;             % frame rate
+Fs = 6;             % frame rate
 ssub = 1;           % spatial downsampling factor
 tsub = 1;           % temporal downsampling factor
 gSig = 3;           % width of the gaussian kernel, which can approximates the average neuron shape
@@ -21,7 +21,7 @@ neuron_full = Sources2D('d1',d1,'d2',d2, ... % dimensions of datasets
 neuron_full.Fs = Fs;         % frame rate
 
 % with dendrites or not 
-with_dendrites = true;
+with_dendrites = false;
 if with_dendrites
     % determine the search locations by dilating the current neuron shapes
     neuron_full.options.search_method = 'dilate'; 
@@ -29,14 +29,15 @@ if with_dendrites
 else
     % determine the search locations by selecting a round area
     neuron_full.options.search_method = 'ellipse';
-    neuron_full.options.dist = 3;
+    neuron_full.options.dist = 5;
 end
-% create convolution kernel to model the shape of calcium transients
-tau_decay = 1;  %
-tau_rise = 0.1;
-nframe_decay = ceil(10*tau_decay*neuron_full.Fs);  % number of frames in decaying period
-bound_pars = false;     % bound tau_decay/tau_rise or not
-neuron_full.kernel = create_kernel('exp2', [tau_decay, tau_rise]*neuron_full.Fs, nframe_decay, [], [], bound_pars);
+
+%% options for running deconvolution 
+neuron_full.options.deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1', 'ar2'}
+    'method', 'thresholded', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
+    'optimize_pars', true, ...  % optimize AR coefficients
+    'optimize_b', false, ... % optimize the baseline
+    'optimize_smin', true);  % optimize the threshold 
 
 %% downsample data for fast and better initialization
 sframe=1;						% user input: first frame to read (optional, default:1)
@@ -49,14 +50,14 @@ fprintf('Time cost in downsapling data:     %.2f seconds\n', toc);
 Y = neuron.reshape(Y, 1);       % convert a 3D video into a 2D matrix
 
 %% compute correlation image and peak-to-noise ratio image.
-cnmfe_show_corr_pnr;    % this step is not necessary, but it can give you some...
+% cnmfe_show_corr_pnr;    % this step is not necessary, but it can give you some...
                         % hints on parameter selection, e.g., min_corr & min_pnr
 
 %% initialization of A, C
 % parameters
 debug_on = true;
 save_avi = false;
-patch_par = [1,1]*1; %1;  % divide the optical field into m X n patches and do initialization patch by patch
+patch_par = [1,1]*3; %1;  % divide the optical field into m X n patches and do initialization patch by patch
 K = []; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
 
 min_corr = 0.85;     % minimum local correlation for a seeding pixel
@@ -65,6 +66,7 @@ min_pixel = 4;      % minimum number of nonzero pixels for each neuron
 bd = 1;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
 neuron.updateParams('min_corr', min_corr, 'min_pnr', min_pnr, ...
     'min_pixel', min_pixel, 'bd', bd);
+neuron.options.nk = 3;  % number of knots for detrending 
 
 % greedy method for initialization
 tic;
@@ -85,20 +87,21 @@ neuron_init = neuron.copy();
 %% iteratively update A, C and B
 % parameters, merge neurons
 display_merge = true;          % visually check the merged neurons
-view_neurons = false;           % view all neurons
+view_neurons = true;           % view all neurons
 
 % parameters, estimate the background
-spatial_ds_factor = 3;      % spatial downsampling factor. it's for faster estimation
+spatial_ds_factor = 2;      % spatial downsampling factor. it's for faster estimation
 thresh = 10;     % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
-if ~isfield(neuron.P, 'sn') || isempty(neuron.P.sn)
-    sn = neuron.estNoise(Y);
-else
-    sn = neuron.P.sn; 
-end
+
 bg_neuron_ratio = 1.5;  % spatial range / diameter of neurons
 
 % parameters, estimate the spatial components
-max_overlap = 5;       % maximum number of neurons overlaping at one pixel 
+update_spatial_method = 'nnls';  % the method for updating spatial components {'hals', 'hals_thresh', 'nnls', 'lars'}
+Nspatial = 5;       % this variable has different meanings: 
+                    %1) udpate_spatial_method=='hals' or 'hals_thresh',
+                    %then Nspatial is the maximum iteration 
+                    %2) update_spatial_method== 'nnls', it is the maximum
+                    %number of neurons overlapping at one pixel 
 
 % parameters, estimate the temporal components
 smin = 5;       % thresholding the amplitude of the spike counts as smin*noise level
@@ -112,11 +115,13 @@ maxIter = 5;        % maximum number of iterations
 miter = 1; 
 while miter <= maxIter
     %% merge neurons, order neurons and delete some low quality neurons
-    % parameters
-        merge_thr = [1e-5, 0.70, .1];     % thresholds for merging neurons
+     if miter ==1
+        merge_thr = [1e-1, 0.8, .1];     % thresholds for merging neurons
         % corresponding to {sptial overlaps, temporal correlation of C,
         %temporal correlation of S}
-    
+    else
+        merge_thr = [0.5, 0.7, 0.1]; 
+    end
     % merge neurons
     cnmfe_quick_merge;              % run neuron merges
     
@@ -134,7 +139,7 @@ while miter <= maxIter
         neuron.updateTemporal_endoscope(Ysignal, smin);
         cnmfe_quick_merge;              % run neuron merges
         %spatial
-        neuron.updateSpatial_endoscope(Ysignal, max_overlap);
+        neuron.updateSpatial_endoscope(Ysignal, Nspatial, update_spatial_method);
         if isempty(merged_ROI)
             break;
         end

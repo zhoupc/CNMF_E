@@ -44,7 +44,7 @@ if ~exist('debug_on', 'var')
 end
 
 options = obj.options;
-options.kernel = obj.kernel;
+% options.kernel = .kernel;
 % divide the optical fields into multiple patches
 if (~exist('patch_sz', 'var'))||(isempty(patch_sz))||(max(patch_sz(:))==1)
     % use the whole optical field directly

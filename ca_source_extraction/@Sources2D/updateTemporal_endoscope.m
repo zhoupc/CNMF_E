@@ -25,9 +25,9 @@ U = A'*Y;
 V = A'*A;
 aa = diag(V);   % squares of l2 norm all all components
 sn =  zeros(1, K);
-kernel = obj.kernel;
-kernel_pars = zeros(K, 2);
-
+% kernel = obj.kernel;
+deconv_options_0 = obj.options.deconv_options; 
+kernel_pars = cell(K,1);
 %% updating
 ind_del = false(K, 1);
 for miter=1:maxIter
@@ -36,22 +36,21 @@ for miter=1:maxIter
             continue;
         end
         temp = C(k, :) + (U(k, :)-V(k, :)*C)/aa(k);
-        % estimate noise
-        if miter==1
-            sn(k) = get_noise_fft(temp);
-        end
-        
+
         % remove baseline
-        [temp, C_offset(k)] = remove_baseline(temp, sn(k));
+%         [temp, C_offset(k)] = remove_baseline(temp);
         
         % deconvolution
         if obj.options.deconv_flag
             if miter==1
-                [ck, sk, kernel] = deconvCa(temp, kernel, smin, true, false, sn(k));
-                kernel_pars(k, :) = kernel.pars;
+                %                 [ck, sk, kernel] = deconvCa(temp, kernel, smin, true, false, sn(k));
+                [ck, sk, deconv_options] = deconvolveCa(temp, deconv_options_0);
+                kernel_pars{k} = reshape(deconv_options.pars, 1, []);
+                sn(k) = deconv_options.sn;
             else
-                kernel.pars = kernel_pars(k, :);
-                [ck, sk, kernel] = deconvCa(temp, kernel, smin, false, false, sn(k));
+                deconv_options.pars = kernel_pars{k};
+                [ck, sk, ~]= deconvolveCa(temp, deconv_options_0, 'sn', sn(k));
+                %                 [ck, sk, kernel] = deconvCa(temp, kernel, smin, false, false, sn(k));
             end
         else
             ck = max(0, temp);
@@ -71,10 +70,12 @@ for miter=1:maxIter
             C_raw(k, :) = temp;
         end
     end
+    deconv_options_0.optimize_pars = false;
 end
 obj.A = bsxfun(@times, A, sn);
 obj.C = bsxfun(@times, C, 1./sn');
 obj.C_raw = bsxfun(@times, C_raw, 1./sn');
 obj.S = bsxfun(@times, S, 1./sn');
-obj.P.kernel_pars = kernel_pars;
+obj.P.kernel_pars =cell2mat( kernel_pars);
+obj.P.sn_neuron = sn; 
 obj.delete(ind_del);

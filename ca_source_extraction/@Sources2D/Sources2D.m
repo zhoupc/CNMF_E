@@ -30,7 +30,7 @@ classdef Sources2D < handle
         %% constructor and options setting
         function obj = Sources2D(varargin)
             obj.options = CNMFSetParms();
-            obj.P = struct('p', 2);
+            obj.P = struct('p', 2, 'sn', []);
             if nargin>0
                 obj.options = CNMFSetParms(obj.options, varargin{:});
             end
@@ -251,6 +251,7 @@ classdef Sources2D < handle
             if ~isempty(obj.C_raw); obj.C_raw(ind, :) = []; end
             if isfield(obj.P, 'kernel_pars')&&(  ~isempty(obj.P.kernel_pars))
                 obj.P.kernel_pars(ind, :) = [];
+                obj.P.sn(ind,:) = []; 
             end
         end
         

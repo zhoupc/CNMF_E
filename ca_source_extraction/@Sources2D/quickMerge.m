@@ -29,6 +29,7 @@ A_thr = merge_thr(1);
 C_thr = merge_thr(2);
 S_thr = merge_thr(3);
 [K, ~] = size(C);   % number of neurons
+deconv_options_0 = obj.options.deconv_options; 
 
 %% find neuron pairs to merge
 % compute spatial correlation
@@ -66,7 +67,7 @@ else
     fprintf('%d neurons will be merged into %d new neurons\n\n', sum(MC(:)), size(MC,2));
 end
 
-%% start merging
+% %% start merging
 [nr, n2merge] = size(MC);
 ind_del = false(nr, 1 );    % indicator of deleting corresponding neurons
 merged_ROIs = cell(n2merge,1);
@@ -89,8 +90,9 @@ for m=1:n2merge
     sn = get_noise_fft(ci); 
     A(active_pixel, IDs(1)) = ai*sn;
     obj.C_raw(IDs(1), :) = ci/sn;
-    [obj.C(IDs(1), :), obj.S(IDs(1), :), tmp_kernel] = deconvCa(ci, obj.kernel, 3, true, false); 
-    obj.P.kernel_pars(IDs(1), :) = tmp_kernel.pars; 
+%     [obj.C(IDs(1), :), obj.S(IDs(1), :), tmp_kernel] = deconvCa(ci, obj.kernel, 3, true, false); 
+[obj.C(IDs(1), :), obj.S(IDs(1),:), deconv_options] = deconvolveCa(ci, deconv_options_0); 
+    obj.P.kernel_pars(IDs(1), :) = deconv_options.pars; 
     newIDs(IDs(1)) = IDs(1);
     % remove merged elements
     ind_del(IDs(2:end)) = true;
