@@ -111,7 +111,7 @@ HY_thr(bsxfun(@lt, HY_thr, Ysig*sig)) = 0;
 Cn = correlation_image(HY_thr, [1,2], d1,d2);
 Cn0 = Cn;   % backup
 Cn(isnan(Cn)) = 0;
-Cn = Cn + rand(size(Cn))*(1e-6);
+Cn = Cn + randn(size(Cn))*(1e-100);
 
 % screen seeding pixels as center of the neuron
 v_search = Cn.*PNR;
@@ -159,7 +159,7 @@ while searching_flag
     %% find local maximum as initialization point
     %find all local maximum as initialization point
     tmp_d = 2*round(gSig)+1;
-    v_search = medfilt2(v_search, [gSig, gSig])+randn(size(v_search))*(1e-10);
+    v_search = medfilt2(v_search, [gSig, gSig])+randn(size(v_search))*(1e-100);
     v_search(ind_search) = 0;
     v_max = ordfilt2(v_search, tmp_d^2, true(tmp_d));
     % set boundary to be 0

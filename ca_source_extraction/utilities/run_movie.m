@@ -34,7 +34,7 @@ ind_cell = zeros(Ncell,1);
 m = 1;
 while true
     subplot(Ncell, ncol, 1:ncol:(Ncell*ncol));
-    
+    drawnow; 
     [x, y] = ginput(1);
     h_dot = plot(x, y, '*m');
     dx = x-ctr(:, 2);

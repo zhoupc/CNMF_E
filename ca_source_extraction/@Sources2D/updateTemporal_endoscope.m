@@ -10,8 +10,12 @@ function [C_offset] = updateTemporal_endoscope(obj, Y, smin)
 
 % options
 maxIter = obj.options.maxIter;
-if ~exist('smin', 'var') || isempty(smin)
-    smin = 3;
+deconv_options_0 = obj.options.deconv_options;
+
+if ~exist('smin', 'var')
+    smin = [];
+else
+    deconv_options_0.optimize_smin = false;
 end
 %% initialization
 A = obj.A;
@@ -25,8 +29,8 @@ U = A'*Y;
 V = A'*A;
 aa = diag(V);   % squares of l2 norm all all components
 sn =  zeros(1, K);
+smin = zeros(1,K);
 % kernel = obj.kernel;
-deconv_options_0 = obj.options.deconv_options; 
 kernel_pars = cell(K,1);
 %% updating
 ind_del = false(K, 1);
@@ -36,26 +40,24 @@ for miter=1:maxIter
             continue;
         end
         temp = C(k, :) + (U(k, :)-V(k, :)*C)/aa(k);
-
-        % remove baseline
-%         [temp, C_offset(k)] = remove_baseline(temp);
+        %remove baseline and estimate noise level
+        [b, tmp_sn] = estimate_baseline_noise(temp);
+        temp = temp-b;
         
         % deconvolution
         if obj.options.deconv_flag
-            if miter==1
-                %                 [ck, sk, kernel] = deconvCa(temp, kernel, smin, true, false, sn(k));
-                [ck, sk, deconv_options] = deconvolveCa(temp, deconv_options_0);
-                kernel_pars{k} = reshape(deconv_options.pars, 1, []);
-                sn(k) = deconv_options.sn;
-            else
+            if miter>1  % use the parameters in the previous initialization
                 deconv_options.pars = kernel_pars{k};
-                [ck, sk, ~]= deconvolveCa(temp, deconv_options_0, 'sn', sn(k));
-                %                 [ck, sk, kernel] = deconvCa(temp, kernel, smin, false, false, sn(k));
             end
+            [ck, sk, deconv_options]= deconvolveCa(temp, deconv_options_0, 'sn', tmp_sn,...
+                                'smin', smin(k));
+            sn(k) = tmp_sn;
+            smin(k) = deconv_options.smin;
+            kernel_pars{k} = reshape(deconv_options.pars, 1, []);
         else
             ck = max(0, temp);
-        end
-        
+    end
+    
         % save convolution kernels and deconvolution results
         C(k, :) = ck;
         
@@ -70,12 +72,11 @@ for miter=1:maxIter
             C_raw(k, :) = temp;
         end
     end
-    deconv_options_0.optimize_pars = false;
 end
 obj.A = bsxfun(@times, A, sn);
 obj.C = bsxfun(@times, C, 1./sn');
 obj.C_raw = bsxfun(@times, C_raw, 1./sn');
 obj.S = bsxfun(@times, S, 1./sn');
 obj.P.kernel_pars =cell2mat( kernel_pars);
-obj.P.sn_neuron = sn; 
+obj.P.smin = smin/sn;
 obj.delete(ind_del);

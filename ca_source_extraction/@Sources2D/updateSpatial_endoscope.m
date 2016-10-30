@@ -34,9 +34,9 @@ IND = logical(determine_search_location(obj.A, search_method, params));
 %% estimate the noise
 if and(strcmpi(method, 'hals_thresh') || strcmpi(method, 'nnls_thresh'), isempty(obj.P.sn))
     %% estimate the noise for all pixels
-    b0 =zeros(size(A,1), 1);
+    b0 =zeros(size(obj.A,1), 1);
     sn = b0;
-    parfor m=1:size(neuron.A,1)
+    parfor m=1:size(obj.A,1)
         [b0(m), sn(m)] = estimate_baseline_noise(Y(m, :));
     end
     Y = bsxfun(@minus, Y, b0);

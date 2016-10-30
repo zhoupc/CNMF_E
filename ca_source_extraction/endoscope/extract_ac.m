@@ -25,7 +25,7 @@ data = HY(tmp_corr>min_corr, :);
 
 %% estimate ci with the mean or rank-1 NMF
 ci = mean(data, 1);
-[~, sn] = estimate_baseline_sn(ci);  % estimate the noise level 
+[~, sn] = estimate_baseline_noise(ci);  % estimate the noise level 
 % ci = ci - min(ci); % avoid nonnegative baseline
 % [~, ci] = nnmf(ci, 1);
 if norm(ci)==0
@@ -42,13 +42,13 @@ y_bg = median(Y(tmp_corr(:)<min_corr, :), 1); % using the median of the whole fi
 thr_noise = 5;      % threshold the nonzero pixels to remove noise
 [~, ind_sort] = sort(y_bg, 'ascend');   % order frames to make sure the background levels are close within nearby frames
 dY = diff(Y(:, ind_sort), 2, 2);    % take the second order differential to remove the background contributions
-[~, snY] = estimate_baseline_sn(dY(:));  % estimate the noise level in dY 
+[~, snY] = estimate_baseline_noise(dY(:));  % estimate the noise level in dY 
 dci = diff(ci(ind_sort), 2);
 dci(dci>- thr_noise * sn) = 0;
 ai = max(0, dY*dci'/(dci*dci'));  % use regression to estimate spatial component
 
 % post-process ai by bwlabel
-th = max(median(ai(:)), snY * 3 / sqrt(dci*dci'));  % minimum value of each pixel 
+th = max(quantile(ai(:), .75), snY * 3 / sqrt(dci*dci'));  % minimum value of each pixel 
 temp = full(ai>=th);
 l = bwlabel(reshape(temp, nr, nc), 4);   % remove disconnected components
 temp(l~=l(ind_ctr)) = false;
@@ -62,7 +62,7 @@ end
 ind_nonzero = (ai>0);
 ai_mask = mean(ai(ind_nonzero))*ind_nonzero;
 ci = (ai-ai_mask)'*ai\((ai-ai_mask)'*Y);
-[b, sn] = estimate_baseline_nosie(ci); 
+[b, sn] = estimate_baseline_noise(ci); 
 ci = ci - b; 
 ind_neg = (ci<-4*sn); 
 ci(ind_neg) = rand(sum(ind_neg), 1)*sn; 

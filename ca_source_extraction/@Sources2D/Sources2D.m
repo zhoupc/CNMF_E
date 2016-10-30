@@ -84,6 +84,7 @@ classdef Sources2D < handle
         
         %% udpate temporal components with fast deconvolution
         updateTemporal_endoscope(obj, Y, smin)
+        updateTemporal_endoscope_parallel(obj, Y, smin)
         
         %% update temporal components without background
         function updateTemporal_nb(obj, Y)
@@ -251,7 +252,6 @@ classdef Sources2D < handle
             if ~isempty(obj.C_raw); obj.C_raw(ind, :) = []; end
             if isfield(obj.P, 'kernel_pars')&&(  ~isempty(obj.P.kernel_pars))
                 obj.P.kernel_pars(ind, :) = [];
-                obj.P.sn(ind,:) = []; 
             end
         end
         
@@ -517,7 +517,7 @@ classdef Sources2D < handle
             if ~exist('save_avi', 'var')||isempty(save_avi); save_avi=false; end
             if ~exist('avi_name', 'var'); avi_name = []; end
             if ~exist('S', 'var');  S = []; end
-            run_movie(Y, obj.A, obj.C, obj.Cn, min_max, obj.Coor, ctr, 5, 1, save_avi, avi_name, S)
+            run_movie(Y, obj.A, obj.C_raw, obj.Cn, min_max, obj.Coor, ctr, 5, 1, save_avi, avi_name, S)
         end
         
         %% function

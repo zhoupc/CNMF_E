@@ -1,5 +1,5 @@
 function [c, s, b, g, smin, active_set] = thresholded_oasisAR1(y, g, sn, optimize_b,...
-    optimize_g, optimize_smin, decimate, maxIter, thresh_factor)
+    optimize_g, decimate, maxIter, thresh_factor)
 %% Infer the most likely discretized spike train underlying an AR(1) fluorescence trace
 % Solves the sparse non-negative deconvolution problem
 %  min 1/2|c-y|^2  subject to s_t = c_t-g c_{t-1} >=s_min or =0
@@ -56,9 +56,6 @@ end
 if ~exist('optimize_g', 'var') || isempty(optimize_g)
     optimize_g = 0;
 end
-if ~exist('optimize_smin', 'var') || isempty(optimize_smin)
-    optimize_smin = false;
-end
 if ~exist('decimate', 'var') || isempty(decimate)
     decimate = 1;
 else
@@ -90,35 +87,37 @@ g_converged = false;
 %% optimize parameters
 tol = 1e-4;
 if ~optimize_b   %% don't optimize the baseline b
+    b = 0; 
     %% initialization
-    b = 0;
     [solution, spks, active_set] = oasisAR1(y, g, [], smin);
-    len_active_set = size(active_set, 1);
     
-    %% iteratively update parameters smin & g
+    res = y - solution;
+    RSS0 = res' * res;
+    %% optimize the baseline b and dependends on the optimized g too
     for miter=1:maxIter
-        % always update g to reduce the RSS
+        % update b and g
         if and(optimize_g, ~g_converged);
             g0 = g;
-            [solution, active_set, g, spks] = update_g(y, active_set,smin);
-            if abs(g-g0)/g0 < 1e-3 % g is converged
+            [solution, active_set, g, spks] = update_g(y, active_set, smin);
+            if abs(g-g0)/g0 < 1e-4;
                 g_converged = true;
             end
         end
+        
         res = y - solution;
         RSS = res' * res;
-        sn = GetSn(res);
-        thresh = thresh_factor* sn * sn * T;
-        if or(RSS>thresh, sum(solution)<1e-9)  % constrained form has been found, stop
+        if abs(RSS-RSS0)<tol  % no more changes
             break;
-        elseif optimize_smin
-            % update s_min
+        end
+        len_active_set = size(active_set,1);
+        
+        if or(abs(RSS-thresh) < tol, sum(solution)<1e-9)
+            break;
+        else
+            RSS0 = RSS;
+            % update smin
             [smin, solution, spks, active_set] = update_smin(y, g, smin,...
                 solution, spks, active_set, sqrt(thresh));
-        end
-        % no more change of the active set
-        if size(active_set,1)==len_active_set
-            break;
         end
     end
 else
@@ -128,7 +127,6 @@ else
         res = y - solution - b;
         RSS0 = res' * res;
     %% optimize the baseline b and dependends on the optimized g too
-    g_converged = false;
     for miter=1:maxIter
         % update b and g
         if and(optimize_g, ~g_converged);
