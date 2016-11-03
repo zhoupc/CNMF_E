@@ -35,8 +35,8 @@ y = reshape(y, [], 1);
 if ~exist('g', 'var') || isempty(g)
     g = estimate_time_constant(y, 2);
 end
-g1 = g(1); 
-g2 = g(2); 
+g1 = g(1);
+g2 = g(2);
 
 if ~exist('lam', 'var') || isempty(lam);   lam = 0; end
 if ~exist('smin', 'var') || isempty(smin);   smin = 0; end
@@ -81,11 +81,11 @@ ii_next = active_set(ii,6);
 ii_prev = active_set(ii,5);
 while ~isnan(ii_next)
     % find the active set
-    while (~isnan(ii_next)) && (g11(active_set(ii,4))*active_set(ii,1) + ...
-            g12(active_set(ii,4))*active_set(ii_prev,2) + smin <= active_set(ii_next,1))
-        active_set(ii_next,5) = ii;         
-        ii = ii_next;       % move to the next pool 
-        ii_next = active_set(ii,6);     
+    while (~isnan(ii_next)) && (g11(active_set(ii,4)+1)*active_set(ii,1) + ...
+            g12(active_set(ii,4)+1)*active_set(ii_prev,2) + smin <= active_set(ii_next,1))
+        active_set(ii_next,5) = ii;
+        ii = ii_next;       % move to the next pool
+        ii_next = active_set(ii,6);
         ii_prev = active_set(ii,5);
     end
     if isnan(ii_next); break; end
@@ -96,21 +96,21 @@ while ~isnan(ii_next)
     li = active_set(ii,4);
     active_set(ii,1) = (g11(1:li)'*yp(ti+(1:li)-1) - g11g12(li)*active_set(ii_prev,2))/g11g11(li);
     active_set(ii,2) = g11(li)*active_set(ii,1) + g12(li)*active_set(ii_prev,2);
-    idx(ii_next) = false; 
-    active_set(ii,6) = active_set(ii_next, 6); 
-    ii_next = active_set(ii, 6); 
+    idx(ii_next) = false;
+    active_set(ii,6) = active_set(ii_next, 6);
+    ii_next = active_set(ii, 6);
     if ~isnan(ii_next)
-        active_set(ii_next,5) = ii; 
+        active_set(ii_next,5) = ii;
     end
     
     ii_prev_1 = active_set(ii,5);
     ii_prev_2 = active_set(ii_prev_1,5);
     %% backtrack until violations fixed
-    while (~isnan(ii_prev_2)) &&  (g11(active_set(ii_prev_1,4))*active_set(ii_prev_1,1) + g12(active_set(ii_prev_1,4))...
+    while (~isnan(ii_prev_2)) &&  (g11(active_set(ii_prev_1,4)+1)*active_set(ii_prev_1,1) + g12(active_set(ii_prev_1,4)+1)...
             *active_set(ii_prev_2,2) + smin > active_set(ii,1))
-        ii_next = ii; 
-        ii = ii_prev_1; 
-        ii_prev = ii_prev_2; 
+        ii_next = ii;
+        ii = ii_prev_1;
+        ii_prev = ii_prev_2;
         
         active_set(ii, 4) = active_set(ii, 4) + active_set(ii_next, 4);
         ti = active_set(ii,3);

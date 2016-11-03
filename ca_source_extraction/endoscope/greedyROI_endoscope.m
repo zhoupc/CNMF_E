@@ -271,7 +271,9 @@ while searching_flag
         sz = [nr, nc];
         [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
-        if max(ci_raw)<min_pnr; ind_success=false; end
+%         if max(ci_raw)<min_pnr; 
+%             ind_success=false; 
+%         end
         if sum(ai(:))<min_pixel; ind_success=false; end
         if ind_success
             k = k+1;
@@ -361,7 +363,7 @@ while searching_flag
         
         
         if mod(k, 10)==0
-            fprintf('%d/%d neurons have been detected\n', k, K);
+            fprintf('%d neurons have been detected\n', k);
         end
         
         if k==K;

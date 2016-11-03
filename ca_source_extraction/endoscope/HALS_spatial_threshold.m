@@ -32,7 +32,7 @@ K = size(A, 2);     % number of components
 U = Y*C_thresh'; 
 V = C*C_thresh'; 
 cc = sum(C_thresh.^2, 2);   % squares of l2 norm all all components 
-Amin = 4 * bsxfun(@times, sn, 1./sqrt(cc')); 
+%Amin = 4 * bsxfun(@times, sn, 1./sqrt(cc')); 
 %% updating 
 for miter=1:maxIter
     for k=1:K
@@ -40,5 +40,5 @@ for miter=1:maxIter
         ak = max(0, A(tmp_ind, k)+(U(tmp_ind, k)-A(tmp_ind,:)*V(:, k))/cc(k)); 
         A(tmp_ind, k) = ak; 
     end
-    A(A<Amin) = 0; 
+   % A(A<Amin) = 0; 
 end

@@ -117,6 +117,7 @@ for m=1:length(ind_px)
 end
 results.weights = weights;
 results.ssub = ssub;
+results.dims = [d1s, d2s]; 
 
 ind = 1:(d1s*d2s);
 ind(ind_px) = [];

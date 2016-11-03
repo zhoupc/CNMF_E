@@ -25,10 +25,8 @@ data = HY(tmp_corr>min_corr, :);
 
 %% estimate ci with the mean or rank-1 NMF
 ci = mean(data, 1);
-[~, sn] = estimate_baseline_noise(ci);  % estimate the noise level 
-% ci = ci - min(ci); % avoid nonnegative baseline
-% [~, ci] = nnmf(ci, 1);
-if norm(ci)==0
+
+if norm(ci)==0  % avoid empty results 
     ai=[];
     ind_success=false;
     return;
@@ -38,30 +36,50 @@ end
 % estiamte the background level using the boundary
 y_bg = median(Y(tmp_corr(:)<min_corr, :), 1); % using the median of the whole field (except the center area) as background estimation
 
-% sort the data, take the differencing and estiamte ai
-thr_noise = 5;      % threshold the nonzero pixels to remove noise
-[~, ind_sort] = sort(y_bg, 'ascend');   % order frames to make sure the background levels are close within nearby frames
-dY = diff(Y(:, ind_sort), 2, 2);    % take the second order differential to remove the background contributions
-[~, snY] = estimate_baseline_noise(dY(:));  % estimate the noise level in dY 
-dci = diff(ci(ind_sort), 2);
-dci(dci>- thr_noise * sn) = 0;
-ai = max(0, dY*dci'/(dci*dci'));  % use regression to estimate spatial component
+%%%%%%%%%%%%%%%%%%%  WHAT A PITY %%%%%%%%%%%%%%%%%%%%%%
+%it's such a pity that this algorithm was abandoned because I found a
+%simpler algorithm to solve the problem. For a really long time, I'm proud
+%of this idea of removing the background with sorting and differencing. 
+% tic; 
+% % sort the data, take the differencing and estiamte ai
+% thr_noise = 5;      % threshold the nonzero pixels to remove noise
+% [~, ind_sort] = sort(y_bg, 'ascend');   % order frames to make sure the background levels are close within nearby frames
+% dY = diff(Y(:, ind_sort), 2, 2);    % take the second order differential to remove the background contributions
+% [~, snY] = estimate_baseline_noise(dY(:));  % estimate the noise level in dY 
+% dci = diff(ci(ind_sort), 2);
+% dci(dci>- thr_noise * sn) = 0;
+% ai = max(0, dY*dci'/(dci*dci'));  % use regression to estimate spatial component
+%%%%%%%%%%%%%%%%%%%% SIMPLER IS BETTER %%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% post-process ai by bwlabel
-th = max(quantile(ai(:), .75), snY * 3 / sqrt(dci*dci'));  % minimum value of each pixel 
-temp = full(ai>=th);
+%% estimate ai 
+T = length(ci); 
+X = [ones(T,1), y_bg', ci']; 
+temp = (X'*X)\(X'*Y'); 
+ai = max(0, temp(3,:)'); 
+
+%% threshold the spatial shape and remove outliers 
+temp = full(ai>=median(ai));
 l = bwlabel(reshape(temp, nr, nc), 4);   % remove disconnected components
 temp(l~=l(ind_ctr)) = false;
 ai(~temp(:)) = 0;
+
+% remove outliers 
+temp =  full(ai>quantile(ai(:), 0.75)); 
+l = bwlabel(reshape(temp, nr, nc), 4); 
+temp(l~=l(ind_ctr)) = false; 
+ai(~temp(:)) = 0; 
 if sum(ai(:)>0) < min_pixels %the ROI is too small
     ind_success=false;
     return;
 end
 
 % refine ci given ai 
-ind_nonzero = (ai>0);
-ai_mask = mean(ai(ind_nonzero))*ind_nonzero;
-ci = (ai-ai_mask)'*ai\((ai-ai_mask)'*Y);
+% ind_nonzero = (ai>0);
+% ai_mask = mean(ai(ind_nonzero))*ind_nonzero;
+% ci = (ai-ai_mask)'*ai\((ai-ai_mask)'*Y);
+% plot(ci, 'r'); 
+% pause; 
+
 [b, sn] = estimate_baseline_noise(ci); 
 ci = ci - b; 
 ind_neg = (ci<-4*sn); 

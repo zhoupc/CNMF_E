@@ -1,8 +1,8 @@
-function [c, s, b, g, smin, active_set] = thresholded_oasisAR2(y, g, sn, optimize_b,...
+function [c, s, b, g, smin, active_set] = thresholded_oasisAR2(y, g, sn, smin, optimize_b,...
     optimize_g, decimate, maxIter, thresh_factor)
-%% Infer the most likely discretized spike train underlying an AR(1) fluorescence trace
+%% Infer the most likely discretized spike train underlying an AR(2) fluorescence trace
 % Solves the sparse non-negative deconvolution problem
-%  min 1/2|c-y|^2 + lam |s|_1 subject to s_t = c_t-g c_{t-1} >=s_min or =0
+%  min 1/2|c-y|^2 + lam |s|_1 subject to s_t = c_t-g_1*c_{t-1} - g_2*c_{t-2}>=s_min or =0
 
 %% inputs:
 %   y:  T*1 vector, One dimensional array containing the fluorescence intensities
@@ -41,11 +41,17 @@ T = length(y);
 if ~exist('g', 'var') || isempty(g)
     g = estimate_time_constant(y, 2);
 end
-if ~exist('sn', 'var') || isempty(sn)
-    sn = GetSn(y);
-end
+
 if ~exist('optimize_b', 'var') || isempty(optimize_b)
     optimize_b = false;
+end
+
+if ~exist('sn', 'var') || isempty(sn)
+    if optimize_b
+        [b, sn] = estimate_baseline_noise(y);
+    else
+        [~, sn] = estimate_baseline_noise(y-smooth(y,100));
+    end
 end
 if ~exist('optimize_g', 'var') || isempty(optimize_g)
     optimize_g = 0;
@@ -62,8 +68,9 @@ if ~exist('thresh_factor', 'var') || isempty(thresh_factor)
     thresh_factor = 1.0;
 end
 
+%% start from smin that avoid counting gaussian noise as a spike
+smin = choose_smin(g, sn, 0.9999);
 thresh = thresh_factor* sn * sn * T;
-smin = choose_smin(g, sn);
 
 % change parameters due to downsampling
 if decimate>1
@@ -85,70 +92,83 @@ if ~optimize_b   %% don't optimize the baseline b
     [solution, spks, active_set] = oasisAR2(y, g, [], smin);
     
     res = y - solution;
-    RSS = res' * res;
+    RSS0 = res' * res;
     %% iteratively update parameters lambda & g
     for miter=1:maxIter
-        len_active_set = size(active_set, 1);     
+        if isempty(active_set)
+            break;
+        end
         % update g
-        if and(optimize_g, ~g_converged);
+        if miter==1 && and(optimize_g, ~g_converged);
             g0 = g;
-            [solution, active_set, g, spks] = update_g(y, g, spks,smin);
+            g = update_g(y-b, g, spks);
+            smin = choose_smin(g, sn, 0.9999);
+            [solution, spks,active_set] = oasisAR2(y, g, 0, smin);
             if norm(g-g0,2)/norm(g0) < 1e-3 % g is converged
                 g_converged = true;
             end
         end
-        % update smin 
-        [smin, solution, spks, active_set] = update_smin(y, g, smin,...
-            solution, spks, active_set, sqrt(thresh), max(spks));
         
-        % no more change of the active set
-        if size(active_set,1)==len_active_set
-            break;
-        end
-        %         g_converged = true;
         res = y - solution;
         RSS = res' * res;
+        if abs(RSS-RSS0)<tol  % no more changes
+            break;
+        end
+        len_active_set = size(active_set,1);
+        
         if or(RSS>thresh, sum(solution)<1e-9)  % constrained form has been found, stop
-            break; 
+            break;
+        else
+            RSS0 = RSS;
+            % update smin
+            [smin, solution, spks, active_set] = update_smin(y, g, smin,...
+                solution, spks, active_set, sqrt(thresh), max(spks));
         end
     end
 else
     %% initialization
-    b = quantile(y, 0.15);
     [solution, spks, active_set] = oasisAR2(y-b, g, [], smin);
     
-    %% optimize the baseline b and dependends on the optimized g too
-    g_converged = false;
+    res = y - solution -b;
+    RSS0 = res' * res;
+    %% iteratively update parameters lambda & g
     for miter=1:maxIter
-           % update b and g
-    
-        res = y - solution - b;
+        if isempty(active_set)
+            break;
+        end
+        % update g
+        if and(optimize_g, ~g_converged);
+            g0 = g;
+            g = update_g(y-b, g, spks);
+            smin = choose_smin(g, sn, 0.9999);
+            [solution, spks,active_set] = oasisAR2(y, g, 0, smin);
+            
+            if norm(g-g0,2)/norm(g0) < 1e-3 % g is converged
+                g_converged = true;
+            end
+        end
+        
+        res = y - solution -b;
         RSS = res' * res;
+        if abs(RSS-RSS0)<tol  % no more changes
+            break;
+        end
         len_active_set = size(active_set,1);
         
-        if or(abs(RSS-thresh) < tol, sum(solution)<1e-9)
+        if or(RSS>thresh, sum(solution)<1e-9)  % constrained form has been found, stop
             break;
         else
+            RSS0 = RSS;
             % update smin
             [smin, solution, spks, active_set] = update_smin(y-b, g, smin,...
-                solution, spks, active_set, sqrt(thresh));
+                solution, spks, active_set, sqrt(thresh), max(spks));
             b = mean(y-solution);
-            
-            % update b and g
-            if and(optimize_g, ~g_converged);
-                g0 = g;
-                [solution, active_set, g, spks] = update_g(y-b, active_set,lam);
-                if norm(g-g0,2)/norm(g0,2) < 1e-4;
-                    g_converged = true;
-                end
-            end
-            
         end
     end
-    
 end
 c = solution;
 s = spks;
+g = g(1:2);
 
 %% nested functions
     function [smin, solution, spks, active_set] = update_smin(y, g, smin, solution, ...
@@ -181,11 +201,44 @@ s = spks;
 
 
 end
-
-
+%
+% function [c, active_set, g, s] = update_g(y, g, spks, smin, c)
+% %% update the AR coefficient: g
+%
+%
+% %% residual
+% yres = y - c;
+% T = length(y);
+% %% convolution kernel
+% ht = filter(1,[1,-g],[1,zeros(1,500)]);
+% ht(ht<0.01) = [];
+% w = length(ht);
+% ht = [ zeros(1, 2), ht];
+% %% find all spikes
+% tsp = find(spks>0);
+% tsp(tsp<3) = [];
+% tsp(tsp==T) = [];
+% spv = spks(tsp);
+%
+%
+% %% compute the mean waveform
+% mean_trace = zeros(1, 2+w);
+% for m=1:length(tsp)
+%     ti = tsp(m);
+%     if ti<= T-w
+%         mean_trace = mean_trace + ht*spv(m) + yres((ti-2):(ti+w-1))' ;
+%     else
+%         ind = (ti-2):T;
+%         mean_trace(1:(T-ti+3)) = mean_trace(1:(T-ti+3)) + ht(1:(T-ti+3))*spv(m) + yres(ind)'/spv(m);
+%     end
+% end
+%
+% g = estimate_time_constant(mean_trace);
+% [c, s, active_set] = oasisAR2(y, g, [], smin);
+% end
 
 %update the AR coefficient: g
-function [c, active_set, g, s] = update_g(y, g, spks, smin)
+function g = update_g(y, g, spks)
 %% inputs:
 %   y:  T*1 vector, One dimensional array containing the fluorescence intensities
 %withone entry per time-bin.
@@ -202,18 +255,18 @@ function [c, active_set, g, s] = update_g(y, g, spks, smin)
 %% Authors: Pengcheng Zhou, Carnegie Mellon University, 2016
 
 %% initialization
-s_th = quantile(spks(spks>1e-3), 0.25); 
-tsp = find(spks>=s_th); 
-tsp = reshape(tsp, 1, []); 
-time_p = find(conv2(double(spks<=s_th), ones(30,1), 'same')>0); 
-time_p = reshape(time_p,[],1); 
+s_th = quantile(spks(spks>1e-3), 0.25);
+tsp = find(spks>=s_th);
+tsp = reshape(tsp, 1, []);
+time_p = find(conv2(double(spks<=s_th), ones(30,1), 'same')>0);
+time_p = reshape(time_p,[],1);
 y = reshape(y,[],1);    % fluorescence data
-yp = y(time_p); 
-T = length(y); 
+yp = y(time_p);
+T = length(y);
 tau_dr = ar2exp(g);
 tau_d = tau_dr(1);
 tau_r = tau_dr(2);
-warning('off', 'MATLAB:singularMatrix'); 
+warning('off', 'MATLAB:singularMatrix');
 
 %% find the optimal g and get the warm started active_set
 tau_d0 = tau_d;
@@ -231,13 +284,12 @@ for m=1:10
     end
 end
 
-%% copute the optimal solution
+%% compute the optimal solution
 g = exp2ar([tau_d, tau_r]);
-[c,s,active_set] = oasisAR2(y, g, 0, smin);
 
 %% nested functions
 
-    function rss = rss_taur(tau_r)        
+    function rss = rss_taur(tau_r)
         ht = (exp(-(1:T)/tau_d) - exp(-(1:T)/tau_r))/(tau_d-tau_r);
         ht(T) = 0;
         ind = bsxfun(@minus, time_p, tsp);
@@ -250,8 +302,8 @@ g = exp2ar([tau_d, tau_r]);
         rss = res' * res;
     end
 
-    function rss = rss_taud(tau_d)        
-         ht = (exp(-(1:T)/tau_d) - exp(-(1:T)/tau_r))/(tau_d-tau_r);
+    function rss = rss_taud(tau_d)
+        ht = (exp(-(1:T)/tau_d) - exp(-(1:T)/tau_r))/(tau_d-tau_r);
         ht(T) = 0;
         ind = bsxfun(@minus, time_p, tsp);
         ind(ind<=0) = T;

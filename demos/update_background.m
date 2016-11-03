@@ -62,6 +62,7 @@ if thresh<inf    % do thresholding
     if isempty(sn)  % first iteration
         sn = get_noise_fft(reshape(Y, d1*d2,T));
     end
+    sn = reshape(sn, d1, d2);
     
     %  current estimation
     if isempty(Ybg)  % use the mean of neighbors
@@ -72,22 +73,29 @@ if thresh<inf    % do thresholding
         R = sqrt(cind.^2+rind.^2);
         neigh_kernel = (R>=rr) .* (R<rr+1);  % kernel representing the selected neighbors
         
+        b0 = mean(Y, 3);
         Y = bsxfun(@minus, Y, b0);
         Ybf = bsxfun(@times, imfilter(Y, neigh_kernel), ...
             1./imfilter(ones(d1, d2), neigh_kernel));
         % detect events
         ind_events = (bsxfun(@times, Y-Ybf, 1./sn) > thresh);
-        
         % replace the outliers with the current estimation
         Y(ind_events) = Ybf(ind_events); % remove potential calcium transients
+        clear Ybf;
+        
+        temp = mean(Y, 3);
+        Y = bsxfun(@minus, Y, temp);
+        b0 = temp + b0;
     else
         % use previous estimation
         % detect events
+        Ybg = reshape(Ybg, size(Y));
         ind_events = (bsxfun(@times, Y-Ybg, 1./sn) > thresh);
         Y(ind_events) = Ybg(ind_events);  % remove potential calcium transients
+        clear Ybg; 
+        b0 = mean(Y, 3);
+        Y = bsxfun(@minus, Y, b0);
     end
-    b0 = mean(Y, 3);
-    Y = bsxfun(@minus, Y, b0);
 else
     Y = bsxfun(@minus, Y, b0);
     ind_events = false(d1, d2, T);
@@ -95,7 +103,7 @@ end
 
 %% downsampling
 %downsample the data
-Y0 = Y; 
+Y0 = Y;
 if ssub>1
     Y = imresize(Y, 1./ssub);
     [d1s, d2s, ~] = size(Y);
@@ -172,8 +180,8 @@ warning('on','MATLAB:SingularMatrix');
 %% up-sampling
 if ssub>1
     Yest = imresize(Yest, [d1, d2]);
-    Y = Y0; 
-    clear Y0;  
+    Y = Y0;
+    clear Y0;
 end
 
 %% estimate the baseline and noise
@@ -181,6 +189,7 @@ if estimate_b0
     
     Y = reshape(Y, size(Yest));
     Yres = reshape(Y - Yest, d1*d2, T);  % residual
+    clear Y; 
     b0_ds = zeros(d1s, d2s);
     sn_ds = zeros(d1s, d2s);
     indr = round(linspace(1,d1, d1s));

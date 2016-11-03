@@ -73,6 +73,6 @@ else
         y2logy = y2.*logy;
     end
     mu= -p(2)/2/p(3);
-    sig = sqrt(-0.5/p(3));
+    sig = abs(sqrt(-0.5/p(3)));
     A = exp(p(1)-0.25*p(2)^2/p(3));
 end

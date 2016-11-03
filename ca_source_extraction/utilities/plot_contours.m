@@ -1,4 +1,4 @@
-function [CC,jsf] = plot_contours(Aor,Cn,thr,display_numbers,max_number,Coor, ln_wd)
+function [CC,jsf] = plot_contours(Aor,Cn,thr,display_numbers,max_number,Coor, ln_wd, ln_col)
 
 % save and plot the contour traces of the found spatial components againsts
 % specified background image. The contour is drawn around the value above
@@ -44,8 +44,11 @@ end
 %v = axis;
 %handle = title('Correlation image and identified spatial footprints','fontweight','bold','fontsize',14,'fontname',fontname);
 hold on;
-
+if ~exist('cmap', 'var') || isempty(cmap)
 cmap = hot(3*size(Aor,2));
+else
+    cmap = repmat(reshape(ln_col, 1, []), size(Aor,2), 1); 
+end
 if ~(nargin < 6 || isempty(Coor))
     CC = Coor;
     for i = 1:size(Aor,2)

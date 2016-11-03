@@ -1,5 +1,5 @@
 function [c, s, b, g, smin, active_set] = thresholded_oasisAR1(y, g, sn, optimize_b,...
-    optimize_g, decimate, maxIter, thresh_factor)
+    optimize_g, decimate, maxIter, thresh_factor, p_noise)
 %% Infer the most likely discretized spike train underlying an AR(1) fluorescence trace
 % Solves the sparse non-negative deconvolution problem
 %  min 1/2|c-y|^2  subject to s_t = c_t-g c_{t-1} >=s_min or =0
@@ -18,6 +18,8 @@ function [c, s, b, g, smin, active_set] = thresholded_oasisAR1(y, g, sn, optimiz
 %   maxIter:  int, maximum number of iterations
 %   active_set: npool x 4 matrix, warm stared active sets
 %  thresh_factor: scalar, set the maximum thresh as thresh_factor*sn^2*T
+%  smin_p: scalar, the probability of rejecting false spikes resulted from
+%  noise 
 
 %% outputs
 %   c: T*1 vector, the inferred denoised fluorescence signal at each time-bin.
@@ -40,6 +42,7 @@ T = length(y);
 
 if ~exist('g', 'var') || isempty(g)
     g = estimate_time_constant(y, 1);
+    g = g(1); 
 end
 
 if ~exist('optimize_b', 'var') || isempty(optimize_b)
@@ -48,7 +51,7 @@ end
 
 if ~exist('sn', 'var') || isempty(sn)
     if optimize_b
-        [b, sn] = estimate_baseline_noise(y); 
+        [b, sn] = estimate_baseline_noise(y);
     else
         [~, sn] = estimate_baseline_noise(y);
     end
@@ -67,9 +70,12 @@ end
 if ~exist('thresh_factor', 'var') || isempty(thresh_factor)
     thresh_factor = 1.0;
 end
+if ~exist('p_noise', 'var') || isempty(p_noise)
+    p_noise = 0.9999;
+end
 
 % thresh = thresh_factor* sn * sn * T;
-smin = choose_smin(g, sn, 0.9999);
+smin = choose_smin(g, sn, p_noise);
 thresh = thresh_factor* sn * sn * T;
 
 % change parameters due to downsampling
@@ -87,7 +93,7 @@ g_converged = false;
 %% optimize parameters
 tol = 1e-4;
 if ~optimize_b   %% don't optimize the baseline b
-    b = 0; 
+    b = 0;
     %% initialization
     [solution, spks, active_set] = oasisAR1(y, g, [], smin);
     
@@ -95,6 +101,9 @@ if ~optimize_b   %% don't optimize the baseline b
     RSS0 = res' * res;
     %% optimize the baseline b and dependends on the optimized g too
     for miter=1:maxIter
+        if isempty(active_set)
+            break;
+        end
         % update b and g
         if and(optimize_g, ~g_converged);
             g0 = g;
@@ -123,11 +132,14 @@ if ~optimize_b   %% don't optimize the baseline b
 else
     %% initialization
     [solution, spks, active_set] = oasisAR1(y-b, g, [], smin);
-            
-        res = y - solution - b;
-        RSS0 = res' * res;
+    
+    res = y - solution - b;
+    RSS0 = res' * res;
     %% optimize the baseline b and dependends on the optimized g too
     for miter=1:maxIter
+        if isempty(active_set)
+            break;
+        end
         % update b and g
         if and(optimize_g, ~g_converged);
             g0 = g;
@@ -158,6 +170,7 @@ else
 end
 c = solution;
 s = spks;
+g = g(1); 
 
 %% nested functions
     function [smin, solution, spks, active_set] = update_smin(y, g, smin, solution, ...

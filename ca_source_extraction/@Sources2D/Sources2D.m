@@ -723,6 +723,30 @@ classdef Sources2D < handle
             fprintf('results has been saved into file %s\n', file_nm);
         end
         
+        %% reconstruct background signal given the weights 
+        function Ybg = reconstructBG(obj, Y, weights)
+            if ~exist('weights', 'var')||isempty(weights)
+                try 
+                    weights = obj.P.weights; 
+                catch 
+                    Ybg = []; 
+                    disp('no regression weights given'); 
+                end
+            end 
+            Y = obj.reshape(Y-obj.A*obj.C, 2); 
+            [d1,d2, ~] = size(Y); 
+            dims = weights.dims; 
+            b0 = mean(Y,3); 
+            Y = bsxfun(@minus, Y, b0); 
+            Y = imresize(Y, dims); 
+            Y = reshape(Y, [], size(Y,3)); 
+            Ybg = zeros(size(Y)); 
+            parfor m=1:size(Y,1)
+                w = weights.weights{m}; 
+                Ybg(m,:) = w(2,:)*Y(w(1,:),:); 
+            end
+            Ybg = bsxfun(@plus, imresize(Ybg, [d1,d2]), b0);       
+        end 
         %% event detection
         function E = event_detection(obj, sig, w)
             % detect events by thresholding S with sig*noise
@@ -745,7 +769,7 @@ classdef Sources2D < handle
             end
         end
         
-        % compute correlation image and peak to noise ratio for endoscopic
+        %% compute correlation image and peak to noise ratio for endoscopic
         % data. unlike the correlation image for two-photon data,
         % correlation image of the microendoscopic data needs to be
         % spatially filtered first. otherwise neurons are significantly
@@ -756,6 +780,7 @@ classdef Sources2D < handle
             %             obj.PNR = PNR;
         end
         
+        %% convert struct data to Sources2D object
         function obj = struct2obj(obj, var_struct)
             temp = fieldnames(var_struct);
             for m=1:length(temp)
@@ -765,6 +790,7 @@ classdef Sources2D < handle
             end
         end
         
+        %% get contours of the all neurons 
         function Coor = get_contours(obj, thr, ind)
             A_ = obj.A;
             if exist('ind', 'var')

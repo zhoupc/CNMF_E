@@ -43,21 +43,19 @@ for miter=1:maxIter
         %remove baseline and estimate noise level
         [b, tmp_sn] = estimate_baseline_noise(temp);
         temp = temp-b;
+        sn(k) = tmp_sn;
         
         % deconvolution
         if obj.options.deconv_flag
             if miter>1  % use the parameters in the previous initialization
                 deconv_options.pars = kernel_pars{k};
             end
-            [ck, sk, deconv_options]= deconvolveCa(temp, deconv_options_0, 'sn', tmp_sn,...
-                                'smin', smin(k));
-            sn(k) = tmp_sn;
+            [ck, sk, deconv_options]= deconvolveCa(temp, deconv_options_0, 'sn', tmp_sn, 'maxIter', 2);
             smin(k) = deconv_options.smin;
             kernel_pars{k} = reshape(deconv_options.pars, 1, []);
         else
             ck = max(0, temp);
-    end
-    
+        end
         % save convolution kernels and deconvolution results
         C(k, :) = ck;
         

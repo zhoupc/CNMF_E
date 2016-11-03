@@ -67,7 +67,8 @@ end
 win = options.window;   % length of the convolution kernel
 % estimate the noise
 if isempty(options.sn)
-    options.sn = GetSn(y);
+    %     options.sn = GetSn(y);
+    [~, options.sn] = estimate_baseline_noise(y);
 end
 % estimate time constant
 if isempty(options.pars)
@@ -95,7 +96,8 @@ switch lower(options.method)
             [c, s, options.b, options.pars] = foopsi_oasisAR1(y-options.b, options.pars, options.lambda, ...
                 options.smin, options.optimize_b, options.optimize_pars, [], options.maxIter);
         elseif strcmpi(options.type, 'ar2') % AR 2
-            [c, s, options.b, options.pars] = foopsi_oasisAR2(y-options.b, options.pars, options.lambda);
+            [c, s, options.b, options.pars] = foopsi_oasisAR2(y-options.b, options.pars, options.lambda, ...
+                options.smin);
         elseif strcmpi(options.type, 'exp2')   % difference of two exponential functions
             kernel = exp2kernel(options.pars, options.window);
             [c, s] = onnls(y-options.b, kernel, options.lambda, ...
@@ -123,7 +125,7 @@ switch lower(options.method)
         if strcmpi(options.type, 'ar1')
             [c, s, options.b, options.pars, options.smin] = thresholded_oasisAR1(y,...
                 options.pars, options.sn, options.optimize_b, options.optimize_pars, ...
-                [], options.maxIter, options.thresh_factor);
+                [], options.maxIter, options.thresh_factor, options.p_noise);
             %             if and(options.smin==0, options.optimize_smin) % smin is given
             %                 [c, s, options.b, options.pars, options.smin] = thresholded_oasisAR1(y,...
             %                     options.pars, options.sn, options.optimize_b, options.optimize_pars, ...
@@ -134,7 +136,7 @@ switch lower(options.method)
             %             end
         elseif strcmpi(options.type, 'ar2')
             [c, s, options.b, options.pars, options.smin] = thresholded_oasisAR2(y,...
-                options.pars, options.sn, options.optimize_b, options.optimize_pars, ...
+                options.pars, options.sn, options.smin, options.optimize_b, options.optimize_pars, ...
                 [], options.maxIter, options.thresh_factor);
             %             if and(options.smin==0, options.optimize_smin) % smin is given
             %                 [c, s, options.b, options.pars, options.smin] = thresholded_oasisAR2(y,...
@@ -182,10 +184,11 @@ options.smin = 0;
 options.maxIter = 10;
 options.thresh_factor = 1.0;
 options.extra_params = [];
+options.p_noise = 0.9999; 
 
 if isempty(varargin)
     return;
-elseif isstruct(varargin{1})
+elseif isstruct(varargin{1}) && ~isempty(varargin{1})
     tmp_options = varargin{1};
     field_nams = fieldnames(tmp_options);
     for m=1:length(field_nams)
@@ -279,6 +282,11 @@ while k<=nargin
             % number of frames by which to shift window from on run of NNLS
             % to the next
             options.thresh_factor = varargin{k+1};
+            k = k+2;       
+        case 'p_noise'
+            % number of frames by which to shift window from on run of NNLS
+            % to the next
+            options.p_noise = varargin{k+1};
             k = k+2;
         otherwise
             k = k+1;
