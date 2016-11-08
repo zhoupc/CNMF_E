@@ -49,7 +49,7 @@ A = toeplitz(xc(lags+(1:lags)),xc(lags+(1:p))) - sn^2*eye(lags,p);
 g = pinv(A)*xc(lags+2:end);
 
 while max(abs(roots([1,-g(:)']))>1) && p < 5
-    warning('No stable AR(%i) model found. Checking for AR(%i) model \n',p, p+1);
+%     warning('No stable AR(%i) model found. Checking for AR(%i) model \n',p, p+1);
     p = p + 1;
     g = estimate_time_constant(y,p,sn,lags);
 end

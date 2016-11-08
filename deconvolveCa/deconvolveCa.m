@@ -67,16 +67,29 @@ end
 win = options.window;   % length of the convolution kernel
 % estimate the noise
 if isempty(options.sn)
-    %     options.sn = GetSn(y);
-    [~, options.sn] = estimate_baseline_noise(y);
+    psd_sn = GetSn(y);
+    [~, sn] = estimate_baseline_noise(y);
+    options.sn = min(sn, psd_sn); 
 end
 % estimate time constant
 if isempty(options.pars)
     switch options.type
         case 'ar1'
             options.pars = estimate_time_constant(y, 1, options.sn);
+            if length(options.pars)~=1
+                c = zeros(size(y)); 
+                s = zeros(size(y)); 
+                options.pars = 0; 
+                return; 
+            end
         case 'ar2'
             options.pars = estimate_time_constant(y, 2, options.sn);
+            if length(options.pars)~=2
+                c = zeros(size(y)); 
+                s = zeros(size(y)); 
+                options.pars =[0,0]; 
+                return; 
+            end
         case 'exp2'
             g = estimate_time_constant(y, 2, options.sn);
             options.pars = ar2exp(g);

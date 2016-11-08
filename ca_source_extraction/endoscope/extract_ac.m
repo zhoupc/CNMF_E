@@ -80,8 +80,15 @@ end
 % plot(ci, 'r'); 
 % pause; 
 
+% we use two methods for estimating the noise level 
 [b, sn] = estimate_baseline_noise(ci); 
-ci = ci - b; 
+psd_sn = GetSn(ci); 
+if sn>GetSn(ci)
+    sn =psd_sn; 
+    [ci, ~] = remove_baseline(ci, sn); 
+else
+    ci = ci - b; 
+end 
 ind_neg = (ci<-4*sn); 
 ci(ind_neg) = rand(sum(ind_neg), 1)*sn; 
 

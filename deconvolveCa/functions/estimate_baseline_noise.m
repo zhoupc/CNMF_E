@@ -17,7 +17,7 @@ end
 
 %% create the histogram for fitting 
 temp = quantile(y, 0:0.1:1); 
-dbin = min(diff(temp))/3; 
+dbin = max(min(diff(temp))/3, (max(temp)-min(temp))/1000); 
 bins = temp(1):dbin:temp(end); 
 nums = hist(y, bins); 
 
