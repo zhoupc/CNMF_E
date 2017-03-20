@@ -64,7 +64,7 @@ temp(l~=l(ind_ctr)) = false;
 ai(~temp(:)) = 0;
 
 % remove outliers 
-temp =  full(ai>quantile(ai(:), 0.75)); 
+temp =  full(ai>quantile(ai(:), 0.5)); 
 l = bwlabel(reshape(temp, nr, nc), 4); 
 temp(l~=l(ind_ctr)) = false; 
 ai(~temp(:)) = 0; 
@@ -83,7 +83,7 @@ end
 % we use two methods for estimating the noise level 
 [b, sn] = estimate_baseline_noise(ci); 
 psd_sn = GetSn(ci); 
-if sn>GetSn(ci)
+if sn>psd_sn
     sn =psd_sn; 
     [ci, ~] = remove_baseline(ci, sn); 
 else

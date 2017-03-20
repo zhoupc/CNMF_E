@@ -131,6 +131,7 @@ if ~optimize_b   %% don't optimize the baseline b
     end
 else
     %% initialization
+    [b, ~] = estimate_baseline_noise(y); 
     [solution, spks, active_set] = oasisAR1(y-b, g, [], smin);
     
     res = y - solution - b;
@@ -146,6 +147,7 @@ else
             [solution, active_set, g, spks] = update_g(y-b, active_set, smin);
             if abs(g-g0)/g0 < 1e-4;
                 g_converged = true;
+                [solution, spks, active_set] = oasisAR1(y-b, g, [], smin); 
             end
         end
         

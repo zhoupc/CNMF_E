@@ -127,6 +127,7 @@ if ~optimize_b   %% don't optimize the baseline b
     end
 else
     %% initialization
+    [b, ~] = estimate_baseline_noise(y); 
     [solution, spks, active_set] = oasisAR2(y-b, g, [], smin);
     
     res = y - solution -b;

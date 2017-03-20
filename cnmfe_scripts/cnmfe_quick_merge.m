@@ -44,6 +44,7 @@ if display_merge && ~isempty(merged_ROI)
     neuron.S = [neuron.S(~ind_after, :); neuron_bk.S(ind_before, :)];
     neuron.P.kernel_pars = [neuron.P.kernel_pars(~ind_after, :); neuron_bk.P.kernel_pars(ind_before, :)];
     clear neuron_bk;
+    close; 
 end
 
 % sort neurons

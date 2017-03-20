@@ -18,16 +18,19 @@ col = {[0, 114, 176]; ...
     [0, 158, 115]; ...
     [213, 94, 0]}; 
 
+% fluorescence trace 
+plot(1:T, Y(1,:)/3, 'o', 'color',  uint8(col{2}));
+
+% calcium trace 
+plot(1:T, trueC(1,:)/3, 'color', 'k'); % uint8(col{1})); 
 % spike train 
 tsp = find(trueSpikes(1, :)); 
 for m=1:length(tsp)
     plot([1,1]*tsp(m), [0, 1], 'color', uint8(col{3})); 
 end
-% calcium trace 
-plot(1:T, trueC(1,:)/3, 'color', uint8(col{1})); 
-% fluorescence trace 
-plot(1:T, Y(1,:)/3, 'o', 'color', uint8(col{2}));
 axis tight; 
 xlabel('Time'); 
 ylabel('Fluorescence'); 
+legend('y', 'c', 's'); 
+set(gco, 'fontweigth', 'bold'); 
 saveas(gcf, 'fig/model.pdf'); 

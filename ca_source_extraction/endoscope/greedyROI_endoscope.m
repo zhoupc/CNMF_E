@@ -121,7 +121,7 @@ ind_search(v_search==0) = true; % ignore pixels with small correlations or low p
 
 % show local correlation
 if debug_on
-    figure('position', [100, 100, 1290, 646]); %#ok<*UNRCH>
+    figure('position', [100, 100, 1290, 646], 'color', [1,1,1]*0.9); %#ok<*UNRCH>
     subplot(231);
     imagesc(Cn0); colorbar;
     %     imagesc(Cn.*PNR, quantile(Cn(:).*PNR(:), [0.5, 0.99])); colorbar;
@@ -130,8 +130,14 @@ if debug_on
     title('Cn');
     if exist('avi_name', 'var')
         avi_file = VideoWriter(avi_name);
+        avi_file.FrameRate = 1;
+        avi_file.open();
+    elseif save_avi
+        avi_file = VideoWriter('temp.avi');
+        avi_file.FrameRate = 1;
         avi_file.open();
     end
+    
 end
 
 %% start initialization
@@ -173,7 +179,7 @@ while searching_flag
         plot(center(1:k, 2), center(1:k, 1), '*r');
         axis equal off tight;
         subplot(122);
-        imagesc(v_search, [0, max(max(min_v_search(:)*0.99), min_v_search)]);
+        imagesc(v_search.*Cn0.*PNR0); %, [0, max(max(min_v_search(:)*0.99), min_v_search)]);
         hold on;
         axis equal tight; colorbar; drawnow;
         set(gca, 'xtick', []);
@@ -188,7 +194,7 @@ while searching_flag
             if isempty(tmp_x)||or(tmp_x<1, tmp_x>d2) || or(tmp_y<1, tmp_y>d1) ||(v_search(tmp_y, tmp_x)==0)
                 break;
             end
-            plot(tmp_x, tmp_y, '*r');
+            plot(tmp_x, tmp_y, '*r', 'linewidth', 2);
             drawnow();
             ind_localmax(tmp_k) = sub2ind([d1,d2], tmp_y, tmp_x);
         end
@@ -223,7 +229,7 @@ while searching_flag
         % roughly check whether this is a good starting point
         y0 = HY(ind_p, :);
         y0_std = std(diff(y0));
-%         y0(y0<median(y0)) = 0;
+        %         y0(y0<median(y0)) = 0;
         if (k>=1) && any(corr(Cin(1:k, :)', y0')>0.9) %already found similar temporal traces
             continue;
         end
@@ -257,37 +263,42 @@ while searching_flag
             title(sprintf('neuron %d', k+1));
             axis equal off tight; hold on;
             plot(c_peak(mcell:end), r_peak(mcell:end), '.r');
-            plot(c,r, 'og');
+            plot(c,r, 'or', 'markerfacecolor', 'r', 'markersize', 10);
             subplot(233);
-            imagesc(reshape(Cn(ind_nhood), nr, nc));
+            imagesc(reshape(Cn(ind_nhood), nr, nc), [0, 1]);
             axis equal off tight;
             title('correlation image');
             subplot(2,3,4:6); cla;
             plot(HY_box(ind_ctr, :)); title('activity in the center'); axis tight;
             if ~save_avi; pause; end
+            if exist('avi_file', 'var')
+                frame = getframe(gcf);
+                frame.cdata = imresize(frame.cdata, [646, 1290]);
+                avi_file.writeVideo(frame);
+            end
         end
         
         %% extract ai, ci
         sz = [nr, nc];
         [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
-%         if max(ci_raw)<min_pnr; 
-%             ind_success=false; 
-%         end
+        %         if max(ci_raw)<min_pnr;
+        %             ind_success=false;
+        %         end
         if sum(ai(:))<min_pixel; ind_success=false; end
         if ind_success
             k = k+1;
             
             if deconv_flag
                 % deconv the temporal trace
-                [ci, si, deconv_options] = deconvolveCa(ci_raw, deconv_options_0, 'sn', 1);  % sn is 1 because i normalized c_raw already 
+                [ci, si, deconv_options] = deconvolveCa(ci_raw, deconv_options_0, 'sn', 1);  % sn is 1 because i normalized c_raw already
                 % save this initialization
                 Ain(ind_nhood, k) = ai;
                 Cin(k, :) = ci;
                 Sin(k, :) = si;
                 Cin_raw(k, :) = ci_raw;
-%                 kernel_pars(k, :) = kernel.pars;
-                kernel_pars{k} = reshape(deconv_options.pars, 1, []); 
+                %                 kernel_pars(k, :) = kernel.pars;
+                kernel_pars{k} = reshape(deconv_options.pars, 1, []);
             else
                 ci = ci_raw;
                 Ain(ind_nhood, k) = ai;
@@ -342,9 +353,9 @@ while searching_flag
             axis equal off tight;
             title('spatial component');
             subplot(2,3,4:6); cla; hold on;
-            plot(ci_raw); title('temporal component'); axis tight;
+            plot(ci_raw, 'linewidth', 2); title('temporal component'); axis tight;
             if deconv_flag
-                plot(ci, 'r');  axis tight;
+                plot(ci, 'r', 'linewidth', 2);  axis tight;
                 legend('raw trace', 'denoised trace');
             end
             if exist('avi_file', 'var')

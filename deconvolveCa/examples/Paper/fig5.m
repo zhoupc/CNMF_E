@@ -7,11 +7,11 @@ col = {[0 114 178],[0 158 115], [213 94 0],[230 159 0],...
 % simulation 
 g = .95; 
 sn = .3; 
-[Y, trueC, trueSpikes] = gen_data(); 
+[Y, trueC, trueSpikes] = gen_data(g, sn, [], [],[], [], 1, 10); 
 y = Y(1, :); 
 
 % run deconvolution 
-[c, s] = constrained_foopsi(y, g, sn); 
+[c, s] = constrained_foopsi_cvx(y, g, sn); 
 [c_t, s_t] = oasisAR1(y, g, 0, .55); 
 
 % check the dependence on smin 
@@ -95,7 +95,7 @@ seed = 1;
 y = Y(1, :); 
 
 % run deconvolution 
-[c, s] = constrained_foopsi(y, g, sn); 
+[c, s] = constrained_foopsi_cvx(y, g, sn); 
 [c_t, s_t] = oasisAR2(y, g, 0, .55); 
 
 % check the dependence on smin 

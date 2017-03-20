@@ -80,7 +80,7 @@ for m=1:n2merge
     active_pixel = (sum(A(:,IDs), 2)>0);
     
     % update spatial/temporal components of the merged neuron
-    data = A(active_pixel, IDs)*C(IDs, :);
+    data = A(active_pixel, IDs)*C_raw(IDs, :);
     ci = C_raw(IDs(1), :);
     for miter=1:10
         ai = data*ci'/(ci*ci');

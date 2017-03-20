@@ -636,7 +636,7 @@ classdef Sources2D < handle
             col = zeros(K, 3);
             for m=1:3
                 col(:, m) = mod(tmp, 2);
-                tmp = round(tmp/2);
+                tmp = floor(tmp/2);
             end
             figure;
             % play
@@ -648,7 +648,7 @@ classdef Sources2D < handle
             cmax = max(reshape(obj.A*obj.C(:, 1:100:end), 1, []));
             for m=1:T
                 img = obj.A(:, cell_id)*bsxfun(@times, obj.C(cell_id,m), col);
-                img = obj.reshape(img, 2)/cmax*500;
+                img = obj.reshape(img, 2)/cmax*1000;
                 imagesc(uint8(img));
                 axis equal off tight;
                 title(sprintf('Time %.2f seconds', m/obj.Fs));
