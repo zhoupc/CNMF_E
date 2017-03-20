@@ -8,11 +8,11 @@ global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
 cnmfe_choose_data;
 
 %% create Source2D class object for storing results and parameters
-Fs = 10;             % frame rate
+Fs = 15;             % frame rate
 ssub = 1;           % spatial downsampling factor
 tsub = 2;           % temporal downsampling factor
-gSig = 4;           % width of the gaussian kernel, which can approximates the average neuron shape
-gSiz = 15;          % maximum diameter of neurons in the image plane. larger values are preferred.
+gSig = 2;           % width of the gaussian kernel, which can approximates the average neuron shape
+gSiz = 8;          % maximum diameter of neurons in the image plane. larger values are preferred.
 neuron_full = Sources2D('d1',d1,'d2',d2, ... % dimensions of datasets
     'ssub', ssub, 'tsub', tsub, ...  % downsampleing
     'gSig', gSig,...
@@ -56,19 +56,20 @@ cnmfe_show_corr_pnr;    % this step is not necessary, but it can give you some..
 % parameters
 debug_on = false;
 save_avi = true;
-patch_par = [1, 1]*3; %1;  % divide the optical field into m X n patches and do initialization patch by patch
+patch_par = [1, 1]*1; %1;  % divide the optical field into m X n patches and do initialization patch by patch
 K = []; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
 
-min_corr = 0.9;     % minimum local correlation for a seeding pixel
+min_corr = 0.85;     % minimum local correlation for a seeding pixel
 min_pnr = 10;       % minimum peak-to-noise ratio for a seeding pixel
 min_pixel = 4;      % minimum number of nonzero pixels for each neuron
 bd = 1;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
 neuron.updateParams('min_corr', min_corr, 'min_pnr', min_pnr, ...
-    'min_pixel', min_pixel, 'bd', bd);
-neuron.options.nk = 5;  % number of knots for detrending 
+    'min_pixel', min_pixel, 'bd', bd, 'deconv_flag', true);
+neuron.options.nk = 1;  % number of knots for detrending 
 
 % greedy method for initialization
 tic;
+neuron.options.seed_method = 'auto'; 
 [center, Cn, ~] = neuron.initComponents_endoscope(Y, K, patch_par, debug_on, save_avi);
 fprintf('Time cost in initializing neurons:     %.2f seconds\n', toc);
 
@@ -86,7 +87,7 @@ neuron_init = neuron.copy();
 %% iteratively update A, C and B
 % parameters, merge neurons
 display_merge = false;          % visually check the merged neurons
-view_neurons = false;           % view all neurons
+view_neurons = true;           % view all neurons
 
 % parameters, estimate the background
 spatial_ds_factor = 3;      % spatial downsampling factor. it's for faster estimation
@@ -96,7 +97,7 @@ if ~isfield(neuron.P, 'sn') || isempty(neuron.P.sn)
 else
     sn = neuron.P.sn; 
 end
-bg_neuron_ratio = 1.2;  % spatial range / diameter of neurons
+bg_neuron_ratio = 1.5;  % spatial range / diameter of neurons
 
 % parameters, estimate the spatial components
 max_overlap = 5;       % maximum number of neurons overlaping at one pixel 
@@ -138,7 +139,7 @@ while miter <= maxIter
         neuron.updateTemporal_endoscope(Ysignal, smin);
         cnmfe_quick_merge;              % run neuron merges
         %spatial
-        neuron.updateSpatial_endoscope(Ysignal, max_overlap, 'hals_thresh');
+        neuron.updateSpatial_endoscope(Ysignal, max_overlap, 'hals');
         neuron.trimSpatial(0.02, 3);  % trim the spatial components by removing isolated pixels and weak pixels. 
         if isempty(merged_ROI)
             break;

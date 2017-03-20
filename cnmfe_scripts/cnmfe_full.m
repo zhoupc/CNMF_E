@@ -35,14 +35,15 @@ rr = bg_neuron_ratio * neuron.options.gSiz;
 cnmfe_update_BG; 
 
 %% update the spatial and components
-maxIter = 3; 
+maxIter = 1; 
 for miter=1:maxIter
     fprintf('Iteration %d/%d to update spatial and temporal components\n', miter, maxIter); 
     tic;
-    neuron.updateSpatial_endoscope(Ysignal, max_overlap);
+    neuron.updateSpatial_endoscope(Ysignal, Nspatial, update_spatial_method);
+    neuron.trimSpatial(0.02); 
     fprintf('Time cost in updating neuronal spatial components:     %.2f seconds\n', toc);
     
-    neuron.updateTemporal_endoscope(Ysignal, smin);
+    neuron.updateTemporal_endoscope(Ysignal);
     fprintf('Time cost in updating neuronal temporal components:     %.2f seconds\n', toc);   
 end
     

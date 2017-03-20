@@ -47,10 +47,11 @@ min_corr = options.min_corr;    %minimum local correlations for determining seed
 min_pnr = options.min_pnr;               % peak to noise ratio for determining seed pixels
 min_v_search = min_corr*min_pnr;
 seed_method = options.seed_method; % methods for selecting seed pixels
-kernel_0 = options.kernel;
+% kernel_0 = options.kernel;
+deconv_options_0= options.deconv_options;
 min_pixel = options.min_pixel;  % minimum number of pixels to be a neuron
 deconv_flag = options.deconv_flag;
-smin = options.smin;
+% smin = options.smin;
 % boudnary to avoid for detecting seed pixels
 try
     bd = options.bd;
@@ -110,7 +111,7 @@ HY_thr(bsxfun(@lt, HY_thr, Ysig*sig)) = 0;
 Cn = correlation_image(HY_thr, [1,2], d1,d2);
 Cn0 = Cn;   % backup
 Cn(isnan(Cn)) = 0;
-Cn = Cn + rand(size(Cn))*(1e-6);
+Cn = Cn + randn(size(Cn))*(1e-100);
 
 % screen seeding pixels as center of the neuron
 v_search = Cn.*PNR;
@@ -120,7 +121,7 @@ ind_search(v_search==0) = true; % ignore pixels with small correlations or low p
 
 % show local correlation
 if debug_on
-    figure('position', [100, 100, 1290, 646]); %#ok<*UNRCH>
+    figure('position', [100, 100, 1290, 646], 'color', [1,1,1]*0.9); %#ok<*UNRCH>
     subplot(231);
     imagesc(Cn0); colorbar;
     %     imagesc(Cn.*PNR, quantile(Cn(:).*PNR(:), [0.5, 0.99])); colorbar;
@@ -129,8 +130,14 @@ if debug_on
     title('Cn');
     if exist('avi_name', 'var')
         avi_file = VideoWriter(avi_name);
+        avi_file.FrameRate = 1;
+        avi_file.open();
+    elseif save_avi
+        avi_file = VideoWriter('temp.avi');
+        avi_file.FrameRate = 1;
         avi_file.open();
     end
+    
 end
 
 %% start initialization
@@ -142,7 +149,7 @@ Ain = zeros(d1*d2, K);  % spatial components
 Cin = zeros(K, T);      % temporal components
 Sin = zeros(K, T);    % spike counts
 Cin_raw = zeros(K, T);
-kernel_pars = zeros(K, length(kernel_0.pars));    % parameters for the convolution kernels of all neurons
+kernel_pars = cell(K,1);    % parameters for the convolution kernels of all neurons
 center = zeros(K, 2);   % center of the initialized components
 
 %% do initialization in a greedy way
@@ -158,7 +165,7 @@ while searching_flag
     %% find local maximum as initialization point
     %find all local maximum as initialization point
     tmp_d = 2*round(gSig)+1;
-    v_search = medfilt2(v_search, [gSig, gSig])+randn(size(v_search))*(1e-10);
+    v_search = medfilt2(v_search, [gSig, gSig])+randn(size(v_search))*(1e-100);
     v_search(ind_search) = 0;
     v_max = ordfilt2(v_search, tmp_d^2, true(tmp_d));
     % set boundary to be 0
@@ -172,7 +179,7 @@ while searching_flag
         plot(center(1:k, 2), center(1:k, 1), '*r');
         axis equal off tight;
         subplot(122);
-        imagesc(v_search, [0, max(max(min_v_search(:)*0.99), min_v_search)]);
+        imagesc(v_search.*Cn0.*PNR0); %, [0, max(max(min_v_search(:)*0.99), min_v_search)]);
         hold on;
         axis equal tight; colorbar; drawnow;
         set(gca, 'xtick', []);
@@ -187,7 +194,7 @@ while searching_flag
             if isempty(tmp_x)||or(tmp_x<1, tmp_x>d2) || or(tmp_y<1, tmp_y>d1) ||(v_search(tmp_y, tmp_x)==0)
                 break;
             end
-            plot(tmp_x, tmp_y, '*r');
+            plot(tmp_x, tmp_y, '*r', 'linewidth', 2);
             drawnow();
             ind_localmax(tmp_k) = sub2ind([d1,d2], tmp_y, tmp_x);
         end
@@ -222,7 +229,7 @@ while searching_flag
         % roughly check whether this is a good starting point
         y0 = HY(ind_p, :);
         y0_std = std(diff(y0));
-        y0(y0<median(y0)) = 0;
+        %         y0(y0<median(y0)) = 0;
         if (k>=1) && any(corr(Cin(1:k, :)', y0')>0.9) %already found similar temporal traces
             continue;
         end
@@ -241,7 +248,7 @@ while searching_flag
         Y_box = Y(ind_nhood, :);    % extract spatial component from Y_box
         ind_ctr = sub2ind([nr, nc], r-rsub(1)+1, c-csub(1)+1);   % subscripts of the center
         
-        % a larger neighbours for updating HY after initialization of one
+        % neighbouring pixels to update after initialization of one
         % neuron
         rsub = max(1, -2*gSiz+r):min(d1, 2*gSiz+r);
         csub = max(1, -2*gSiz+c):min(d2, 2*gSiz+c);
@@ -256,40 +263,49 @@ while searching_flag
             title(sprintf('neuron %d', k+1));
             axis equal off tight; hold on;
             plot(c_peak(mcell:end), r_peak(mcell:end), '.r');
-            plot(c,r, 'og');
+            plot(c,r, 'or', 'markerfacecolor', 'r', 'markersize', 10);
             subplot(233);
-            imagesc(reshape(Cn(ind_nhood), nr, nc));
+            imagesc(reshape(Cn(ind_nhood), nr, nc), [0, 1]);
             axis equal off tight;
             title('correlation image');
             subplot(2,3,4:6); cla;
             plot(HY_box(ind_ctr, :)); title('activity in the center'); axis tight;
             if ~save_avi; pause; end
+            if exist('avi_file', 'var')
+                frame = getframe(gcf);
+                frame.cdata = imresize(frame.cdata, [646, 1290]);
+                avi_file.writeVideo(frame);
+            end
         end
         
         %% extract ai, ci
         sz = [nr, nc];
         [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
-        if max(ci_raw)/get_noise_fft(ci_raw)<min_pnr; ind_success=false; end
+        %         if max(ci_raw)<min_pnr;
+        %             ind_success=false;
+        %         end
         if sum(ai(:))<min_pixel; ind_success=false; end
         if ind_success
             k = k+1;
             
             if deconv_flag
                 % deconv the temporal trace
-                [ci, si, kernel] = deconvCa(ci_raw, kernel_0, smin, true, false);
+                [ci, si, deconv_options] = deconvolveCa(ci_raw, deconv_options_0, 'sn', 1);  % sn is 1 because i normalized c_raw already
                 % save this initialization
                 Ain(ind_nhood, k) = ai;
                 Cin(k, :) = ci;
                 Sin(k, :) = si;
                 Cin_raw(k, :) = ci_raw;
-                kernel_pars(k, :) = kernel.pars;
+                %                 kernel_pars(k, :) = kernel.pars;
+                kernel_pars{k} = reshape(deconv_options.pars, 1, []);
             else
                 ci = ci_raw;
                 Ain(ind_nhood, k) = ai;
                 Cin(k, :) = ci_raw;
                 Cin_raw(k, :) = ci_raw;
             end
+            ci = reshape(ci, 1,[]);
             center(k, :) = [r, c];
             
             % avoid searching nearby pixels that are highly correlated with this one
@@ -337,9 +353,9 @@ while searching_flag
             axis equal off tight;
             title('spatial component');
             subplot(2,3,4:6); cla; hold on;
-            plot(ci_raw); title('temporal component'); axis tight;
+            plot(ci_raw, 'linewidth', 2); title('temporal component'); axis tight;
             if deconv_flag
-                plot(ci, 'r');  axis tight;
+                plot(ci, 'r', 'linewidth', 2);  axis tight;
                 legend('raw trace', 'denoised trace');
             end
             if exist('avi_file', 'var')
@@ -358,7 +374,7 @@ while searching_flag
         
         
         if mod(k, 10)==0
-            fprintf('%d/%d neurons have been detected\n', k, K);
+            fprintf('%d neurons have been detected\n', k);
         end
         
         if k==K;
@@ -373,7 +389,7 @@ results.Cin = Cin(1:k, :);
 results.Cin_raw = Cin_raw(1:k, :);
 if deconv_flag
     results.Sin = Sin(1:k, :);
-    results.kernel_pars = kernel_pars(1:k, :);
+    results.kernel_pars = cell2mat(kernel_pars(1:k));
 end
 % Cin(Cin<0) = 0;
 Cn = Cn0;

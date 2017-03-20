@@ -30,7 +30,7 @@ classdef Sources2D < handle
         %% constructor and options setting
         function obj = Sources2D(varargin)
             obj.options = CNMFSetParms();
-            obj.P = struct('p', 2);
+            obj.P = struct('p', 2, 'sn', []);
             if nargin>0
                 obj.options = CNMFSetParms(obj.options, varargin{:});
             end
@@ -84,6 +84,7 @@ classdef Sources2D < handle
         
         %% udpate temporal components with fast deconvolution
         updateTemporal_endoscope(obj, Y, smin)
+        updateTemporal_endoscope_parallel(obj, Y, smin)
         
         %% update temporal components without background
         function updateTemporal_nb(obj, Y)
@@ -516,7 +517,7 @@ classdef Sources2D < handle
             if ~exist('save_avi', 'var')||isempty(save_avi); save_avi=false; end
             if ~exist('avi_name', 'var'); avi_name = []; end
             if ~exist('S', 'var');  S = []; end
-            run_movie(Y, obj.A, obj.C, obj.Cn, min_max, obj.Coor, ctr, 5, 1, save_avi, avi_name, S)
+            run_movie(Y, obj.A, obj.C_raw, obj.Cn, min_max, obj.Coor, ctr, 5, 1, save_avi, avi_name, S)
         end
         
         %% function
@@ -635,7 +636,7 @@ classdef Sources2D < handle
             col = zeros(K, 3);
             for m=1:3
                 col(:, m) = mod(tmp, 2);
-                tmp = round(tmp/2);
+                tmp = floor(tmp/2);
             end
             figure;
             % play
@@ -647,7 +648,7 @@ classdef Sources2D < handle
             cmax = max(reshape(obj.A*obj.C(:, 1:100:end), 1, []));
             for m=1:T
                 img = obj.A(:, cell_id)*bsxfun(@times, obj.C(cell_id,m), col);
-                img = obj.reshape(img, 2)/cmax*500;
+                img = obj.reshape(img, 2)/cmax*1000;
                 imagesc(uint8(img));
                 axis equal off tight;
                 title(sprintf('Time %.2f seconds', m/obj.Fs));
@@ -722,6 +723,30 @@ classdef Sources2D < handle
             fprintf('results has been saved into file %s\n', file_nm);
         end
         
+        %% reconstruct background signal given the weights 
+        function Ybg = reconstructBG(obj, Y, weights)
+            if ~exist('weights', 'var')||isempty(weights)
+                try 
+                    weights = obj.P.weights; 
+                catch 
+                    Ybg = []; 
+                    disp('no regression weights given'); 
+                end
+            end 
+            Y = obj.reshape(Y-obj.A*obj.C, 2); 
+            [d1,d2, ~] = size(Y); 
+            dims = weights.dims; 
+            b0 = mean(Y,3); 
+            Y = bsxfun(@minus, Y, b0); 
+            Y = imresize(Y, dims); 
+            Y = reshape(Y, [], size(Y,3)); 
+            Ybg = zeros(size(Y)); 
+            parfor m=1:size(Y,1)
+                w = weights.weights{m}; 
+                Ybg(m,:) = w(2,:)*Y(w(1,:),:); 
+            end
+            Ybg = bsxfun(@plus, imresize(Ybg, [d1,d2]), b0);       
+        end 
         %% event detection
         function E = event_detection(obj, sig, w)
             % detect events by thresholding S with sig*noise
@@ -744,7 +769,7 @@ classdef Sources2D < handle
             end
         end
         
-        % compute correlation image and peak to noise ratio for endoscopic
+        %% compute correlation image and peak to noise ratio for endoscopic
         % data. unlike the correlation image for two-photon data,
         % correlation image of the microendoscopic data needs to be
         % spatially filtered first. otherwise neurons are significantly
@@ -755,6 +780,7 @@ classdef Sources2D < handle
             %             obj.PNR = PNR;
         end
         
+        %% convert struct data to Sources2D object
         function obj = struct2obj(obj, var_struct)
             temp = fieldnames(var_struct);
             for m=1:length(temp)
@@ -764,6 +790,7 @@ classdef Sources2D < handle
             end
         end
         
+        %% get contours of the all neurons 
         function Coor = get_contours(obj, thr, ind)
             A_ = obj.A;
             if exist('ind', 'var')

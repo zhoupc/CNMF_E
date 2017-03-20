@@ -4,7 +4,7 @@ function A = HALS_spatial_threshold(Y, A, C, active_pixel, maxIter, sn)
 %   Y:  d*T, fluorescence data
 %   A:  d*K, spatial components 
 %   C:  K*T, temporal components 
-%   sn: K*1, noise level for each neuron 
+%   sn: d*1, noise level for each pixel 
 % output: 
 %   A: d*K, updated spatial components 
 
@@ -22,16 +22,17 @@ else
 end;     %determine nonzero pixels 
 
 %% thresholding C 
-IND_thresh = bsxfun(@lt, C, 3*sn); 
+IND_thresh = bsxfun(@lt, C, 3); 
 C_thresh = C; 
 C_thresh(IND_thresh) = 0; 
+
 %% initialization 
 A(~active_pixel) = 0; 
 K = size(A, 2);     % number of components 
 U = Y*C_thresh'; 
 V = C*C_thresh'; 
 cc = sum(C_thresh.^2, 2);   % squares of l2 norm all all components 
-
+%Amin = 4 * bsxfun(@times, sn, 1./sqrt(cc')); 
 %% updating 
 for miter=1:maxIter
     for k=1:K
@@ -39,4 +40,5 @@ for miter=1:maxIter
         ak = max(0, A(tmp_ind, k)+(U(tmp_ind, k)-A(tmp_ind,:)*V(:, k))/cc(k)); 
         A(tmp_ind, k) = ak; 
     end
+   % A(A<Amin) = 0; 
 end

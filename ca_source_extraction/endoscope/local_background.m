@@ -100,6 +100,7 @@ warning('off','MATLAB:SingularMatrix');
 Y = reshape(Y, d1s*d2s, []);
 Yest = zeros(size(Y));
 weights = cell(d1s, d2s);
+    
 for m=1:length(ind_px)
     px = ind_px(m);
     ind_nhood = sub2ind([d1s,d2s], rsub(px, :), csub(px, :));
@@ -116,6 +117,7 @@ for m=1:length(ind_px)
 end
 results.weights = weights;
 results.ssub = ssub;
+results.dims = [d1s, d2s]; 
 
 ind = 1:(d1s*d2s);
 ind(ind_px) = [];
