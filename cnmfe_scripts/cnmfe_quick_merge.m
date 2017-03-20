@@ -50,7 +50,6 @@ end
 % sort neurons
 [Cpnr, srt] = sort(max(neuron.C, [], 2).*max(neuron.A, [], 1)', 'descend');
 neuron.orderROIs(srt);
-[Ain, Cin] = neuron.snapshot();   % keep the initialization results
 
 %% view neurons
 if view_neurons
