@@ -13,7 +13,11 @@ figure('position', [0,0, 1248, 600]);
 % avi_file = VideoWriter('~/Dropbox/Public/Garret/day1/residual.avi');
 if save_avi
     avi_file = VideoWriter([dir_nm, filesep, file_nm, '_results.avi']);
+<<<<<<< Updated upstream
     avi_file.FrameRate = neuron.Fs; 
+=======
+    avi_file.FrameRate= neuron.Fs/kt; 
+>>>>>>> Stashed changes
     avi_file.open();
 end
 temp  = quantile(Ybg(1:1000:numel(Ybg)), [0.0001, y_quantile]);
@@ -26,7 +30,11 @@ ACmax = quantile(Yac(1:1000:numel(Yac)), ac_quantile);
 ACmin = ACmax/100; 
 
 %     subplot(4,6, [5,6,11,12]);
+<<<<<<< Updated upstream
 for m=5381:kt:T
+=======
+for m=t_begin:kt:t_end
+>>>>>>> Stashed changes
     subplot(4,6, [1,2, 7, 8]);
     imagesc(Ybg(:, :,m)+Ysignal(:, :, m), [Ymin, Ymax]);
     set(gca, 'children', flipud(get(gca, 'children')));
