@@ -21,7 +21,7 @@ if display_merge && ~isempty(merged_ROI)
         axis off;
         subplot(2,2,3:4);
         tmp_C = neuron_bk.C_raw(merged_ROI{m}, :)';
-        tmp_C = bsxfun(@times, tmp_C, 1./max(tmp_C, [], 1));
+%         tmp_C = bsxfun(@times, tmp_C, 1./max(tmp_C, [], 1));
         plot(tmp_C, 'linewidth', 2);
         
         temp = input('keep this merge? (y(default)/n(cancel)/b(back))/e(end)   ', 's');

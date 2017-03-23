@@ -1,5 +1,5 @@
 %%
-Yac = neuron.reshape(neuron.A*neuron.C, 2);
+Yac = neuron.reshape(neuron.A*neuron.C_raw, 2);
 Ymean = neuron.reshape(mean(Y, 2), 2);  % estimate the baseline
 Ybg = neuron.reshape(Ybg, 2);
 % Y = neuron.reshape(Y, 2);
@@ -13,28 +13,20 @@ figure('position', [0,0, 1248, 600]);
 % avi_file = VideoWriter('~/Dropbox/Public/Garret/day1/residual.avi');
 if save_avi
     avi_file = VideoWriter([dir_nm, filesep, file_nm, '_results.avi']);
-<<<<<<< Updated upstream
-    avi_file.FrameRate = neuron.Fs; 
-=======
     avi_file.FrameRate= neuron.Fs/kt; 
->>>>>>> Stashed changes
     avi_file.open();
 end
-temp  = quantile(Ybg(1:1000:numel(Ybg)), [0.0001, y_quantile]);
+temp  = quantile(Ybg(randi(numel(Ybg(:)), 10000,1)), [0.0001, y_quantile]);
 Ymin = temp(1);
 Ymax = temp(2);
 Ymin_1 = temp(1) - mean(Ymean(:));
 Ymax_1 = temp(2) - mean(Ymean(:));
 
-ACmax = quantile(Yac(1:1000:numel(Yac)), ac_quantile);
-ACmin = ACmax/100; 
+ACmax = quantile(Yac(randi(numel(Yac(:)), 10000,1)), ac_quantile);
+ACmin = ACmax/10; 
 
 %     subplot(4,6, [5,6,11,12]);
-<<<<<<< Updated upstream
-for m=5381:kt:T
-=======
 for m=t_begin:kt:t_end
->>>>>>> Stashed changes
     subplot(4,6, [1,2, 7, 8]);
     imagesc(Ybg(:, :,m)+Ysignal(:, :, m), [Ymin, Ymax]);
     set(gca, 'children', flipud(get(gca, 'children')));

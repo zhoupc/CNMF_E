@@ -49,7 +49,7 @@ if strcmpi(method, 'hals')
 elseif strcmpi(method, 'hals_thresh')
     obj.A = HALS_spatial_threshold(Y, obj.A, obj.C, IND, num, obj.P.sn); 
 elseif strcmpi(method, 'lars')
-     [obj.A, obj.C] = update_spatial_components_nb(Y,obj.C,obj.A, [], obj.options); 
+     [obj.A, obj.C] = update_spatial_components_nb(Y,obj.C,obj.A, obj.P, obj.options); 
 elseif strcmpi(method, 'nnls_thresh')&&(~isempty(IND_thresh)) 
     obj.A = nnls_spatial_thresh(Y, obj.A, obj.C, IND, num, obj.P.sn); 
 else

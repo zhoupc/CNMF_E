@@ -41,16 +41,21 @@ for miter=1:maxIter
         end
         temp = C(k, :) + (U(k, :)-V(k, :)*C)/aa(k);
         %remove baseline and estimate noise level
-        [b, tmp_sn] = estimate_baseline_noise(temp);
+        if range(temp)/std(temp)>8
+            [b, tmp_sn] = estimate_baseline_noise(temp);
+        else
+            b = mean(temp(temp<median(temp)));
+            tmp_sn = GetSn(temp);
+        end
         % we use two methods for estimating the noise level
-%         psd_sn = GetSn(temp);
-%         if tmp_sn>psd_sn
-%             tmp_sn =psd_sn;
-%             [temp, ~] = remove_baseline(temp, tmp_sn);
-%         else
-%             temp = temp - b;
-%         end
-        temp = temp -b; 
+        %         psd_sn = GetSn(temp);
+        %         if tmp_sn>psd_sn
+        %             tmp_sn =psd_sn;
+        %             [temp, ~] = remove_baseline(temp, tmp_sn);
+        %         else
+        %             temp = temp - b;
+        %         end
+        temp = temp -b;
         sn(k) = tmp_sn;
         
         % deconvolution

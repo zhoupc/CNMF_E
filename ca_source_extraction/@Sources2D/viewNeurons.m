@@ -86,6 +86,7 @@ while and(m>=1, m<=length(ind))
         m = m+1;
     else
         fprintf('Neuron %d, keep(k, default)/delete(d)/split(s)/trim(t)/delete all(da)/backward(b)/end(e):    ', ind(m));
+
         temp = input('', 's');
         if temp=='d'
             ind_del(m) = true;
