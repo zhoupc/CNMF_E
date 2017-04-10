@@ -239,6 +239,9 @@ classdef Sources2D < handle
         %% quick merge neurons based on spatial and temporal correlation
         [merged_ROIs, newIDs] = quickMerge(obj, merge_thr)
         
+        %% quick merge neurons based on spatial and temporal correlation
+        [merged_ROIs, newIDs] = MergeNeighbors(obj, dmin, method)
+        
         
         %% quick view
         viewNeurons(obj, ind, C2, folder_nm);
@@ -609,7 +612,7 @@ classdef Sources2D < handle
             if nargin<3
                 ratio = 0.3;
             end
-            AA = bsxfun(@times, AA, 1./max(AA,1));
+%             AA = bsxfun(@times, AA, 1./max(AA,1));
             AA(bsxfun(@lt, AA, max(AA, [], 1)*ratio)) = 0;
             [d, K] = size(AA);
             
@@ -626,11 +629,14 @@ classdef Sources2D < handle
         end
         
         %% play video
-        function playAC(obj, avi_file, cell_id)
-            if nargin<3
+        function playAC(obj, avi_file, cell_id, indt)
+            if nargin<3 || isempty(cell_id)
                 cell_id = 1:size(obj.C, 1);
             end
             [K, T] = size(obj.C(cell_id, :));
+            if ~exist('indt', 'var')
+                indt = [1, T];
+            end 
             % draw random color for each neuron
             tmp = mod((1:K)', 6)+1;
             col = zeros(K, 3);
@@ -638,24 +644,29 @@ classdef Sources2D < handle
                 col(:, m) = mod(tmp, 2);
                 tmp = floor(tmp/2);
             end
-            figure;
+            figure; 
+            height = obj.options.d1*512/obj.options.d2; 
+            set(gcf, 'position', [675, 524, 512, height]); 
+            axes('position', [0,0,1,1]); 
             % play
             if nargin>1
                 fp = VideoWriter(avi_file);
+                fp.FrameRate = obj.Fs; 
                 fp.open();
             end
             
-            cmax = max(reshape(obj.A*obj.C(:, 1:100:end), 1, []));
-            for m=1:T
+            cmax = max(reshape(obj.A*obj.C, 1, []));
+            for m=indt(1):indt(2)
                 img = obj.A(:, cell_id)*bsxfun(@times, obj.C(cell_id,m), col);
                 img = obj.reshape(img, 2)/cmax*1000;
                 imagesc(uint8(img));
                 axis equal off tight;
-                title(sprintf('Time %.2f seconds', m/obj.Fs));
-                
-                pause(.1);
-                if nargin>1
+                text(5, 10, sprintf('Time: %.2f seconds',(m-indt(1))/obj.Fs), 'color', 'w',...
+                    'fontsize', 16);
+                pause(.01); 
+                if exist('fp', 'var')
                     frame = getframe(gcf);
+                    frame.cdata = imresize(frame.cdata, [512, height]); 
                     fp.writeVideo(frame);
                 end
             end
@@ -673,7 +684,7 @@ classdef Sources2D < handle
             end
             neuron = obj.copy();
             neuron.options.seed_method = seed_method;
-            [center, Cn, pnr] = neuron.initComponents_endoscope(Y, [], patch_par, false, false);
+            [center, Cn, pnr] = neuron.initComponents_endoscope(Y, [], patch_par, true, false);
             obj.A = [obj.A, neuron.A];
             obj.C = [obj.C; neuron.C];
             obj.S = [obj.S; neuron.S];

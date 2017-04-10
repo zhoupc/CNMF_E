@@ -1,6 +1,5 @@
 neuron_bk = neuron.copy();
-[merged_ROI, newIDs] = neuron.quickMerge(merge_thr);  % merge neurons based on the correlation computed with {'A', 'S', 'C'}
-% A: spatial shapes; S: spike counts; C: calcium traces
+[merged_ROI, newIDs] = neuron.MergeNeighbors(dmin, center_method); 
 if display_merge && ~isempty(merged_ROI)
     figure('position', [1,1, 1200, 600]);
     ind_before = false(size(neuron_bk.A, 2), 1);

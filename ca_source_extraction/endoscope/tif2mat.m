@@ -17,7 +17,15 @@ else
 end
 
 info = imfinfo(nam);
-T = length(info);   % number of frames 
+
+      
+if strfind(info(1).ImageDescription,'ImageJ')
+    junk1=regexp(info(1).ImageDescription,'images=\d*','match');
+    junk2=strjoin(junk1);
+    T=strread(junk2,'%*s %d','delimiter','=');
+else
+    T = length(info);   % number of frames
+end
 d1 = info.Height;   % height of the image 
 d2 = info.Width;    % width of the image 
 Ysiz = [d1, d2, T]'; 
@@ -25,7 +33,7 @@ Ysiz = [d1, d2, T]';
 fprintf('CNMF_E is converting TIFF file to *.mat file'); 
 % create a mat file 
 Tchunk = min(T, round(2^29/d1/d2)); %each chunk uses at most 4GB
-Y = bigread2(nam, 1, Tchunk);  %#ok<*NASGU>
+Y = smod_bigread2(nam, 1, Tchunk);  %#ok<*NASGU>
 save(nam_mat, 'Y', 'Ysiz', '-v7.3'); 
 if Tchunk==T
     return; 
@@ -34,7 +42,7 @@ else
     t0 = Tchunk+1; 
     while t0<=T
         num2read = min(t0+Tchunk-1, T) - t0 + 1; 
-        tmpY = bigread2(nam, t0, num2read); 
+        tmpY = smod_bigread2(nam, t0, num2read); 
         data.Y(:, :, (1:num2read)+t0-1) = tmpY; 
         t0 = t0 + num2read; 
     end 

@@ -9,7 +9,7 @@ for miter=1:10
     ci = ai'*data/(ai'*ai);
 end
 
-sn = get_noise_fft(ci);
+sn = GetSn(ci);
 neuron.A(active_pixel, IDs(1)) = ai*sn;
 neuron.C_raw(IDs(1), :) = ci/sn;
 neuron.S(IDs(1), :) = ci/sn; 

@@ -14,6 +14,8 @@ function viewNeurons(obj, ind, C2, folder_nm)
 if ~exist('ind', 'var') || isempty(ind)
     % display all neurons if ind is not specified.
     ind = 1:size(obj.A, 2);
+elseif ind==-1 
+    ind = size(obj.A,2):-1:1; 
 end
 if ~exist('C2', 'var'); C2=[]; end
 

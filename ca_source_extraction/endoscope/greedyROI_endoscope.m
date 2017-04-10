@@ -90,6 +90,7 @@ psf(~ind_nonzero) = 0;
 
 % filter the data
 HY = imfilter(reshape(Y, d1,d2,[]), psf, 'replicate');
+
 HY = reshape(HY, d1*d2, []);
 % HY_med = median(HY, 2);
 % HY_max = max(HY, [], 2)-HY_med;    % maximum projection
@@ -198,12 +199,12 @@ while searching_flag
             drawnow();
             ind_localmax(tmp_k) = sub2ind([d1,d2], tmp_y, tmp_x);
         end
+        close(tmp_fig);
         
         ind_localmax = ind_localmax(1:(tmp_k-1));
         if isempty(ind_localmax)
             break;
         end
-        close(tmp_fig);
     else
         % automatically select seed pixels
         ind_search(v_search<min_v_search) = true;    % avoid generating new seed pixels after initialization
