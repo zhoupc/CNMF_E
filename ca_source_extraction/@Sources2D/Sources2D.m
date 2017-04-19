@@ -341,13 +341,22 @@ classdef Sources2D < handle
         end
         %% play movie
         function playMovie(obj, Y, min_max, col_map, avi_nm, t_pause)
+            d1 = obj.options.d1; 
+            d2 = obj.options.d2; 
             % play movies
-            figure;
+            figure('papersize', [d2,d1]/max(d1,d2)*5);
+            width = d2/max(d1,d2)*500; 
+            height =d1/max(d1,d2)*500; 
+            set(gcf, 'position', [500, 200, width, height]); 
+            axes('position', [0,0, 1, 1]); 
             if ~exist('col_map', 'var') || isempty(col_map)
                 col_map = jet;
             end
             if exist('avi_nm', 'var') && ischar(avi_nm)
                 avi_file = VideoWriter(avi_nm);
+                if ~isnan(obj.Fs)
+                    avi_file.FrameRate = obj.Fs; 
+                end
                 avi_file.open();
                 avi_flag = true;
             else
@@ -364,12 +373,16 @@ classdef Sources2D < handle
             if ~exist('t_pause', 'var'); t_pause=0.01; end
             for t=1:size(Y,3)
                 imagesc(Y(:, :, t), min_max); colormap(col_map);
-                axis equal; axis off;
+                axis equal; axis off tight;
+                if isnan(obj.Fs)
                 title(sprintf('Frame %d', t));
+                else
+                    text(1, 10, sprintf('Time = %.2f', t/obj.Fs), 'fontsize', 15, 'color', 'w'); 
+                end
                 pause(t_pause);
                 if avi_flag
                     temp = getframe(gcf);
-                    temp.cdata = imresize(temp.cdata, [420,560]);
+                    temp.cdata = imresize(temp.cdata, [width, height]);
                     avi_file.writeVideo(temp);
                 end
             end
@@ -684,7 +697,7 @@ classdef Sources2D < handle
             end
             neuron = obj.copy();
             neuron.options.seed_method = seed_method;
-            [center, Cn, pnr] = neuron.initComponents_endoscope(Y, [], patch_par, true, false);
+            [center, Cn, pnr] = neuron.initComponents_endoscope(Y, [], patch_par, false, false);
             obj.A = [obj.A, neuron.A];
             obj.C = [obj.C; neuron.C];
             obj.S = [obj.S; neuron.S];

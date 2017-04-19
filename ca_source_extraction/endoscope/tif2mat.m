@@ -33,7 +33,7 @@ Ysiz = [d1, d2, T]';
 fprintf('CNMF_E is converting TIFF file to *.mat file'); 
 % create a mat file 
 Tchunk = min(T, round(2^29/d1/d2)); %each chunk uses at most 4GB
-Y = smod_bigread2(nam, 1, Tchunk);  %#ok<*NASGU>
+Y = bigread2(nam, 1, Tchunk);  %#ok<*NASGU>
 save(nam_mat, 'Y', 'Ysiz', '-v7.3'); 
 if Tchunk==T
     return; 
