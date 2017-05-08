@@ -6,27 +6,27 @@ Constrained Nonnegative Matrix Factorization for microEndoscopic data
 
 Download
 =======
-OPTION 1: download the package from this [LINK](https://github.com/zhoupc/CNMF_E/archive/master.zip)
+OPTION 1: download the package using this [LINK](https://github.com/zhoupc/CNMF_E/archive/master.zip)
 
 OPTION 2: (recommended) clone the git repository <https://github.com/zhoupc/CNMF_E.git>. In this way, you are able to get the latest updates of the package within 1-line command or 1-button click. 
 
 Installation
 =======
-Run setup.m to add CNMF-E package to the search path of MATLAB
+Run cnmfe_setup.m to add CNMF-E package to the search path of MATLAB
 
 `>> cnmfe_setup`
 
-CNMF-E requires [CVX](http://cvxr.com/cvx/) to denoise the extracted calcium traces. CNMF-E will automatically downloaded it and added it to the searching path. 
+CNMF-E requires [CVX](http://cvxr.com/cvx/) to denoise the extracted calcium traces. CNMF-E will automatically downloaded it and add it to the searching path. 
 
 Example
 =======
-The best way of getting started is to run a demo script for analyzing an example data. 
+The best way to get started is running a demo script for analyzing an example data. 
 
 `>> run demos/demo_endoscope.m ` 
 
 Questions
 =======
-You can ask questions by sending emails to zhoupc1988@gmail.com or join our [slack channel](https://beat-ica.slack.com) for discussions. 
+You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. 
 
 Reference
 =======
