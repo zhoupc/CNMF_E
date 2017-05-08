@@ -132,25 +132,25 @@ classdef Sources2D < handle
             
         end
         
-        %% extract DF/F signal for microendoscopic data 
+        %% extract DF/F signal for microendoscopic data
         function [C_df,C_raw_df, Df] = extract_DF_F_endoscope(obj, Ybg)
-            options_ = obj.options; 
-            A_ = obj.A; 
-            C_ = obj.C; 
-            [K,T] = size(obj.C);  % number of frames 
-            Ybg = bsxfun(@times, A_, 1./sum(A_.^2, 1))' * Ybg;   % estimate the background for each neurons  
+            options_ = obj.options;
+            A_ = obj.A;
+            C_ = obj.C;
+            [K,T] = size(obj.C);  % number of frames
+            Ybg = bsxfun(@times, A_, 1./sum(A_.^2, 1))' * Ybg;   % estimate the background for each neurons
             if isempty(options_.df_window) || (options_.df_window > T)
                 % use quantiles of the whole recording session as the
-                % baseline 
+                % baseline
                 if options_.df_prctile == 50
                     Df = median(Ybg,2);
                 else
                     Df = prctile(Ybg,options_.df_prctile,2);
                 end
                 C_df = spdiags(Df,0,K,K)\C_;
-                C_raw_df = spdiags(Df,0,K,K)\obj.C_raw; 
+                C_raw_df = spdiags(Df,0,K,K)\obj.C_raw;
             else
-                % estimate the baseline for each short period 
+                % estimate the baseline for each short period
                 if options_.df_prctile == 50
                     Df = medfilt1(Ybg,options_.df_window,[],2,'truncate');
                 else
@@ -161,10 +161,10 @@ classdef Sources2D < handle
                     end
                 end
                 C_df = C_./Df;
-                C_raw_df = obj.C_raw./Df; 
+                C_raw_df = obj.C_raw./Df;
             end
         end
-            
+        
         %% order_ROIs
         function [srt] = orderROIs(obj, srt)
             %% order neurons
@@ -341,21 +341,21 @@ classdef Sources2D < handle
         end
         %% play movie
         function playMovie(obj, Y, min_max, col_map, avi_nm, t_pause)
-            d1 = obj.options.d1; 
-            d2 = obj.options.d2; 
+            d1 = obj.options.d1;
+            d2 = obj.options.d2;
             % play movies
             figure('papersize', [d2,d1]/max(d1,d2)*5);
-            width = d2/max(d1,d2)*500; 
-            height =d1/max(d1,d2)*500; 
-            set(gcf, 'position', [500, 200, width, height]); 
-            axes('position', [0,0, 1, 1]); 
+            width = d2/max(d1,d2)*500;
+            height =d1/max(d1,d2)*500;
+            set(gcf, 'position', [500, 200, width, height]);
+            axes('position', [0,0, 1, 1]);
             if ~exist('col_map', 'var') || isempty(col_map)
                 col_map = jet;
             end
             if exist('avi_nm', 'var') && ischar(avi_nm)
                 avi_file = VideoWriter(avi_nm);
                 if ~isnan(obj.Fs)
-                    avi_file.FrameRate = obj.Fs; 
+                    avi_file.FrameRate = obj.Fs;
                 end
                 avi_file.open();
                 avi_flag = true;
@@ -375,9 +375,9 @@ classdef Sources2D < handle
                 imagesc(Y(:, :, t), min_max); colormap(col_map);
                 axis equal; axis off tight;
                 if isnan(obj.Fs)
-                title(sprintf('Frame %d', t));
+                    title(sprintf('Frame %d', t));
                 else
-                    text(1, 10, sprintf('Time = %.2f', t/obj.Fs), 'fontsize', 15, 'color', 'w'); 
+                    text(1, 10, sprintf('Time = %.2f', t/obj.Fs), 'fontsize', 15, 'color', 'w');
                 end
                 pause(t_pause);
                 if avi_flag
@@ -625,12 +625,12 @@ classdef Sources2D < handle
             if nargin<3
                 ratio = 0.3;
             end
-%             AA = bsxfun(@times, AA, 1./max(AA,1));
+            %             AA = bsxfun(@times, AA, 1./max(AA,1));
             AA(bsxfun(@lt, AA, max(AA, [], 1)*ratio)) = 0;
             [d, K] = size(AA);
             
             col = randi(6, 1, K);
-            col0 = col; 
+            col0 = col;
             img = zeros(d, 3);
             for m=1:3
                 img(:, m) = sum(bsxfun(@times, AA, mod(col, 2)), 2);
@@ -649,7 +649,7 @@ classdef Sources2D < handle
             [K, T] = size(obj.C(cell_id, :));
             if ~exist('indt', 'var')
                 indt = [1, T];
-            end 
+            end
             % draw random color for each neuron
             tmp = mod((1:K)', 6)+1;
             col = zeros(K, 3);
@@ -657,14 +657,14 @@ classdef Sources2D < handle
                 col(:, m) = mod(tmp, 2);
                 tmp = floor(tmp/2);
             end
-            figure; 
-            height = obj.options.d1*512/obj.options.d2; 
-            set(gcf, 'position', [675, 524, 512, height]); 
-            axes('position', [0,0,1,1]); 
+            figure;
+            height = obj.options.d1*512/obj.options.d2;
+            set(gcf, 'position', [675, 524, 512, height]);
+            axes('position', [0,0,1,1]);
             % play
             if nargin>1
                 fp = VideoWriter(avi_file);
-                fp.FrameRate = obj.Fs; 
+                fp.FrameRate = obj.Fs;
                 fp.open();
             end
             
@@ -676,10 +676,10 @@ classdef Sources2D < handle
                 axis equal off tight;
                 text(5, 10, sprintf('Time: %.2f seconds',(m-indt(1))/obj.Fs), 'color', 'w',...
                     'fontsize', 16);
-                pause(.01); 
+                pause(.01);
                 if exist('fp', 'var')
                     frame = getframe(gcf);
-                    frame.cdata = imresize(frame.cdata, [512, height]); 
+                    frame.cdata = imresize(frame.cdata, [512, height]);
                     fp.writeVideo(frame);
                 end
             end
@@ -747,30 +747,30 @@ classdef Sources2D < handle
             fprintf('results has been saved into file %s\n', file_nm);
         end
         
-        %% reconstruct background signal given the weights 
+        %% reconstruct background signal given the weights
         function Ybg = reconstructBG(obj, Y, weights)
             if ~exist('weights', 'var')||isempty(weights)
-                try 
-                    weights = obj.P.weights; 
-                catch 
-                    Ybg = []; 
-                    disp('no regression weights given'); 
+                try
+                    weights = obj.P.weights;
+                catch
+                    Ybg = [];
+                    disp('no regression weights given');
                 end
-            end 
-            Y = obj.reshape(Y-obj.A*obj.C, 2); 
-            [d1,d2, ~] = size(Y); 
-            dims = weights.dims; 
-            b0 = mean(Y,3); 
-            Y = bsxfun(@minus, Y, b0); 
-            Y = imresize(Y, dims); 
-            Y = reshape(Y, [], size(Y,3)); 
-            Ybg = zeros(size(Y)); 
-            parfor m=1:size(Y,1)
-                w = weights.weights{m}; 
-                Ybg(m,:) = w(2,:)*Y(w(1,:),:); 
             end
-            Ybg = bsxfun(@plus, imresize(Ybg, [d1,d2]), b0);       
-        end 
+            Y = obj.reshape(Y-obj.A*obj.C, 2);
+            [d1,d2, ~] = size(Y);
+            dims = weights.dims;
+            b0 = mean(Y,3);
+            Y = bsxfun(@minus, Y, b0);
+            Y = imresize(Y, dims);
+            Y = reshape(Y, [], size(Y,3));
+            Ybg = zeros(size(Y));
+            parfor m=1:size(Y,1)
+                w = weights.weights{m};
+                Ybg(m,:) = w(2,:)*Y(w(1,:),:);
+            end
+            Ybg = bsxfun(@plus, imresize(Ybg, [d1,d2]), b0);
+        end
         %% event detection
         function E = event_detection(obj, sig, w)
             % detect events by thresholding S with sig*noise
@@ -814,7 +814,7 @@ classdef Sources2D < handle
             end
         end
         
-        %% get contours of the all neurons 
+        %% get contours of the all neurons
         function Coor = get_contours(obj, thr, ind)
             A_ = obj.A;
             if exist('ind', 'var')
@@ -832,41 +832,75 @@ classdef Sources2D < handle
             end
             for m=1:num_neuron
                 % smooth the image with median filter
-                img = medfilt2(obj.reshape(full(A_(:, m)),2), [3, 3]);
+                A_temp = medfilt2(obj.reshape(full(A_(:, m)),2), [3, 3]);
                 % find the threshold for detecting nonzero pixels
-                temp = sort(img(img>1e-9));
-                if ~any(temp)
-                    Coor{m} = []; 
-                    continue; 
-                end
-                temp_sum = cumsum(temp);
-                ind = find(temp_sum>=temp_sum(end)*(1-thr),1);
-                v_thr = temp(ind);
                 
-                % find the connected components
-                [~, ind_max] = max(img(:));
-                temp = bwlabel(img>v_thr);
-                img = double(temp==temp(ind_max));
-                v_nonzero = imfilter(img, [0,-1/4,0;-1/4,1,-1/4; 0,-1/4,0]);
-                vv = v_nonzero(v_nonzero>1e-9)';
-                [y, x] = find(v_nonzero>1e-9);
-                xmx = bsxfun(@minus, x, x');
-                ymy = bsxfun(@minus, y, y');
-                dist_pair = xmx.^2 + ymy.^2;
-                dist_pair(diag(true(length(x),1))) = inf;
-                seq = ones(length(x)+1,1);
-                for mm=1:length(x)-1
-                    [v_min, seq(mm+1)] = min(dist_pair(seq(mm), :)+vv);
-                    dist_pair(:,seq(mm)) = inf;
-                    if v_min>3
-                        seq(mm+1) = 1;
-                        break;
-                    end
+                A_temp = A_temp(:);
+                [temp,ind] = sort(A_temp(:).^2,'ascend');
+                temp =  cumsum(temp);
+                ff = find(temp > (1-thr)*temp(end),1,'first');
+                if ~isempty(ff)
+                    pvpairs = { 'LevelList' , [0,0]+A_temp(ind(ff)), 'ZData', obj.reshape(A_temp,2)}; 
+                    h = matlab.graphics.chart.primitive.Contour(pvpairs{:});
+                    temp = h.ContourMatrix; 
+                    temp = medfilt1(temp')';
+                    Coor{m} = temp(:, 3:end); 
                 end
-                Coor{m} = [smooth(x(seq), 2)'; smooth(y(seq),2)'];
+                
             end
-            
         end
+            %         function Coor = get_contours(obj, thr, ind)
+            %             A_ = obj.A;
+            %             if exist('ind', 'var')
+            %                 A_ = A_(:, ind);
+            %             end
+            %             if ~exist('thr', 'var') || isempty(thr)
+            %                 thr = 0.995;
+            %             end
+            %             num_neuron = size(A_,2);
+            %             if num_neuron==0
+            %                 Coor ={};
+            %                 return;
+            %             else
+            %                 Coor = cell(num_neuron,1);
+            %             end
+            %             for m=1:num_neuron
+            %                 % smooth the image with median filter
+            %                 img = medfilt2(obj.reshape(full(A_(:, m)),2), [3, 3]);
+            %                 % find the threshold for detecting nonzero pixels
+            %                 temp = sort(img(img>1e-9));
+            %                 if ~any(temp)
+            %                     Coor{m} = [];
+            %                     continue;
+            %                 end
+            %                 temp_sum = cumsum(temp);
+            %                 ind = find(temp_sum>=temp_sum(end)*(1-thr),1);
+            %                 v_thr = temp(ind);
+            %
+            %                 % find the connected components
+            %                 [~, ind_max] = max(img(:));
+            %                 temp = bwlabel(img>v_thr);
+            %                 img = double(temp==temp(ind_max));
+            %                 v_nonzero = imfilter(img, [0,-1/4,0;-1/4,1,-1/4; 0,-1/4,0]);
+            %                 vv = v_nonzero(v_nonzero>1e-9)';
+            %                 [y, x] = find(v_nonzero>1e-9);
+            %                 xmx = bsxfun(@minus, x, x');
+            %                 ymy = bsxfun(@minus, y, y');
+            %                 dist_pair = xmx.^2 + ymy.^2;
+            %                 dist_pair(diag(true(length(x),1))) = inf;
+            %                 seq = ones(length(x)+1,1);
+            %                 for mm=1:length(x)-1
+            %                     [v_min, seq(mm+1)] = min(dist_pair(seq(mm), :)+vv);
+            %                     dist_pair(:,seq(mm)) = inf;
+            %                     if v_min>3
+            %                         seq(mm+1) = 1;
+            %                         break;
+            %                     end
+            %                 end
+            %                 Coor{m} = [smooth(x(seq), 2)'; smooth(y(seq),2)'];
+            %             end
+            %
+            %         end
+        end
+        
     end
-    
-end

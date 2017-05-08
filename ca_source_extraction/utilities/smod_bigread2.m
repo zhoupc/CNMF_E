@@ -1,4 +1,4 @@
-function [imData,sizx,sizy]=smod_bigread2(varargin)
+function [imData,sizx,sizy]=smod_bigread2(varargin);
 %reads tiff files in Matlab bigger than 4GB, allows reading from sframe to sframe+num2read-1 frames of the tiff - in other words, you can read page 200-300 without rading in from page 1.
 %based on a partial solution posted on Matlab Central (http://www.mathworks.com/matlabcentral/answers/108021-matlab-only-opens-first-frame-of-multi-page-tiff-stack)
 %Darcy Peterka 2014, v1.0
@@ -16,7 +16,7 @@ function [imData,sizx,sizy]=smod_bigread2(varargin)
 %till the end
 %Checks to see if imageJ generated tif, then uses info in imageJ generated
 %image description to load the files based on offset and image number.
-% 
+%
 
 
 %get image info
@@ -37,7 +37,7 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');
     %     numFrames = str2double(numFramesStr{1}{1});
     % end
     
-      
+    
     if strfind(info(1).ImageDescription,'ImageJ')
         junk1=regexp(info(1).ImageDescription,'images=\d*','match');
         junk2=strjoin(junk1);
@@ -200,6 +200,7 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');
             end
             if nargin==3
                 num2read=cell2mat(varargin(3));
+                sframe = cell2mat(varargin(2));
             end
             if sframe<=0
                 sframe=1;

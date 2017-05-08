@@ -54,13 +54,13 @@ cnmfe_show_corr_pnr;    % this step is not necessary, but it can give you some..
 
 %% initialization of A, C
 % parameters
-debug_on = false;
-save_avi = true;
-patch_par = [1,1]*1; %1;  % divide the optical field into m X n patches and do initialization patch by patch
+debug_on = false;   % visualize the initialization procedue. 
+save_avi = false;   %save the initialization procedure as an avi movie. 
+patch_par = [1,1]*1; %1;  % divide the optical field into m X n patches and do initialization patch by patch. It can be used when the data is too large 
 K = []; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
 
-min_corr = 0.8;     % minimum local correlation for a seeding pixel
-min_pnr = 15;       % minimum peak-to-noise ratio for a seeding pixel
+min_corr = 0.85;     % minimum local correlation for a seeding pixel
+min_pnr = 20;       % minimum peak-to-noise ratio for a seeding pixel
 min_pixel = 5;      % minimum number of nonzero pixels for each neuron
 bd = 1;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
 neuron.updateParams('min_corr', min_corr, 'min_pnr', min_pnr, ...
@@ -74,7 +74,7 @@ fprintf('Time cost in initializing neurons:     %.2f seconds\n', toc);
 
 % show results
 figure;
-imagesc(Cn.*pnr, quantile(pnr(:), [0.1, 0.95]));
+imagesc(Cn, [0.1, 0.95]);
 hold on; plot(center(:, 2), center(:, 1), 'or');
 colormap; axis off tight equal;
 
@@ -95,19 +95,17 @@ thresh = 10;     % threshold for detecting frames with large cellular activity. 
 bg_neuron_ratio = 1;  % spatial range / diameter of neurons
 
 % parameters, estimate the spatial components
-update_spatial_method = 'hals_thresh';  % the method for updating spatial components {'hals', 'hals_thresh', 'nnls', 'lars'}
+update_spatial_method = 'hals';  % the method for updating spatial components {'hals', 'hals_thresh', 'nnls', 'lars'}
 Nspatial = 5;       % this variable has different meanings: 
                     %1) udpate_spatial_method=='hals' or 'hals_thresh',
                     %then Nspatial is the maximum iteration 
                     %2) update_spatial_method== 'nnls', it is the maximum
                     %number of neurons overlapping at one pixel 
-                    
-neuron.options.maxIter = 5;   % iterations to update C
-
+               
 % parameters for running iteratiosn 
 nC = size(neuron.C, 1);    % number of neurons 
 
-maxIter = 5;        % maximum number of iterations 
+maxIter = 2;        % maximum number of iterations 
 miter = 1; 
 while miter <= maxIter
     %% merge neurons, order neurons and delete some low quality neurons
@@ -130,7 +128,7 @@ while miter <= maxIter
     
     %% update spatial & temporal components
     tic;
-    for m=1:5    
+    for m=1:2  
         %temporal
         neuron.updateTemporal_endoscope(Ysignal);
         cnmfe_quick_merge;              % run neuron merges
@@ -146,7 +144,7 @@ while miter <= maxIter
     %% pick neurons from the residual (cell 4).
     if miter==1
         neuron.options.seed_method = 'auto'; % methods for selecting seed pixels {'auto', 'manual'}
-        [center_new, Cn_res, pnr_res] = neuron.pickNeurons(Ysignal - neuron.A*neuron.C, patch_par, 'auto'); % method can be either 'auto' or 'manual'
+        [center_new, Cn_res, pnr_res] = neuron.pickNeurons(Ysignal - neuron.A*neuron.C, patch_par); % method can be either 'auto' or 'manual'
     end
     
     %% stop the iteration 
@@ -167,6 +165,24 @@ if or(ssub>1, tsub>1)
     neuron_full = neuron.copy();
 end
 
+
+%% delete some neurons and run CNMF-E iteration 
+neuron.viewNeurons([], neuron.C_raw); 
+tic;
+cnmfe_update_BG;
+fprintf('Time cost in estimating the background:        %.2f seconds\n', toc);
+%update spatial & temporal components
+tic;
+for m=1:2
+    %temporal
+    neuron.updateTemporal_endoscope(Ysignal);
+    cnmfe_quick_merge;              % run neuron merges
+    %spatial
+    neuron.updateSpatial_endoscope(Ysignal, Nspatial, update_spatial_method);
+    neuron.trimSpatial(0.01, 3); % for each neuron, apply imopen first and then remove pixels that are not connected with the center
+end
+fprintf('Time cost in updating spatial & temporal components:     %.2f seconds\n', toc);
+
 %% display neurons
 dir_neurons = sprintf('%s%s%s_neurons%s', dir_nm, filesep, file_nm, filesep);
 if exist('dir_neurons', 'dir')
@@ -181,9 +197,10 @@ neuron.viewNeurons([], neuron.C_raw, dir_neurons);
 close(gcf); 
 
 %% display contours of the neurons
+neuron.Coor = neuron.get_contours(0.8); % energy within the contour is 80% of the total 
 figure;
 Cnn = correlation_image(neuron.reshape(Ysignal(:, 1:5:end), 2), 4);
-neuron.Coor = plot_contours(neuron.A, Cnn, 0.8, 0, [], [], 2);
+neuron.Coor = plot_contours(neuron.A, Cnn, 0.8, 0, [], neuron.Coor, 2);
 colormap winter;
 axis equal; axis off;
 title('contours of estimated neurons');
@@ -192,26 +209,22 @@ title('contours of estimated neurons');
 % [Cn, pnr] = neuron.correlation_pnr(Y(:, round(linspace(1, T, min(T, 1000)))));
 figure;
 Cn = imresize(Cn, [d1, d2]); 
-plot_contours(neuron.A, Cn, 0.8, 0, [], [], 2);
+plot_contours(neuron.A, Cn, 0.8, 0, [], neuron.Coor, 2);
 colormap winter;
 title('contours of estimated neurons');
 
 %% check spatial and temporal components by playing movies
-% save_avi = false;
-% avi_name = 'play_movie.avi';
-% neuron.Cn = Cn;
-% neuron.runMovie(Ysignal, [0, 50], save_avi, avi_name);
+save_avi = false;
+avi_name = 'play_movie.avi';
+neuron.Cn = Cn;
+neuron.runMovie(Ysignal, [0, 50], save_avi, avi_name);
 
 %% save video
 kt = 3;     % play one frame in every kt frames
 save_avi = true;
-y_quantile = 0.9999;    % for specifying the color value limits 
-ac_quantile = .9999;
-
+center_ac = median(max(neuron.A,[],1)'.*max(neuron.C,[],2)); % the denoised video are mapped to [0, 2*center_ac] of the colormap 
 cnmfe_save_video;
 
-%% visually check the results by choosing few neurons
-neuron.runMovie(Ysignal, [0, max(Ysignal(:))]*0.8); 
 %% save results
 globalVars = who('global');
 eval(sprintf('save %s%s%s_results.mat %s', dir_nm, filesep, file_nm, strjoin(globalVars)));
