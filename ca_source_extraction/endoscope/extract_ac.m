@@ -34,7 +34,7 @@ end
 
 %% extract spatial component
 % estiamte the background level using the boundary
-y_bg = median(Y(tmp_corr(:)<min_corr, :), 1); % using the median of the whole field (except the center area) as background estimation
+y_bg = median(Y(tmp_corr(:)<0.3, :), 1); % using the median of the whole field (except the center area) as background estimation
 
 %%%%%%%%%%%%%%%%%%%  WHAT A PITY %%%%%%%%%%%%%%%%%%%%%%
 %it's such a pity that this algorithm was abandoned because I found a

@@ -122,10 +122,15 @@ ind_search(v_search==0) = true; % ignore pixels with small correlations or low p
 
 % show local correlation
 if debug_on
-    figure('position', [100, 100, 1290, 646], 'color', [1,1,1]*0.9); %#ok<*UNRCH>
-    subplot(231);
-    imagesc(Cn0); colorbar;
-    %     imagesc(Cn.*PNR, quantile(Cn(:).*PNR(:), [0.5, 0.99])); colorbar;
+    figure('position', [100, 100, 1200, 800], 'color', [1,1,1]*0.9); %#ok<*UNRCH>
+    set(gcf, 'defaultAxesFontSize', 20); 
+    ax_cn = axes('position', [0.04, 0.5, 0.3, 0.4]); 
+    ax_pnr_cn = axes('position', [0.36, 0.5, 0.3, 0.4]); 
+    ax_cn_box = axes('position', [0.68, 0.54, 0.24, 0.32]); 
+    ax_trace = axes('position', [0.05, 0.05, 0.92, 0.4]); 
+    axes(ax_cn); 
+    imagesc(Cn0); 
+    %     imagesc(Cn.*PNR, quantile(Cn(:).*PNR(:), [0.5, 0.99])); 
     axis equal off tight; hold on;
     %     title('Cn * PNR');
     title('Cn');
@@ -166,7 +171,7 @@ while searching_flag
     %% find local maximum as initialization point
     %find all local maximum as initialization point
     tmp_d = 2*round(gSig)+1;
-    v_search = medfilt2(v_search, [gSig, gSig])+randn(size(v_search))*(1e-100);
+    v_search = medfilt2(v_search, [gSig, gSig]); %+randn(size(v_search))*(1e-100);
     v_search(ind_search) = 0;
     v_max = ordfilt2(v_search, tmp_d^2, true(tmp_d));
     % set boundary to be 0
@@ -175,14 +180,14 @@ while searching_flag
     if strcmpi(seed_method, 'manual') %manually select seed pixels
         tmp_fig = figure('position', [200, 200, 1024, 412]);
         subplot(121); cla;
-        imagesc(Cn0.*PNR0); colorbar; hold on;
+        imagesc(Cn0.*PNR0);  hold on;
         title('Cn*PNR');
         plot(center(1:k, 2), center(1:k, 1), '*r');
         axis equal off tight;
         subplot(122);
         imagesc(v_search.*Cn0.*PNR0); %, [0, max(max(min_v_search(:)*0.99), min_v_search)]);
         hold on;
-        axis equal tight; colorbar; drawnow;
+        axis equal tight;  drawnow;
         set(gca, 'xtick', []);
         set(gca, 'ytick', []);
         title('click neuron centers for initialziation');
@@ -259,22 +264,22 @@ while searching_flag
         
         %% show temporal trace in the center
         if debug_on
-            subplot(232); cla;
-            imagesc(reshape(v_search, d1, d2), [0, max_v]); colorbar;
+            axes(ax_pnr_cn); cla;
+            imagesc(reshape(v_search, d1, d2), [0, max_v]); 
             title(sprintf('neuron %d', k+1));
             axis equal off tight; hold on;
             plot(c_peak(mcell:end), r_peak(mcell:end), '.r');
             plot(c,r, 'or', 'markerfacecolor', 'r', 'markersize', 10);
-            subplot(233);
+            axes(ax_cn_box); 
             imagesc(reshape(Cn(ind_nhood), nr, nc), [0, 1]);
             axis equal off tight;
             title('correlation image');
-            subplot(2,3,4:6); cla;
+            axes(ax_trace); cla;
             plot(HY_box(ind_ctr, :)); title('activity in the center'); axis tight;
             if ~save_avi; pause; end
             if exist('avi_file', 'var')
                 frame = getframe(gcf);
-                frame.cdata = imresize(frame.cdata, [646, 1290]);
+                frame.cdata = imresize(frame.cdata, [800, 1200]);
                 avi_file.writeVideo(frame);
             end
         end
@@ -345,15 +350,15 @@ while searching_flag
         
         %% display results
         if debug_on
-            subplot(231);
+            axes(ax_cn); 
             plot(c, r, '.r');
-            subplot(232);
+            axes(ax_pnr_cn); 
             plot(c,r, 'or');
-            subplot(233);
+            axes(ax_cn_box); 
             imagesc(reshape(ai, nr, nc));
             axis equal off tight;
             title('spatial component');
-            subplot(2,3,4:6); cla; hold on;
+            axes(ax_trace);  cla; hold on;
             plot(ci_raw, 'linewidth', 2); title('temporal component'); axis tight;
             if deconv_flag
                 plot(ci, 'r', 'linewidth', 2);  axis tight;
@@ -361,7 +366,7 @@ while searching_flag
             end
             if exist('avi_file', 'var')
                 frame = getframe(gcf);
-                frame.cdata = imresize(frame.cdata, [646, 1290]);
+                frame.cdata = imresize(frame.cdata, [800, 1200]);
                 avi_file.writeVideo(frame);
             elseif ~save_avi
                 temp = input('type s to stop the debug mode:  ', 's');
