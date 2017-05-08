@@ -12,13 +12,15 @@ OPTION 2: (recommended) clone the git repository <https://github.com/zhoupc/CNMF
 
 Installation
 =======
-Run setup.m to add OASIS function to the search path of MATLAB
+Run setup.m to add CNMF-E package to the search path of MATLAB
 
-`>> run_setup`
+`>> cnmfe_setup`
+
+CNMF-E requires [CVX](http://cvxr.com/cvx/) to denoise the extracted calcium traces. CNMF-E will automatically downloaded it and added it to the searching path. 
 
 Example
 =======
-The best way of getting started is to run a demo script to analyze an example data. 
+The best way of getting started is to run a demo script for analyzing an example data. 
 
 `>> run demos/demo_endoscope.m ` 
 
@@ -28,6 +30,8 @@ You can ask questions by sending emails to zhoupc1988@gmail.com or join our [sla
 
 Reference
 =======
+**Please cite this paper when you use CNMF-E for your research. Thanks!**
+
 **Zhou, P.**, Resendez, S. L., Stuber, G. D., Kass, R. E., & Paninski, L. (2016). *Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data*. arXiv preprint arXiv:1605.07266.
 
 **Note**: This manusript is relatively old. We made main changes to our model and algorithms. The new version will be updated soon. 
