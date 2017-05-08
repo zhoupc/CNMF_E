@@ -2,6 +2,36 @@
 # CNMF_E
 Constrained Nonnegative Matrix Factorization for microEndoscopic data 
 
+
+
+Download
+=======
+OPTION 1: download the package from this [LINK](https://github.com/zhoupc/CNMF_E/archive/master.zip)
+
+OPTION 2: (recommended) clone the git repository <https://github.com/zhoupc/CNMF_E.git>. In this way, you are able to get the latest updates of the package within 1-line command or 1-button click. 
+
+Installation
+=======
+Run setup.m to add OASIS function to the search path of MATLAB
+
+`>> run_setup`
+
+Example
+=======
+The best way of getting started is to run a demo script to analyze an example data. 
+
+`>> run demos/demo_endoscope.m ` 
+
+Questions
+=======
+You can ask questions by sending emails to zhoupc1988@gmail.com or join our [slack channel](https://beat-ica.slack.com) for discussions. 
+
+Reference
+=======
+**Zhou, P.**, Resendez, S. L., Stuber, G. D., Kass, R. E., & Paninski, L. (2016). *Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data*. arXiv preprint arXiv:1605.07266.
+
+**Note**: This manusript is relatively old. We made main changes to our model and algorithms. The new version will be updated soon. 
+
 License
 =======
 
