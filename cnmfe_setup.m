@@ -1,12 +1,12 @@
 %% add path
-CNMF_dir = fileparts(which('run_setup.m'));
-addpath(sprintf('%s%sca_source_extraction%s', CNMF_dir, filesep, filesep));
-addpath(genpath(sprintf('%s%sca_source_extraction%sutilities%s', CNMF_dir, filesep, filesep, filesep)));
-addpath(genpath(sprintf('%s%sca_source_extraction%sendoscope', CNMF_dir, filesep, filesep, filesep)));
-addpath(sprintf('%s%sGUI', CNMF_dir, filesep));
-addpath(sprintf('%s%sGUI%sgui_callbacks', CNMF_dir, filesep, filesep));
-addpath(sprintf('%s%sGUI%smodules', CNMF_dir, filesep, filesep));
-addpath(sprintf('%s%scnmfe_scripts', CNMF_dir, filesep));
+CNMF_dir = fileparts(which('cnmfe_setup.m'));
+addpath(fullfile(CNMF_dir, 'ca_source_extraction'));
+addpath(genpath(fullfile(CNMF_dir, 'ca_source_extraction', 'utilities')));
+addpath(genpath(fullfile(CNMF_dir, 'ca_source_extraction', 'endoscope')));
+addpath(fullfile(CNMF_dir, 'GUI'));
+addpath(fullfile(CNMF_dir, 'GUI', 'gui_callbacks'));
+addpath(fullfile(CNMF_dir, 'GUI', 'modules'));
+addpath(fullfile(CNMF_dir, 'cnmfe_scripts'));
 
 %% setup cvx
 if isempty(which('cvx_begin.m'))
@@ -31,4 +31,4 @@ end
 %savepath();
 
 %% deconvolution 
-run(sprintf('%s%sdeconvolveCa%ssetup.m', CNMF_dir, filesep, filesep));
+run(fullfile(CNMF_dir, 'deconvolveCa', 'setup.m'));
