@@ -38,7 +38,7 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');
     % end
     
     
-    if strfind(info(1).ImageDescription,'ImageJ')
+    if isfield(info(1), 'ImageDescription') && strfind(info(1).ImageDescription,'ImageJ')
         junk1=regexp(info(1).ImageDescription,'images=\d*','match');
         junk2=strjoin(junk1);
         aa=strread(junk2,'%*s %d','delimiter','=');

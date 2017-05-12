@@ -1,12 +1,12 @@
-if ~exist('t_begin', 'var') 
-    t_begin = 1; 
-end 
+if ~exist('t_begin', 'var')
+    t_begin = 1;
+end
 if ~exist('t_end', 'var')
-    t_end = size(neuron.C, 2); 
-end 
-if ~exist('kt', 'var') 
-    kt = 1; 
-end 
+    t_end = size(neuron.C, 2);
+end
+if ~exist('kt', 'var')
+    kt = 1;
+end
 
 %% data preparation
 Yac = neuron.reshape(neuron.A*neuron.C_raw, 2);
@@ -16,10 +16,18 @@ figure('position', [0,0, 600, 400]);
 
 if ~exist('center_ac', 'var')
     center_ac = median(max(neuron.A,[],1)'.*max(neuron.C,[],2));
-    range_res = [-1,1]*center_ac;
+end
+range_res = [-1,1]*center_ac;
+if ~exist('range_ac', 'var')
     range_ac = center_ac+range_res;
-    temp = quantile(Y(numel(Y), 10000,1), [0.01, 0.98]); 
-    multi_factor = floor(diff(temp)/diff(range_ac));
+end
+if ~exist('range_Y', 'var')
+    if ~exist('multi_factor', 'var')
+        multi_factor = floor(diff(temp)/diff(range_ac));
+        temp = quantile(Y(randi(numel(Y), 10000,1)), [0.01, 0.98]);
+    else
+        temp = quantile(Y(randi(numel(Y), 10000,1)), 0.01);
+    end
     center_Y = temp(1) + multi_factor*center_ac;
     range_Y = center_Y + range_res*multi_factor;
 end
@@ -55,31 +63,31 @@ ax_denoised =    axes('position', [0.345, 0.01, 0.3, 0.42]);
 ax_res =    axes('position', [0.675, 0.51, 0.3, 0.42]);
 ax_mix =     axes('position', [0.675, 0.01, 0.3, 0.42]);
 for m=t_begin:kt:t_end
-    axes(ax_y); cla; 
+    axes(ax_y); cla;
     imagesc(Ybg(:, :,m)+Ysignal(:, :, m), range_Y);
     %     set(gca, 'children', flipud(get(gca, 'children')));
     title('Raw data');
     axis equal off tight;
     
-    axes(ax_bg); cla; 
+    axes(ax_bg); cla;
     imagesc(Ybg(:, :, m),range_Y);
     %     set(gca, 'children', flipud(get(gca, 'children')));
     axis equal off tight;
     title('Background');
     
-    axes(ax_signal); cla; 
+    axes(ax_signal); cla;
     imagesc(Ysignal(:, :, m), range_ac); hold on;
     %     set(gca, 'children', flipud(get(gca, 'children')));
     title(sprintf('(Raw-BG) X %d', multi_factor));
     axis equal off tight;
     
-    axes(ax_denoised); cla; 
+    axes(ax_denoised); cla;
     imagesc(Yac(:, :, m), range_ac);
     %     imagesc(Ybg(:, :, m), [-50, 50]);
     title(sprintf('Denoised X %d', multi_factor));
     axis equal off tight;
     
-    axes(ax_res); cla; 
+    axes(ax_res); cla;
     imagesc(Ysignal(:, :, m)-Yac(:, :, m), range_res);
     %     set(gca, 'children', flipud(get(gca, 'children')));
     title(sprintf('Residual X %d', multi_factor));
@@ -95,7 +103,7 @@ for m=t_begin:kt:t_end
     %     box on; set(gca, 'xtick', []);
     %     set(gca, 'ytick', []);
     
-   
+    
     if save_avi
         temp = getframe(gcf);
         temp = imresize(temp.cdata, [400, 600]);
