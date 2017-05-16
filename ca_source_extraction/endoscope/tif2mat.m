@@ -19,7 +19,7 @@ end
 info = imfinfo(nam);
 
       
-if  isfield(info(1), 'ImageDescription') && ifstrfind(info(1).ImageDescription,'ImageJ')
+if  isfield(info(1), 'ImageDescription') && strfind(info(1).ImageDescription,'ImageJ')
     junk1=regexp(info(1).ImageDescription,'images=\d*','match');
     junk2=strjoin(junk1);
     T=strread(junk2,'%*s %d','delimiter','=');
