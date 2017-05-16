@@ -9,6 +9,7 @@ if ~exist('kt', 'var')
 end
 
 %% data preparation
+Y = neuron.reshape(Y, 2); 
 Yac = neuron.reshape(neuron.A*neuron.C_raw, 2);
 Ybg = neuron.reshape(Ybg, 2);
 Ysignal = neuron.reshape(Ysignal, 2);
@@ -23,10 +24,10 @@ if ~exist('range_ac', 'var')
 end
 if ~exist('range_Y', 'var')
     if ~exist('multi_factor', 'var')
-        multi_factor = floor(diff(temp)/diff(range_ac));
         temp = quantile(Y(randi(numel(Y), 10000,1)), [0.01, 0.98]);
-    else
-        temp = quantile(Y(randi(numel(Y), 10000,1)), 0.01);
+                    multi_factor = floor(diff(temp)/diff(range_ac));
+%     else
+%         temp = quantile(Y(randi(numel(Y), 10000,1)), 0.01);
     end
     center_Y = temp(1) + multi_factor*center_ac;
     range_Y = center_Y + range_res*multi_factor;
