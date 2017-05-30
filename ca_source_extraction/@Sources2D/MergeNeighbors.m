@@ -29,7 +29,7 @@ if ~exist('method', 'var') || isempty(method)
 end
 if strcmp(method, 'center')
     ctr = obj.estCenter();
-    xx = ctr(:,1);
+    yy = ctr(:,1);
     xx = ctr(:,2);
 else
     [~,temp] = max(obj.A, [], 1);
