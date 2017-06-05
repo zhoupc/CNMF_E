@@ -20,14 +20,16 @@ if ~exist('center_ac', 'var')
 end
 range_res = [-1,1]*center_ac;
 if ~exist('range_ac', 'var')
-    range_ac = center_ac+range_res;
+    range_ac = center_ac+range_res+3;
 end
 if ~exist('range_Y', 'var')
     if ~exist('multi_factor', 'var')
         temp = quantile(Y(randi(numel(Y), 10000,1)), [0.01, 0.98]);
-                    multi_factor = floor(diff(temp)/diff(range_ac));
+        multi_factor = ceil(diff(temp)/diff(range_ac));
 %     else
 %         temp = quantile(Y(randi(numel(Y), 10000,1)), 0.01);
+    else
+        temp = quantile(Y(randi(numel(Y), 10000,1)), 0.01); 
     end
     center_Y = temp(1) + multi_factor*center_ac;
     range_Y = center_Y + range_res*multi_factor;

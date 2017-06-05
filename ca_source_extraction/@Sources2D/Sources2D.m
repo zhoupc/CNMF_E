@@ -56,6 +56,7 @@ classdef Sources2D < handle
         %% fast initialization for microendoscopic data
         [center, Cn, pnr] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi);
         
+        [center] = initComponents_2p(obj,Y, K, options, sn, debug_on, save_avi); 
         %% update spatial components
         function updateSpatial(obj, Y)
             [obj.A, obj.b, obj.C] = update_spatial_components(Y, ...
