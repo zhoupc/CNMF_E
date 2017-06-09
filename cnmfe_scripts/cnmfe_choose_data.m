@@ -13,7 +13,7 @@ if ~exist('nam', 'var') || isempty(nam)
     [dir_nm, file_nm, file_type] = fileparts(nam);
 else
     % use pre-specified file 
-    if exist(nam, 'file')
+    if 1; %exist(nam, 'file')
         [dir_nm, file_nm, file_type] = fileparts(nam);
     else
         dir_nm = 0; 
@@ -46,7 +46,12 @@ end
 
 %% information of the data 
 data = matfile(nam_mat);
-Ysiz = data.Ysiz;
+if isfield(data, 'Y')
+    Ysiz = size(data.Y); %data.Ysiz;
+else
+    Ysiz = size(data.VIDEO); 
+    Ysiz = Ysiz([2 3 1]);
+end
 d1 = Ysiz(1);   %height
 d2 = Ysiz(2);   %width
 numFrame = Ysiz(3);    %total number of frames
