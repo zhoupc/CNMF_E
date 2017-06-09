@@ -1,4 +1,3 @@
-
 # CNMF_E
 Constrained Nonnegative Matrix Factorization for microEndoscopic data 
 
@@ -30,11 +29,9 @@ You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [
 
 Reference
 =======
-**Please cite this paper when you use CNMF-E for your research. Thanks!**
+**Please cite this paper when you use CNMF-E in your research. Thanks!**
 
-**Zhou, P.**, Resendez, S. L., Stuber, G. D., Kass, R. E., & Paninski, L. (2016). *Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data*. arXiv preprint arXiv:1605.07266.
-
-**Note**: This manusript is relatively old. We made main changes to our model and algorithms. The new version will be updated soon. 
+**Zhou, P.**, Resendez, S.L., Rodriguez-Romaguera, J., Jimenez, J.C, Neufeld, S.Q., Stuber, G.D., Hen, R., Kheirbek, M.A., Sabatini, B.L., Kass, R.E., Paninski, L. (2016). [Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data](https://arxiv.org/abs/1605.07266). arXiv Prepr, arXiv1605.07266.
 
 License
 =======
