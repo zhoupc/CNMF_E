@@ -15,6 +15,6 @@ if ~isfield(neuron.P, 'sn') || isempty(neuron.P.sn)
     parfor m=1:size(neuron.A,1)
         [b0(m), sn(m)] = estimate_baseline_noise(Ysignal(m, :));
     end     
-    Ysigma = bsxfun(@minus, Ysignal, b0);
+    Ysignal = bsxfun(@minus, Ysignal, b0);
     neuron.P.sn = sn; 
 end
