@@ -95,6 +95,7 @@ HY = reshape(HY, d1*d2, []);
 % HY_med = median(HY, 2);
 % HY_max = max(HY, [], 2)-HY_med;    % maximum projection
 HY = bsxfun(@minus, HY, median(HY, 2));
+HY0=HY; % saved as intact filtered result.
 HY_max = max(HY, [], 2);
 Ysig = get_noise_fft(HY, options);
 PNR = reshape(HY_max./Ysig, d1, d2);
@@ -397,6 +398,7 @@ if deconv_flag
     results.Sin = Sin(1:k, :);
     results.kernel_pars = cell2mat(kernel_pars(1:k));
 end
+results.HY=HY0;
 % Cin(Cin<0) = 0;
 Cn = Cn0;
 PNR = PNR0;

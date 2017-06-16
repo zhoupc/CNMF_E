@@ -1,4 +1,4 @@
-function [center, Cn, PNR] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi)
+function [center, Cn, PNR, HY] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi)
 %% initializing spatial/temporal components for miceoendoscopic data
 %% input:
 %   Y:  d1 X d2 X T matrix or (d1*d2)X T matrix, video data
@@ -64,6 +64,7 @@ if (~exist('patch_sz', 'var'))||(isempty(patch_sz))||(max(patch_sz(:))==1)
         obj.S = zeros(size(obj.C));
     end
     obj.Cn = Cn;
+    HY=results.HY;
     return;
 elseif isscalar(patch_sz)
     % patch size has been assigned
