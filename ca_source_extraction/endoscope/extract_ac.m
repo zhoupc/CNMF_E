@@ -58,11 +58,6 @@ temp = (X'*X)\(X'*Y');
 ai = max(0, temp(3,:)'); 
 
 %% threshold the spatial shape and remove outliers 
-temp = full(ai>=median(ai));
-l = bwlabel(reshape(temp, nr, nc), 4);   % remove disconnected components
-temp(l~=l(ind_ctr)) = false;
-ai(~temp(:)) = 0;
-
 % remove outliers 
 temp =  full(ai>quantile(ai(:), 0.5)); 
 l = bwlabel(reshape(temp, nr, nc), 4); 
