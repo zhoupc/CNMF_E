@@ -58,7 +58,7 @@ temp = (X'*X)\(X'*Y');
 ai = max(0, temp(3,:)'); 
 
 %% threshold the spatial shape and remove outliers 
-% remove outliers 
+% remove outliers and trim
 temp =  full(ai>quantile(ai(:), 0.5)); 
 l = bwlabel(reshape(temp, nr, nc), 4); 
 temp(l~=l(ind_ctr)) = false; 

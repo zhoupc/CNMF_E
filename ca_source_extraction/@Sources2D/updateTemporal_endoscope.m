@@ -1,4 +1,4 @@
-function [C_offset] = updateTemporal_endoscope(obj, Y, smin)
+function [C_offset,sn] = updateTemporal_endoscope(obj, Y, smin)
 %% run HALS by fixating all spatial components
 % input:
 %   Y:  d*T, fluorescence data
