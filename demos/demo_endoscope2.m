@@ -1,5 +1,5 @@
-%% clear workspace
-clear; clc; close all;  
+function [A0s,File]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,Afinal)
+%% clear workspace 
 global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
     neuron_full Ybg_weights; %#ok<NUSED> % global variables, don't change them manually
 
@@ -8,6 +8,8 @@ global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
 cnmfe_choose_data;
 
 %% create Source2D class object for storing results and parameters
+nam=nam;
+mode=mode;          % 'initiation' mode or 'massive' mode
 Fs = 30;             % frame rate
 ssub = 1;           % spatial downsampling factor
 tsub = 1;           % temporal downsampling factor
@@ -69,8 +71,14 @@ neuron.options.nk = 1;  % number of knots for detrending
 
 % greedy method for initialization
 tic;
-[center, Cn, pnr] = neuron.initComponents_endoscope(Y, K, patch_par, debug_on, save_avi);
-fprintf('Time cost in initializing neurons:     %.2f seconds\n', toc);
+if strcmp(mode,'initiation')
+    [center, Cn, pnr] = neuron.initComponents_endoscope(Y, K, patch_par, debug_on, save_avi);
+    fprintf('Time cost in initializing neurons:     %.2f seconds\n', toc);
+elseif strcmp(mode,'massive')
+    AC=A2C2A([], Afinal, [], neuron.options, []);
+    neuron.A=AC.Ain;
+    neuron.C_raw=AC.Cin;
+end
 
 % show results
 % figure;
@@ -155,9 +163,9 @@ while miter <= maxIter
         nC = temp; 
     end
 end
-Ybg=Ybg+b0;
-Ysignal_sn=Ysignal;
-noise=neuron.P.sn_neuron;
+%Ybg=Ybg+b0;
+%Ysignal_sn=Ysignal;
+%noise=neuron.P.sn_neuron;
 Ysignal=neuron.A*neuron.C;
 
 %% apply results to the full resolution
@@ -229,6 +237,20 @@ end
 % cnmfe_save_video;
 
 %% see and save results
-ColorAllNeurons(neuron.A)
+picname=picname;
+ColorAllNeurons(neuron.A);
+
+A0s=neuron.A;
+if strcmp(mode,'initiation')    
+    File.options=neuron.options;
+    File.Y=Y;
+%    File.Ybg=Ybg; %Ybg+b0
+    File.Ysignal=Ysignal;
+%    File.Ysignal_sn=Ysignal_sn;
+%    File.noise=noise;
+elseif strcmp(mode,'massive')
+    File=neuron.C;
+end
+
 %globalVars = who('global');
 %eval(sprintf('save %s%s%s_results.mat %s', dir_nm, filesep, file_nm, strjoin(globalVars)));

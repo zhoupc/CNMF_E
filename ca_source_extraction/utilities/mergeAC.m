@@ -71,9 +71,9 @@ for m=1:n2merge
     for i=1:numel(File)
         FileA=File(i).Ain;
         FileC=File(i).Cin;
-        data(:,:,i) = FileA(active_pixel, IDs)*FileC(IDs, :);
+        data = [data FileA(active_pixel, IDs)*FileC(IDs, :)];
     end
-    data=reshape(data,size(data,1),size(data,2)*size(data,3));    
+    
     ci = max(C(IDs, :),[],1);
     for miter=1:10
         ai = data*ci'/(ci*ci');

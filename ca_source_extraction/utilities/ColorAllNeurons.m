@@ -1,5 +1,5 @@
 function  ColorAllNeurons(A)
-    global min_pnr gSiz gSig d1 d2
+    global d1 d2 picname
     
     figure; 
     hold all
@@ -31,9 +31,9 @@ function  ColorAllNeurons(A)
         Position(2,i)=mean(row_ind);
         Position(1,i)=mean(col_ind);
     end    
-    text(Position(1,:),Position(2,:),cellstr(num2str((1:k)'))','Color','white')
-    title(filelist(i).name)
+    text(Position(1,:),Position(2,:),cellstr(num2str((1:k)'))','Color','black')
+    title(picname)
 
-    fignam=filelist(i).name;
+    fignam=picname;
     saveas(gcf,fignam);
     
