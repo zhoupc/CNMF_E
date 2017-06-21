@@ -70,25 +70,24 @@ end
 weightedA=ReducingA(Aunique,STDunique);
 Afinal=cat(2,commonA,weightedA);
 
+for i=1:size(Afinal,2)
+    ai=Afinal(:,i);
+    temp = full(ai>quantile(ai, 0.5, 1));
+    l = bwlabel(reshape(temp, nr, nc), 4); 
+    temp(l~=l(ind_ctr)) = false; 
+    ai(~temp(:)) = 0;
+    Afinal(:,i)=ai;
+end
+
 %% 5
 filelist=dir(Datadir);
-%AC(length(filelist)) = struct('Ain',[],'Cin',[]); % AC is used in initiation in demo_2
 As=cell(1,length(filelist));
 Cs=cell(1,length(filelist));
 
-parfor i= 1:length(filelist)
-    
-    picname=filelist(i).name
+parfor i= 1:length(filelist)    
+    picname=filelist(i).name(1:35)
     nam=fullfile(datadir,filelist(i).name);
     mode='massive';
-    [As{i},Cs{i}]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,Afinal,[]);
-    
+    [~,neuron{i}]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,Afinal,[]);        
 end
 %% 6
-[ns_storage]=Over_Days_findAnn(As,0.6,1.1,6); % most senstive to skewness border line 5 and 6.
-
-for i=1:3 %length(As)
-    subplot(1,length(As),i)
-    circleNeuronsFromA(As{i}, ns_storage(:,i))
-    title({['neuron from day ' num2str(i)], ['with ' num2str(size(ns_storage,1)) ' neurons tracked.']})
-end   

@@ -75,9 +75,21 @@ if strcmp(mode,'initiation')
     [center, Cn, pnr] = neuron.initComponents_endoscope(Y, K, patch_par, debug_on, save_avi);
     fprintf('Time cost in initializing neurons:     %.2f seconds\n', toc);
 elseif strcmp(mode,'massive')
-    AC=A2C2A([], Afinal, [], neuron.options, []);
-    neuron.A=AC.Ain;
-    neuron.C_raw=AC.Cin;
+    % parameters, estimate the background
+    spatial_ds_factor = 1;      % spatial downsampling factor. it's for faster estimation
+    thresh = 10;     % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
+    bg_neuron_ratio = bg_neuron_ratio;  % spatial range / diameter of neurons
+    BackgroundSub
+    [C,~]=extract_c(Ysignal,[],Afinal);
+    neuron.C=C;
+    neuron.A=Afinal;
+    neuron.updateTemporal_endoscope(Ysignal);
+    A0s=[];
+    File=neuron;
+    
+    Picname=picname;
+    ColorAllNeurons(neuron.A);
+    return
 end
 
 % show results
@@ -240,8 +252,9 @@ end
 Picname=picname;
 ColorAllNeurons(neuron.A);
 
-A0s=neuron.A;
-if strcmp(mode,'initiation')    
+
+if strcmp(mode,'initiation')
+    A0s=neuron.A;
     File.options=neuron.options;
     File.Y=Y;
 %    File.Ybg=Ybg; %Ybg+b0
