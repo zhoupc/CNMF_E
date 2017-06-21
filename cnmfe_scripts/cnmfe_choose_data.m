@@ -46,12 +46,8 @@ end
 
 %% information of the data 
 data = matfile(nam_mat);
-if isfield(data, 'Y')
-    Ysiz = size(data.Y); %data.Ysiz;
-else
-    Ysiz = size(data.VIDEO); 
-    Ysiz = Ysiz([2 3 1]);
-end
+
+Ysiz = size(data.Y); %data.Ysiz;
 d1 = Ysiz(1);   %height
 d2 = Ysiz(2);   %width
 numFrame = Ysiz(3);    %total number of frames

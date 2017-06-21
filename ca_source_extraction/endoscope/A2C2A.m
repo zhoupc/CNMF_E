@@ -46,9 +46,8 @@ if ~isempty(j)
     A=A0s{j};                    %concatnated A's from all files
 elseif isempty(j)
     A=A0s;
-end
-    
-Acenter = com(A, d1, d2); %nr x 2 matrix, with the center of mass coordinates
+end  
+Acenter = round(com(A, d1, d2)); %nr x 2 matrix, with the center of mass coordinates
 Amask=A>0;
 
 if isempty(File)
@@ -133,6 +132,8 @@ for k = 1:K;
         ci=ci_raw;
     end      
     STD(k)=std(ci);
+    display(length(ci))
+    ci=ci';
     
     % extract ai        
     % select its neighbours for estimation of ai, the box size is
@@ -143,18 +144,22 @@ for k = 1:K;
     [nr, nc] = size(cind);               % size of the box
     ind_nhood = sub2ind([d1, d2], rind(:), cind(:));
     HY_box = Ysignal(ind_nhood, :);      % extract temporal component from HY_box
+    display(size(HY_box,2))
     Y_box = Y(ind_nhood, :);
-    Amask=Amask(ind_nhood,k);
+    display(size(Y_box,2))
+    Amask_box=Amask(ind_nhood,k);
     ind_ctr = sub2ind([nr, nc], r-rsub(1)+1, c-csub(1)+1);   % index of the center
 
     sz = [nr, nc];
-    [ai, ind_success_ai] = extract_a(ci, Y_box, HY_box, Amask, ind_ctr, sz, sn);  
+    [ai, ind_success_ai] = extract_a(ci, Y_box, HY_box, Amask_box, ind_ctr, sz, sn); 
+    display(size(ai,1))
+    display(size(ai,2))
     if and(ind_success_ai==false,sn==1)
         Ain(:,k)=A(:,k);
     elseif and(ind_success_ai==false,sn==[])
         del_ind(k)=true;
     else
-        Ain(:,k)=ai;
+        Ain(ind_nhood,k)=ai;
     end
           
     % update the raw data

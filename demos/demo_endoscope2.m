@@ -1,7 +1,7 @@
-function [A0s,File]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,Afinal)
+function [A0s,File]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,Afinal,File)
 %% clear workspace 
 global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
-    neuron_full Ybg_weights; %#ok<NUSED> % global variables, don't change them manually
+    neuron_full Ybg_weights Picname; %#ok<NUSED> % global variables, don't change them manually
 
 %% select data and map it to the RAM
 
@@ -146,7 +146,7 @@ while miter <= maxIter
             break;
         end
     end
-    fprintf('Time cost in updating spatial & temporal components:     %.2f seconds\n', toc);
+    fprintf('Time cost in updating spatial & temporal components:     %.2f seconds\n', toc);    
     
     %% pick neurons from the residual (cell 4).
     if miter==1
@@ -237,7 +237,7 @@ end
 % cnmfe_save_video;
 
 %% see and save results
-picname=picname;
+Picname=picname;
 ColorAllNeurons(neuron.A);
 
 A0s=neuron.A;

@@ -88,7 +88,7 @@ obj.A = bsxfun(@times, A, sn);
 obj.C = bsxfun(@times, C, 1./sn');
 obj.C_raw = bsxfun(@times, C_raw, 1./sn');
 obj.S = bsxfun(@times, S, 1./sn');
-obj.P.kernel_pars =cell2mat( kernel_pars);
+obj.P.kernel_pars =cell2mat(kernel_pars);
 obj.P.smin = smin/sn;
 obj.P.sn_neuron = sn; 
 obj.delete(ind_del);

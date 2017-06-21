@@ -1,9 +1,12 @@
 %% Batched CNMF-E version
 %% 1
 %%%% Input1 %%%%
-codeDir='/Users/gushijie/Documents/MATLAB/CaImaging';
+codeDir='C:\Users\emackev\Documents\MATLAB\cnmf_e';
 addpath(genpath(codeDir));
-datadir='/Volumes/data0-shared/elm/ProcessedCalciumData/sleep/7030/061117_5140F/';
+codeDir2='C:\Users\emackev\Documents\MATLAB\CaProcessing';
+addpath(genpath(codeDir2));
+
+datadir='U:\ProcessedCalciumData\sleep\7030\061117_5140F\';
 kind='*CaELM*';
 gSig=10;
 gSiz=17;
@@ -24,14 +27,15 @@ File(length(filelist)) = struct('options',[],'Y',[],'Ybg',[],'Ysignal',[],...
     'Ysignal_sn',[],'noise',[],...
     'Ain',[],'Cin',[],'STD',[]);
 A0s=cell(1,length(filelist));
-
+%%
 parfor i= 1:length(filelist)
-    picname=filelist(i).name
+    picname=filelist(i).name(1:35)
     nam=fullfile(datadir,filelist(i).name);
     mode='initiation';
-    [A0s{i},File(i)]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,[]); 
+    [A0s{i},File(i)]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,[],File(i));
+    fprintf('File %.0f done\n', i);
 end
-[ns_storage_1]=Over_Days_findAnn(Ains,0.6,1.1,6);
+[ns_storage_1]=Over_Days_findAnn(A0s,0.6,1.1,0);
 %% 2
 for i= 1:length(filelist)
     A0=A0s{i};
@@ -39,16 +43,15 @@ for i= 1:length(filelist)
     unique_ind=setdiff(1:size(A0,2),corr_ind);
     A0s{i}=[A0(:,corr_ind) A0(:,unique_ind)];
 end
-
+%%
 A=cat(2,A0s{:});
-Acenter = com(A, d1, d2); %nr x 2 matrix, with the center of mass coordinates
 Amask=A>0;
 
 ACS(length(filelist)) = struct('Ain',[],'Cin',[],'STD',[]);
 
 parfor i= 1:length(filelist)
     for j=1:length(filelist)
-        ACS(i)=A2C2A(File(i), A0s, j, options, 1);
+        ACS(i)=A2C2A(File(i), A0s, j, File(i).options, 1);
     end
 end
 %% 3
@@ -78,7 +81,7 @@ parfor i= 1:length(filelist)
     picname=filelist(i).name
     nam=fullfile(datadir,filelist(i).name);
     mode='massive';
-    [As{i},Cs{i}]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,Afinal);
+    [As{i},Cs{i}]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,Afinal,[]);
     
 end
 %% 6
