@@ -84,7 +84,9 @@ classdef Sources2D < handle
         end
         
         %% udpate temporal components with fast deconvolution
-        updateTemporal_endoscope(obj, Y, smin)
+        function [C_offset,sn,ind_del]= updateTemporal_endoscope(obj, Y, smin)
+            [C_offset,sn,ind_del]= updateTemporal_endoscope2(obj, Y, smin);
+        end
         updateTemporal_endoscope_parallel(obj, Y, smin)
         
         %% update temporal components without background

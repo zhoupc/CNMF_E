@@ -1,7 +1,7 @@
-function [A0s,File]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,Afinal,File)
+function [A0s,File]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,Mode,picname,Afinal,File)
 %% clear workspace 
 global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
-    neuron_full Ybg_weights Picname; %#ok<NUSED> % global variables, don't change them manually
+    neuron_full Ybg_weights mode Picname; %#ok<NUSED> % global variables, don't change them manually
 
 %% select data and map it to the RAM
 
@@ -9,7 +9,7 @@ cnmfe_choose_data;
 
 %% create Source2D class object for storing results and parameters
 nam=nam;
-mode=mode;          % 'initiation' mode or 'massive' mode
+mode=Mode;          % 'initiation' mode or 'massive' mode
 Fs = 30;             % frame rate
 ssub = 1;           % spatial downsampling factor
 tsub = 1;           % temporal downsampling factor
@@ -81,14 +81,15 @@ elseif strcmp(mode,'massive')
     bg_neuron_ratio = bg_neuron_ratio;  % spatial range / diameter of neurons
     BackgroundSub
     [C,~]=extract_c(Ysignal,[],Afinal);
-    neuron.C=C;
     neuron.A=Afinal;
-    neuron.updateTemporal_endoscope(Ysignal);
+    neuron.C=C;
+    [~,~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,[]);
     A0s=[];
-    File=neuron;
-    
-    Picname=picname;
-    ColorAllNeurons(neuron.A);
+    File.A=neuron.A;
+    File.C=neuron.C;
+    File.ind_del=ind_del;
+%    Picname=picname;
+%    ColorAllNeurons(neuron.A);
     return
 end
 
@@ -149,7 +150,7 @@ while miter <= maxIter
     tic;
     for m=1:2  
         %temporal
-        neuron.updateTemporal_endoscope(Ysignal);
+        neuron.updateTemporal_endoscope(Ysignal,[]);
         cnmfe_quick_merge;              % run neuron merges
         %spatial
         neuron.updateSpatial_endoscope(Ysignal, Nspatial, update_spatial_method);

@@ -1,4 +1,4 @@
-function [C_offset,sn] = updateTemporal_endoscope(obj, Y, smin)
+function [C_offset,sn,ind_del] = updateTemporal_endoscope2(obj, Y, smin)
 %% run HALS by fixating all spatial components
 % input:
 %   Y:  d*T, fluorescence data
@@ -9,6 +9,7 @@ function [C_offset,sn] = updateTemporal_endoscope(obj, Y, smin)
 % Author: Pengcheng Zhou, Carnegie Mellon University, adapted from Johannes
 
 % options
+global mode
 maxIter = obj.options.maxIter;
 deconv_options_0 = obj.options.deconv_options;
 
@@ -63,9 +64,15 @@ for miter=1:maxIter
             if miter>1  % use the parameters in the previous initialization
                 deconv_options.pars = kernel_pars{k};
             end
-            [ck, sk, deconv_options]= deconvolveCa(temp, deconv_options_0, 'sn', tmp_sn, 'maxIter', 2);
-            smin(k) = deconv_options.smin;
-            kernel_pars{k} = reshape(deconv_options.pars, 1, []);
+            try
+                [ck, sk, deconv_options]= deconvolveCa(temp, deconv_options_0, 'sn', tmp_sn, 'maxIter', 2);
+                smin(k) = deconv_options.smin;
+                kernel_pars{k} = reshape(deconv_options.pars, 1, []);
+            catch
+                ck=zeros(1,size(C,2));
+                sk=zeros(1,size(C,2));
+                ind_del(k) = true;
+            end
         else
             ck = max(0, temp);
         end
@@ -84,11 +91,21 @@ for miter=1:maxIter
         end
     end
 end
-obj.A = bsxfun(@times, A, sn);
-obj.C = bsxfun(@times, C, 1./sn');
-obj.C_raw = bsxfun(@times, C_raw, 1./sn');
-obj.S = bsxfun(@times, S, 1./sn');
-obj.P.kernel_pars =cell2mat(kernel_pars);
-obj.P.smin = smin/sn;
-obj.P.sn_neuron = sn; 
-obj.delete(ind_del);
+%%%
+% obj.A = bsxfun(@times, A, sn);
+% obj.C = bsxfun(@times, C, 1./sn');
+% obj.C_raw = bsxfun(@times, C_raw, 1./sn');
+%%%
+
+
+obj.C = C;
+obj.C_raw = C_raw;
+
+if strcmp(mode,'initiation')
+    obj.S = bsxfun(@times, S, 1./sn');
+    obj.P.kernel_pars =cell2mat(kernel_pars);
+    obj.P.smin = smin/sn;
+    obj.P.sn_neuron = sn; 
+    obj.delete(ind_del);
+end
+end

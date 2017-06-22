@@ -1,4 +1,4 @@
-function ACS=A2C2A(File, A0s, j, options, sn)
+function ACS=A2C2A(ACS, File, A0s, j, options, sn)
 %% a greedy method for detecting ROIs and initializing CNMF. in each iteration,
 % Modified from "greedyROI_endoscope"
 % Main dependence is "extract_a" modified from "extract_ac" by Pengcheng.
@@ -92,7 +92,7 @@ Cin = zeros(K, T);      % temporal components
 %Sin = zeros(K, T);      % spike counts
 %Cin_raw = zeros(K, T);
 %kernel_pars = cell(K,1);    % parameters for the convolution kernels of all neurons
-STD=zeros(K,1);
+STD=zeros(1,K);
 del_ind=false(1,K);
 %% start initialization
 for k = 1:K;

@@ -12,7 +12,8 @@ if ~isempty(Amask)
     end
 elseif ~isempty(A)
     X = A; 
-    ci = (X'*X)\(X'*Yignal); 
+    ci = (X'*X)\(X'*Ysignal);
+    ind_success=[];
 else
     display('error in extract_c')
 end

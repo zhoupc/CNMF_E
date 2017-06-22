@@ -48,46 +48,60 @@ A=cat(2,A0s{:});
 Amask=A>0;
 
 ACS(length(filelist)) = struct('Ain',[],'Cin',[],'STD',[]);
-
+%%
 parfor i= 1:length(filelist)
     for j=1:length(filelist)
-        ACS(i)=A2C2A(File(i), A0s, j, File(i).options, 1);
+        ACS(i)=A2C2A(ACS(i),File(i), A0s, j, File(i).options, 1);
     end
 end
 %% 3
 merge_thr=[0.7,0.7];
-[merged_ROIs,commonA,commonC,ind_del] = mergeAC(Amask,File,merge_thr);
+[merged_ROIs,commonA,commonC,ind_del] = mergeAC(Amask,ACS,merge_thr);
 
 %% 4
 Aunique=cell(1,length(filelist));
 STDunique=cell(1,length(filelist));
 parfor i=1:length(filelist)
-    FileA=File(i).Ain;
-    FileSTD=File(i).STD;
+    FileA=ACS(i).Ain;
+    FileSTD=ACS(i).STD;
     Aunique{i}=FileA(:,~ind_del);
     STDunique{i}=FileSTD(~ind_del);    
 end
+%%
 weightedA=ReducingA(Aunique,STDunique);
 Afinal=cat(2,commonA,weightedA);
-
+%%
 for i=1:size(Afinal,2)
     ai=Afinal(:,i);
     temp = full(ai>quantile(ai, 0.5, 1));
-    l = bwlabel(reshape(temp, nr, nc), 4); 
-    temp(l~=l(ind_ctr)) = false; 
+%     l = bwlabel(reshape(temp, File(1).options.d1, File(1).options.d2), 4); 
+%     temp(l~=l(ind_ctr)) = false; 
     ai(~temp(:)) = 0;
     Afinal(:,i)=ai;
 end
-
+%%
+nz_ind=any(Afinal);
+Afinal=Afinal(:,nz_ind);
 %% 5
 filelist=dir(Datadir);
-As=cell(1,length(filelist));
-Cs=cell(1,length(filelist));
-
-parfor i= 1:length(filelist)    
+neuron(length(filelist)) = struct('A',[],'C',[],'ind_del',[]);
+parfor i= 1:2 %length(filelist)  
     picname=filelist(i).name(1:35)
     nam=fullfile(datadir,filelist(i).name);
     mode='massive';
-    [~,neuron{i}]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,Afinal,[]);        
+    [~,neuron(i)]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,Afinal,[]);    
 end
-%% 6
+%%
+ind_del_final_cat=cat(2,neuron.ind_del);
+ind_del_final=any(ind_del_final_cat,2);
+parfor i= 1:2 %length(filelist)
+    nA=neuron(i).A;
+    neuron(i).A=nA(:,~ind_del_final);
+    nC=neuron(i).C;
+    neuron(i).C=nC(~ind_del_final,:);
+    fprintf('File %.0f done\n', i);
+end
+fprintf('ALL done');
+
+ALL_C=cat(2,neuron.C);
+cell1=mean(Afinal(:,1)*ALL_C(1,:));

@@ -23,10 +23,9 @@ end
 
 A_thr = merge_thr(1);
 C_thr = merge_thr(2);
-K = size(C,1);   % number of neurons
 C=cat(2,File.Cin);
 A=cat(2,File.Ain);
-
+K = size(C,1);   % number of neurons
 %% find neuron pairs to merge
 % compute spatial correlation
 temp = bsxfun(@times, Amask, 1./sqrt(sum(Amask)));
@@ -67,7 +66,8 @@ for m=1:n2merge
     
     % update spatial/temporal components of the merged neuron
     
-    %data = A(active_pixel, IDs)*C(IDs, :);    
+    %data = A(active_pixel, IDs)*C(IDs, :);
+    data=[];
     for i=1:numel(File)
         FileA=File(i).Ain;
         FileC=File(i).Cin;
