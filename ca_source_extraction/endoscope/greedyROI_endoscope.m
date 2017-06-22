@@ -391,7 +391,7 @@ while searching_flag
     end
 end
 center = center(1:k, :);
-results.Ain = sparse(Ain(:, 1:k));
+results.Ain = Ain(:, 1:k);
 results.Cin = Cin(1:k, :);
 results.Cin_raw = Cin_raw(1:k, :);
 if deconv_flag

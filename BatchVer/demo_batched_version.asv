@@ -146,12 +146,11 @@ parfor i= 1:2 %length(filelist)
     FILE(i).C=[nC(~ind_del_final,:);nC(ind_del_final,:)];
     fprintf('C extraction done');
     %%% save this data's origin
-
+    FILE(i).filelist=filelist(i);    
     for j=1:size(FILE(i).A,2)
         jA=FILE(i).A(:,j);
         jC=FILE(i).C(j,:);
         neuron(i).signal(j,:)=median(jA(jA>0)*jC);
-        neuron(i).filelist=filelist(i);
     end        
     fprintf('FILE %.0f extraction done\n', i);
 end
