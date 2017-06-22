@@ -11,14 +11,14 @@ codeDir='C:\Users\emackev\Documents\MATLAB\cnmf_e';
 addpath(genpath(codeDir));
 codeDir2='C:\Users\emackev\Documents\MATLAB\CaProcessing';
 addpath(genpath(codeDir2));
+datadir='U:\ProcessedCalciumData\sleep\7030\061117_5140F\';
+kind='*CaELM*';
 Datadir=[datadir,kind];
 filelist=dir(Datadir);
 every_file_num=7;       % choose final A from every every_file_num as samples in the folders.
 
-running_on_cluster=false; % running on cluster or not
+running_on_cluster=true; % running on cluster or not
 
-datadir='U:\ProcessedCalciumData\sleep\7030\061117_5140F\';
-kind='*CaELM*';
 gSig=10;
 gSiz=17;
 min_pnr=6.5;
@@ -26,7 +26,7 @@ bg_neuron_ratio = 1;    % spatial range / diameter of neurons
 % also "picname" in section2 should be catered to your way of naming files.
 
 if running_on_cluster
-    [poolObj, ownPool, poolSize] = maybe_spawn_workers(8); 
+    [poolObj, ownPool, poolSize] = maybe_spawn_workers(4); 
     init_par_rng(2016);
 end
 %% 2 
