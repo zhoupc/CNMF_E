@@ -4,11 +4,11 @@ global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
     neuron_full Ybg_weights mode Picname nam outputdir; %#ok<NUSED> % global variables, don't change them manually
 
 %% select data and map it to the RAM
-
+nam=name;
 cnmfe_choose_data;
 
 %% create Source2D class object for storing results and parameters
-nam=name;
+
 mode=Mode;          % 'initiation' mode or 'massive' mode
 Fs = 30;             % frame rate
 ssub = 1;           % spatial downsampling factor
