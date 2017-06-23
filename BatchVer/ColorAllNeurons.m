@@ -32,7 +32,7 @@ function  ColorAllNeurons(A)
         Position(1,i)=mean(col_ind);
     end    
     text(Position(1,:),Position(2,:),cellstr(num2str((1:k)'))','Color','black')
-    title(Picname)
+    title(Picname,'interpreter','none')
     
     [pathstr,~,~]=filepart(nam);
 

@@ -251,11 +251,11 @@ end
 
 %% see and save results
 Picname=picname;
-ColorAllNeurons(neuron.A);
+ColorAllNeurons(full(neuron.A));
 
 
 if strcmp(mode,'initiation')
-    A0s=neuron.A;
+    A0s=full(neuron.A);
     File.options=neuron.options;
     File.Y=Y;
 %    File.Ybg=Ybg; %Ybg+b0
