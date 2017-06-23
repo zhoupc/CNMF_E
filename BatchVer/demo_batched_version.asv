@@ -7,15 +7,14 @@
 %  (1) code directory, data directory, how many every files to sample.
 %  (2) normal CNMF-E parameters.
 
-
+feevault
 codeDir='/home/elm/CaImagingCode/';
 addpath(genpath(codeDir));
-datadir='/net/feevault/data0/elm/ProcessedCalciumData/7030FirstFewDaysForBatch/'; %%%%%
-datadir='U:\ProcessedCalciumData\7030FirstFewDaysForBatch'
+datadir='/net/feevault/data0/elm/ProcessedCalciumData/7030FirstFewDaysForBatch'; %%%%%
 outputdir=datadir;
 
 kind='*CaELM*';
-Datadir=fullfile(datadir,kind);
+Datadir=[datadir,kind];
 filelist=dir(Datadir);
 every_file_num=5;       % choose final A from every every_file_num as samples in the folders.
 
