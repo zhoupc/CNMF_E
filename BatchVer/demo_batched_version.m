@@ -6,13 +6,14 @@
 %% 1 Input 
 %  (1) code directory, data directory, how many every files to sample.
 %  (2) normal CNMF-E parameters.
-
-codeDir='C:\Users\emackev\Documents\MATLAB\cnmf_e';
+global outputdir
+codeDir='/home/shijiegu/cnmf_e/';
 addpath(genpath(codeDir));
-codeDir2='C:\Users\emackev\Documents\MATLAB\CaProcessing';
-addpath(genpath(codeDir2));
-datadir='\\feevault\data0\ProcessedCalciumData\sleep\7030\061117_5140F\';
+% codeDir2='C:\Users\emackev\Documents\MATLAB\CaProcessing';
+% addpath(genpath(codeDir2));
+datadir='/net/feevault/data0/elm/ProcessedCalciumData/sleep/7030/061117_5140F/';
 kind='*CaELM*';
+outputdir='/home/shijiegu/BatchVerResult/7030/';
 Datadir=[datadir,kind];
 filelist=dir(Datadir);
 every_file_num=7;       % choose final A from every every_file_num as samples in the folders.
@@ -26,7 +27,7 @@ bg_neuron_ratio = 1;    % spatial range / diameter of neurons
 % also "picname" in section2 should be catered to your way of naming files.
 
 if running_on_cluster
-    [poolObj, ownPool, poolSize] = maybe_spawn_workers(4); 
+    [poolObj, ownPool, poolSize] = maybe_spawn_workers(8); 
     init_par_rng(2016);
 end
 %% 2 
@@ -157,6 +158,7 @@ parfor i= 1:2 %length(filelist)
 end
 fprintf('First %.0f neurons are found in each files while those after that are missing in some files', sum(ind_del_final));
 fprintf('ALL extraction done');
+eval(sprintf('save %sCNMFE_%s.mat %s -v7.3', outputdir, kind, 'neuron,FILE'));
 
 %% 7 Post-analysis
 

@@ -42,7 +42,7 @@ function [results, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, option
 
 %% use correlation to initialize NMF
 %% parameters
-global Picname nam
+global Picname outputdir
 d1 = options.d1;        % image height
 d2 = options.d2;        % image width
 gSig = options.gSig;    % width of the gaussian kernel approximating one neuron
@@ -442,8 +442,7 @@ xlabel('Corr');
 ylabel(strcat('PNR=',num2str(min_pnr)));
 legend('Those outside neurons','Neuron seeds','Corr*PnrThresh','CorrThresh','PnrThresh')
 
-[pathstr,~,~]=filepart(nam);
-fignam=[pathstr '/' Picname,strcat('PNR=',num2str(min_pnr)),'.png'];
+fignam=[outputdir '/' Picname,strcat('PNR=',num2str(min_pnr)),'.png'];
 saveas(gcf,fignam);
 
 

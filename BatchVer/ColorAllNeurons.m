@@ -1,5 +1,5 @@
 function  ColorAllNeurons(A)
-    global d1 d2 Picname nam
+    global d1 d2 Picname outputdir
     
     figure; 
     hold all
@@ -33,9 +33,7 @@ function  ColorAllNeurons(A)
     end    
     text(Position(1,:),Position(2,:),cellstr(num2str((1:k)'))','Color','black')
     title(Picname,'interpreter','none')
-    
-    [pathstr,~,~]=filepart(nam);
 
-    fignam=[pathstr '/' Picname,'.png'];
+    fignam=[outputdir '/' Picname,'.png'];
     saveas(gcf,fignam);
     
