@@ -6,17 +6,17 @@
 %% 1 Input 
 %  (1) code directory, data directory, how many every files to sample.
 %  (2) normal CNMF-E parameters.
-global outputdir
-codeDir='/home/shijiegu/cnmf_e/';
-addpath(genpath(codeDir));
-codeDir2='/home/shijiegu/caprocessing/';
-addpath(genpath(codeDir2));
-datadir='/net/feevault/data0/elm/ProcessedCalciumData/sleep/7030/061117_5140F/';
+
+% codeDir='/home/shijiegu/cnmf_e/';
+% addpath(genpath(codeDir));
+% codeDir2='/home/shijiegu/caprocessing/';
+% addpath(genpath(codeDir2));
+%datadir=datadir; %%%%%
 kind='*CaELM*';
-outputdir='/home/shijiegu/BatchVerResult/7030/';
+%outputdir='/home/shijiegu/BatchVerResult/7030/';
 Datadir=[datadir,kind];
 filelist=dir(Datadir);
-every_file_num=7;       % choose final A from every every_file_num as samples in the folders.
+every_file_num=5;       % choose final A from every every_file_num as samples in the folders.
 
 running_on_cluster=true; % running on cluster or not
 
@@ -27,7 +27,7 @@ bg_neuron_ratio = 1;    % spatial range / diameter of neurons
 % also "picname" in section2 should be catered to your way of naming files.
 
 if running_on_cluster
-    [poolObj, ownPool, poolSize] = maybe_spawn_workers(8); 
+    [poolObj, ownPool, poolSize] = maybe_spawn_workers(4); 
     init_par_rng(2016);
 end
 %% 2 
@@ -127,7 +127,7 @@ Afinal=Afinal(:,nz_ind);
 %% 6 "massive" procedure: Extract A from each file
 filelist=dir(Datadir);
 FILE(length(filelist)) = struct('A',[],'C',[],'ind_del',[]);
-parfor i= 1:2 %length(filelist)  
+parfor i= 1:length(filelist)  
     picname=filelist(i).name(1:35)
     nam=fullfile(datadir,filelist(i).name);
     mode='massive';
@@ -139,7 +139,7 @@ neuron(length(filelist)) = struct('signal',[],'filelist',[]);
 %%% Partition between those neurons found in each file and those not.
 ind_del_final_cat=cat(2,FILE.ind_del);
 ind_del_final=any(ind_del_final_cat,2);
-parfor i= 1:2 %length(filelist)
+parfor i= 1:length(filelist)
     nA=FILE(i).A;
     FILE(i).A=[nA(:,~ind_del_final) nA(:,ind_del_final)];
     fprintf('A extraction done');
