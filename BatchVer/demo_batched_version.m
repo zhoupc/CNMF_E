@@ -53,7 +53,7 @@ A0s=cell(1,length(filelist));
 %%% Running normal CNMF-E for each file
 parfor i= 1:length(filelist)
     picname=filelist(i).name(1:35) % For each file, save A's so you can roughly check what neuron is picked in which file. 
-    nam=fullfile(datadir,filelist(i).name);
+    name=fullfile(datadir,filelist(i).name);
                                     % The new cnmf-e demo is converted to
                                     % function to cater to parfor loop.
                                     % Meanwhile, some part of cnmf-e demo
@@ -62,7 +62,7 @@ parfor i= 1:length(filelist)
                                     % applied for later for each file.
                                     % Use 'mode' variable to specify this.
     mode='initiation';
-    [A0s{i},File(i)]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,[],File(i));
+    [A0s{i},File(i)]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,name,mode,picname,[],File(i));
     fprintf('Sampling file number %.0f done\n', i);
 end
 
