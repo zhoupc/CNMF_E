@@ -9,8 +9,8 @@
 global outputdir
 codeDir='/home/shijiegu/cnmf_e/';
 addpath(genpath(codeDir));
-% codeDir2='C:\Users\emackev\Documents\MATLAB\CaProcessing';
-% addpath(genpath(codeDir2));
+codeDir2='/home/shijiegu/caprocessing/';
+addpath(genpath(codeDir2));
 datadir='/net/feevault/data0/elm/ProcessedCalciumData/sleep/7030/061117_5140F/';
 kind='*CaELM*';
 outputdir='/home/shijiegu/BatchVerResult/7030/';
@@ -158,7 +158,7 @@ parfor i= 1:2 %length(filelist)
 end
 fprintf('First %.0f neurons are found in each files while those after that are missing in some files', sum(ind_del_final));
 fprintf('ALL extraction done');
-eval(sprintf('save %sCNMFE_%s.mat %s -v7.3', outputdir, kind, 'neuron,FILE'));
+eval(sprintf('save %sCNMFE_%s.mat %s -v7.3', outputdir, kind, 'neuron FILE'));
 
 %% 7 Post-analysis
 

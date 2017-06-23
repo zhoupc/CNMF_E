@@ -8,6 +8,7 @@ nam=name;
 cnmfe_choose_data;
 
 %% create Source2D class object for storing results and parameters
+
 mode=Mode;          % 'initiation' mode or 'massive' mode
 Fs = 30;             % frame rate
 ssub = 1;           % spatial downsampling factor

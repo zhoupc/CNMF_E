@@ -34,6 +34,6 @@ function  ColorAllNeurons(A)
     text(Position(1,:),Position(2,:),cellstr(num2str((1:k)'))','Color','black')
     title(Picname,'interpreter','none')
 
-    fignam=[outputdir '/' Picname,'.png'];
+    fignam=[outputdir Picname,'.png'];
     saveas(gcf,fignam);
     

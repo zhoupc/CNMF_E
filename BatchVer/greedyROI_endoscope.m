@@ -442,7 +442,7 @@ xlabel('Corr');
 ylabel(strcat('PNR=',num2str(min_pnr)));
 legend('Those outside neurons','Neuron seeds','Corr*PnrThresh','CorrThresh','PnrThresh')
 
-fignam=[outputdir '/' Picname,strcat('PNR=',num2str(min_pnr)),'.png'];
+fignam=[outputdir,Picname,strcat('PNR=',num2str(min_pnr)),'.png'];
 saveas(gcf,fignam);
 
 
