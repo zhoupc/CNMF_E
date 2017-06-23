@@ -7,13 +7,12 @@
 %  (1) code directory, data directory, how many every files to sample.
 %  (2) normal CNMF-E parameters.
 
-% codeDir='/home/shijiegu/cnmf_e/';
-% addpath(genpath(codeDir));
-% codeDir2='/home/shijiegu/caprocessing/';
-% addpath(genpath(codeDir2));
-%datadir=datadir; %%%%%
+codeDir='/home/elm/CaImagingCode/';
+addpath(genpath(codeDir));
+datadir='/net/feevault/data0/elm/ProcessedCalciumData/7030FirstFewDaysForBatch'; %%%%%
+outputdir=datadir;
+
 kind='*CaELM*';
-%outputdir='/home/shijiegu/BatchVerResult/7030/';
 Datadir=[datadir,kind];
 filelist=dir(Datadir);
 every_file_num=5;       % choose final A from every every_file_num as samples in the folders.
