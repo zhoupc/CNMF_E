@@ -34,7 +34,7 @@ cc = diag(V);   % squares of l2 norm all all components
 for miter=1:maxIter
     for k=1:K
         tmp_ind = active_pixel(:, k); 
-        ak = max(0, A(tmp_ind, k)+(U(tmp_ind, k)-A(tmp_ind,:)*V(:, k))/cc(k)); 
+        ak = max(0, full(A(tmp_ind, k))+(U(tmp_ind, k)-full(A(tmp_ind,:))*V(:, k))/cc(k)); 
         A(tmp_ind, k) = ak; 
     end
 end

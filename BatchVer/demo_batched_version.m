@@ -11,7 +11,7 @@ codeDir='C:\Users\emackev\Documents\MATLAB\cnmf_e';
 addpath(genpath(codeDir));
 codeDir2='C:\Users\emackev\Documents\MATLAB\CaProcessing';
 addpath(genpath(codeDir2));
-datadir='U:\ProcessedCalciumData\sleep\7030\061117_5140F\';
+datadir='\\feevault\data0\ProcessedCalciumData\sleep\7030\061117_5140F\';
 kind='*CaELM*';
 Datadir=[datadir,kind];
 filelist=dir(Datadir);
@@ -65,7 +65,7 @@ parfor i= 1:length(filelist)
     [A0s{i},File(i)]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,name,mode,picname,[],File(i));
     fprintf('Sampling file number %.0f done\n', i);
 end
-
+%%
 %%% Order similar neurons in the same sequence in each file, not necessary,
 %%% but nice to do. It is fast.
 [ns_storage_1]=Over_Days_findAnn(A0s,0.6,1.1,0);
@@ -125,28 +125,33 @@ Afinal=Afinal(:,nz_ind);
 
 %% 6 "massive" procedure: Extract A from each file
 filelist=dir(Datadir);
-FILE(length(filelist)) = struct('A',[],'C',[],'ind_del',[],'filelist',[],'neuron',cell(1,size(Afinal,2)));
+FILE(length(filelist)) = struct('A',[],'C',[],'ind_del',[]);
 parfor i= 1:2 %length(filelist)  
     picname=filelist(i).name(1:35)
     nam=fullfile(datadir,filelist(i).name);
     mode='massive';
     [~,FILE(i)]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,Afinal,[]);    
 end
+fprintf('Main extraction done');
 
+neuron(length(filelist)) = struct('signal',[],'filelist',[]);
 %%% Partition between those neurons found in each file and those not.
 ind_del_final_cat=cat(2,FILE.ind_del);
 ind_del_final=any(ind_del_final_cat,2);
 parfor i= 1:2 %length(filelist)
     nA=FILE(i).A;
     FILE(i).A=[nA(:,~ind_del_final) nA(:,ind_del_final)];
+    fprintf('A extraction done');
     nC=FILE(i).C;
     FILE(i).C=[nC(~ind_del_final,:);nC(ind_del_final,:)];
+    fprintf('C extraction done');
     %%% save this data's origin
-    FILE(i).filelist=filelist(i);    
+
     for j=1:size(FILE(i).A,2)
         jA=FILE(i).A(:,j);
         jC=FILE(i).C(j,:);
-        FILE(i).neuron{j}=median(jA(jA>0)*jC);
+        neuron(i).signal(j,:)=median(jA(jA>0)*jC);
+        neuron(i).filelist=filelist(i);
     end        
     fprintf('FILE %.0f extraction done\n', i);
 end
