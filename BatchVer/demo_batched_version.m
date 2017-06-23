@@ -65,7 +65,7 @@ parfor i= 1:length(filelist)
     [A0s{i},File(i)]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,[],File(i));
     fprintf('Sampling file number %.0f done\n', i);
 end
-
+%%
 %%% Order similar neurons in the same sequence in each file, not necessary,
 %%% but nice to do. It is fast.
 [ns_storage_1]=Over_Days_findAnn(A0s,0.6,1.1,0);
