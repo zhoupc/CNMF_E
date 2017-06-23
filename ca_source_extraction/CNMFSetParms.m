@@ -101,6 +101,7 @@ Names = [
     'deconv_flag        ' % perform deconvolution or not 
     'deconv_options     ' % options for running deconvolution 
     'smin               ' % mimimum spike size
+    'center_psf         ' % center psf or not 
     ];
 
 [m,n] = size(Names);
@@ -274,6 +275,7 @@ Values = [
     {true}
     {[]}
     {5}
+    {true}
     ];
 
 for j = 1:m

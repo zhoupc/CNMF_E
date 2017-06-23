@@ -29,9 +29,11 @@ T = size(Y, 3);
 %% preprocessing data
 % create a spatial filter for removing background
 psf = fspecial('gaussian', round(gSiz), gSig);
-ind_nonzero = (psf(:)>=max(psf(:,1)));
-psf = psf-mean(psf(ind_nonzero));
-psf(~ind_nonzero) = 0;
+if options.center_psf
+    ind_nonzero = (psf(:)>=max(psf(:,1)));
+    psf = psf-mean(psf(ind_nonzero));
+    psf(~ind_nonzero) = 0;
+end
 
 % divide data into multiple patches
 patch_sz = [3, 3];

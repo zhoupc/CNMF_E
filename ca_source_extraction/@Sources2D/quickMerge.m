@@ -86,9 +86,9 @@ for m=1:n2merge
         ai = data*ci'/(ci*ci');
         ci = ai'*data/(ai'*ai);
     end
-    % normalize ai to make its maximum to be 1
+    % normalize ci
     sn = get_noise_fft(ci);
-    A(active_pixel, IDs(1)) = ai*sn;
+    obj.A(active_pixel, IDs(1)) = ai*sn;
     obj.C_raw(IDs(1), :) = ci/sn;
     %     [obj.C(IDs(1), :), obj.S(IDs(1), :), tmp_kernel] = deconvCa(ci, obj.kernel, 3, true, false);
     try

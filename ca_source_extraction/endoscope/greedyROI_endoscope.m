@@ -56,7 +56,7 @@ deconv_flag = options.deconv_flag;
 try
     bd = options.bd;
 catch
-    bd = gSig*2;
+    bd = round(gSiz/2);
 end
 sig = 5;    % thresholding noise by sig*std()
 
@@ -84,9 +84,11 @@ T = size(Y, 2);
 %% preprocessing data
 % create a spatial filter for removing background
 psf = fspecial('gaussian', round(gSiz), gSig);
-ind_nonzero = (psf(:)>=max(psf(:,1)));
-psf = psf-mean(psf(ind_nonzero));
-psf(~ind_nonzero) = 0;
+if options.center_psf
+    ind_nonzero = (psf(:)>=max(psf(:,1)));
+    psf = psf-mean(psf(ind_nonzero));
+    psf(~ind_nonzero) = 0;
+end
 
 % filter the data
 HY = imfilter(reshape(Y, d1,d2,[]), psf, 'replicate');
@@ -112,7 +114,7 @@ HY_thr(bsxfun(@lt, HY_thr, Ysig*sig)) = 0;
 Cn = correlation_image(HY_thr, [1,2], d1,d2);
 Cn0 = Cn;   % backup
 Cn(isnan(Cn)) = 0;
-Cn = Cn + randn(size(Cn))*(1e-100);
+% Cn = Cn + randn(size(Cn))*(1e-100);
 
 % screen seeding pixels as center of the neuron
 v_search = Cn.*PNR;
@@ -123,14 +125,14 @@ ind_search(v_search==0) = true; % ignore pixels with small correlations or low p
 % show local correlation
 if debug_on
     figure('position', [100, 100, 1200, 800], 'color', [1,1,1]*0.9); %#ok<*UNRCH>
-    set(gcf, 'defaultAxesFontSize', 20); 
-    ax_cn = axes('position', [0.04, 0.5, 0.3, 0.4]); 
-    ax_pnr_cn = axes('position', [0.36, 0.5, 0.3, 0.4]); 
-    ax_cn_box = axes('position', [0.68, 0.54, 0.24, 0.32]); 
-    ax_trace = axes('position', [0.05, 0.05, 0.92, 0.4]); 
-    axes(ax_cn); 
-    imagesc(Cn0); 
-    %     imagesc(Cn.*PNR, quantile(Cn(:).*PNR(:), [0.5, 0.99])); 
+    set(gcf, 'defaultAxesFontSize', 20);
+    ax_cn = axes('position', [0.04, 0.5, 0.3, 0.4]);
+    ax_pnr_cn = axes('position', [0.36, 0.5, 0.3, 0.4]);
+    ax_cn_box = axes('position', [0.68, 0.54, 0.24, 0.32]);
+    ax_trace = axes('position', [0.05, 0.05, 0.92, 0.4]);
+    axes(ax_cn);
+    imagesc(Cn0);
+    %     imagesc(Cn.*PNR, quantile(Cn(:).*PNR(:), [0.5, 0.99]));
     axis equal off tight; hold on;
     %     title('Cn * PNR');
     title('Cn');
@@ -147,9 +149,10 @@ if debug_on
 end
 
 %% start initialization
-if ~exist('K', 'var')||isempty(K); K = sum(v_search(:)>0);
+if ~exist('K', 'var')||isempty(K); 
+    K = floor(sum(v_search(:)>0)/10);
 else
-    K = min(sum(v_search(:)>0), K);
+    K = min(floor(sum(v_search(:)>0)/10), K);
 end
 Ain = zeros(d1*d2, K);  % spatial components
 Cin = zeros(K, T);      % temporal components
@@ -170,8 +173,8 @@ ind_bd(:, (end-bd):end) = true;
 while searching_flag
     %% find local maximum as initialization point
     %find all local maximum as initialization point
-    tmp_d = 2*round(gSig)+1;
-    v_search = medfilt2(v_search, [gSig, gSig]); %+randn(size(v_search))*(1e-100);
+    tmp_d = 2*round(gSiz/4)+1;
+    v_search = medfilt2(v_search, round(gSiz/4)*[1, 1]); %+randn(size(v_search))*(1e-100);
     v_search(ind_search) = 0;
     v_max = ordfilt2(v_search, tmp_d^2, true(tmp_d));
     % set boundary to be 0
@@ -265,12 +268,12 @@ while searching_flag
         %% show temporal trace in the center
         if debug_on
             axes(ax_pnr_cn); cla;
-            imagesc(reshape(v_search, d1, d2), [0, max_v]); 
+            imagesc(reshape(v_search, d1, d2), [0, max_v]);
             title(sprintf('neuron %d', k+1));
             axis equal off tight; hold on;
             plot(c_peak(mcell:end), r_peak(mcell:end), '.r');
             plot(c,r, 'or', 'markerfacecolor', 'r', 'markersize', 10);
-            axes(ax_cn_box); 
+            axes(ax_cn_box);
             imagesc(reshape(Cn(ind_nhood), nr, nc), [0, 1]);
             axis equal off tight;
             title('correlation image');
@@ -350,11 +353,11 @@ while searching_flag
         
         %% display results
         if debug_on
-            axes(ax_cn); 
+            axes(ax_cn);
             plot(c, r, '.r');
-            axes(ax_pnr_cn); 
+            axes(ax_pnr_cn);
             plot(c,r, 'or');
-            axes(ax_cn_box); 
+            axes(ax_cn_box);
             imagesc(reshape(ai, nr, nc));
             axis equal off tight;
             title('spatial component');

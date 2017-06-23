@@ -146,9 +146,11 @@ for mr = 1:nr_patch
         close(gcf);
         tmp_Ain = tmp_results.Ain;
         tmp_Cin = tmp_results.Cin;
+        if tmp_options.deconv_flag 
         tmp_Sin = tmp_results.Sin;
+                tmp_kernel_pars = tmp_results.kernel_pars;
+        end 
         tmp_Cin_raw = tmp_results.Cin_raw;
-        tmp_kernel_pars = tmp_results.kernel_pars;
         tmp_K = size(tmp_Ain, 2);   % number of neurons within the selected patch
         temp = zeros(d1, d2, tmp_K);  % spatial components of all neurosn
         temp(r0:r1, c0:c1, :) = reshape(full(tmp_Ain), tmp_options.d1, tmp_options.d2, []);

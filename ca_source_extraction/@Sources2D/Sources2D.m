@@ -286,9 +286,21 @@ classdef Sources2D < handle
         end
         
         %% deconvolve all temporal components
-        function C0 = deconvTemporal(obj)
-            C0 = obj.C;
-            [obj.C, obj.P, obj.S] = deconv_temporal(obj.C, obj.P, obj.options);
+        function C_ = deconvTemporal(obj)
+            C_raw_ = obj.C_raw; 
+            K = size(C_raw_, 1);
+            C_ = zeros(size(C_raw_));
+            S_ = C_;
+            kernel_pars = cell(K, 1);
+            for m=1:size(C_raw_,1)         
+                [b_, sn] = estimate_baseline_noise(C_raw_(m, :)); 
+                [C_(m, :), S_(m,:), temp_options] = deconvolveCa(C_raw_(m, :)-b_, obj.options.deconv_options, 'sn', sn);
+                kernel_pars{m} = temp_options.pars;
+                obj.C_raw(m, :) = obj.C_raw(m, :)-b_; 
+            end
+            obj.C = C_;
+            obj.S = S_;
+            obj.P.kernel_pars = kernel_pars;
         end
         
         %% update background
@@ -701,9 +713,11 @@ classdef Sources2D < handle
             [center, Cn, pnr] = neuron.initComponents_endoscope(Y, [], patch_par, false, false);
             obj.A = [obj.A, neuron.A];
             obj.C = [obj.C; neuron.C];
-            obj.S = [obj.S; neuron.S];
             obj.C_raw = [obj.C_raw; neuron.C_raw];
-            obj.P.kernel_pars = [obj.P.kernel_pars; neuron.P.kernel_pars];
+            if obj.options.deconv_flag
+                obj.S = [obj.S; neuron.S];
+                obj.P.kernel_pars = [obj.P.kernel_pars; neuron.P.kernel_pars];
+            end
         end
         
         %% post process spatial component
