@@ -11,7 +11,6 @@
 codeDir='/home/elm/CaImagingCode/';
 addpath(genpath(codeDir));
 datadir='/net/feevault/data0/elm/ProcessedCalciumData/7030FirstFewDaysForBatch/'; %%%%%
-datadir='U:\ProcessedCalciumData\7030FirstFewDaysForBatch'
 outputdir=datadir;
 
 kind='*CaELM*';
