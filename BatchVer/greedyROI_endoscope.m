@@ -435,7 +435,7 @@ scatter(THRESH.Corr,THRESH.PNR,20,'red')
 plot(x,y,'k')
 plot([min_corr min_corr],[0 max(max(THRESH.PNROut),max(THRESH.PNR))],'k')
 plot([0 1],[min_pnr min_pnr],'k')
-axis([0 1 0 max(max(THRESH.PNROut),max(THRESH.PNR))])
+% axis([0 1 0 max(max(THRESH.PNROut),max(THRESH.PNR))])
 
 title(strcat('Current PNR and Corr cutoff: ',num2str(numberOfNeuron),'neurons'),'interpreter','none');
 xlabel('Corr');
