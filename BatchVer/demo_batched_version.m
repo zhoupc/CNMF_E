@@ -16,8 +16,21 @@ kind='*CaELM*';
 %outputdir='/home/shijiegu/BatchVerResult/7030/';
 Datadir=[datadir,kind];
 filelist=dir(Datadir);
-every_file_num=5;       % choose final A from every every_file_num as samples in the folders.
+if numel(filelist)==0
+    ME = MException('cnmfeBatchVer:NotEnoughInput', 'This is an empty folder. \n Please redefine input.');
+    throw(ME)
+elseif numel(filelist)==1
+    ME2 = MException('cnmfeBatchVer:OnlyOneInput', 'Only one file \n Use normal cnmf-e instead.');
+    throw(ME2)
+end
 
+every_file_num=5;       % choose final A from every every_file_num as samples in the folders.
+if numel(filelist)<=every_file_num
+    error('Zero file for cnmf-e BatchVer sampling. Please lower your every_file_num')
+elseif numel(filelist)<2*every_file_num
+    error('Only one file for cnmf-e BatchVer sampling. Please lower your every_file_num')
+end
+    
 running_on_cluster=true; % running on cluster or not
 
 gSig=10;
