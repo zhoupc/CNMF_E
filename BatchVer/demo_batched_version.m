@@ -7,14 +7,14 @@
 %  (1) code directory, data directory, how many every files to sample.
 %  (2) normal CNMF-E parameters.
 
-% codeDir='/home/shijiegu/cnmf_e/';
-% addpath(genpath(codeDir));
-% codeDir2='/home/shijiegu/caprocessing/';
-% addpath(genpath(codeDir2));
-%datadir=datadir; %%%%%
+
+codeDir='/home/elm/CaImagingCode/';
+addpath(genpath(codeDir));
+datadir='/net/feevault/data0/elm/ProcessedCalciumData/7030FirstFewDaysForBatch/'; %%%%%
+outputdir=datadir;
+
 kind='*CaELM*';
-%outputdir='/home/shijiegu/BatchVerResult/7030/';
-Datadir=[datadir,kind];
+Datadir=fullfile(datadir,kind);
 filelist=dir(Datadir);
 if numel(filelist)==0
     ME = MException('cnmfeBatchVer:NotEnoughInput', 'This is an empty folder. \n Please redefine input.');
