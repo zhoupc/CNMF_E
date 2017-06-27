@@ -10,6 +10,4 @@
 
 cd /net/feevault/data0/shared/EmilyShijieShared/BatchResultTest/
 module add mit/matlab/2016b
-cmd="matlab -nodisplay -singleCompThread -r"
-mfun=BatchVerScript
-srun $cmd "$mfun"
+matlab -nodisplay -singleCompThread -r "addpath(genpath('/home/shijiegu/cnmf_e/')); BatchVerScript"
