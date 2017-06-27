@@ -6,10 +6,9 @@ function [datadir,sampledir,outputdir,filelist,samplelist]=InputOutput(varargin)
 %                       'outputdir','/Users/gushijie/Documents/Fee/',
 %                       'datakind','*CaELM*',
 %                       'samplekind','*CaELM*',
-%                       'SamplingMethod','manual'
-%                       'running_on_cluster','true');
-%  Input: 1-data directory, 2-sample directory, which can be empty if you
-%         choose 'SamplingMethod' as 'manual', but cannot be 
+%                       'SamplingMethod','manual');
+%  Input: 1-data directory, 2-sample directory, which can be empty. In
+%         'SamplingMethod' as 'auto', the sample directory will be the same as data directory
 %         3-output directory, 4/5-what "kind" of data you want to read in to extract cells (for data and sample).
 %         6-how to choose data for sampling, either "auto", every some files will be asked for you
 %         as an input to sample data; or, "manual", a window will pop up for you to choose data from the sampledir you input.
@@ -32,7 +31,6 @@ addParameter(p,'datakind',kinddefault);
 addParameter(p,'samplekind',kinddefault);
 expectedmethod = {'auto','manual'};
 addParameter(p,'SamplingMethod','auto', @(x) any(validatestring(x,expectedmethod)));
-addParameter(p,'running_on_cluster',true); % running on cluster or not
 
 parse(p, varargin{:});
 
@@ -42,7 +40,6 @@ outputdir=p.Results.outputdir;
 datakind=p.Results.datakind;
 samplekind=p.Results.samplekind;
 SamplingMethod=p.Results.SamplingMethod;
-running_on_cluster=p.Results.running_on_cluster;
 
 Datadir=fullfile(datadir,datakind);
 filelist=dir(Datadir);
@@ -50,7 +47,7 @@ numInFolder=numel(filelist);
 
 %first check how many input data files are there. Minimum requirement is two.
 if numInFolder==0
-    ME = MException('cnmfeBatchVer:NotEnoughInput', 'This is an empty folder. \n Please redefine input.');
+    ME = MException('cnmfeBatchVer:NotEnoughInput', 'This is an empty data folder or a incorrectly specified folder. \n Please redefine input.');
     throw(ME)
 elseif numInFolder==1
     ME2 = MException('cnmfeBatchVer:OnlyOneInput', 'Only one file \n Use normal cnmf-e instead.');
@@ -59,7 +56,7 @@ end
 
 if strcmp(SamplingMethod,'auto')
     if isempty(sampledir)
-        error('Sample directory is empty.')
+        sampledir=datadir;
     end
     Sampledir=fullfile(sampledir,samplekind);
     samplelist=dir(Sampledir);
@@ -92,9 +89,5 @@ else
     samplelist = struct('name',FileName);
 end
     
-if running_on_cluster
-    [~, ~, ~] = maybe_spawn_workers(4); 
-    init_par_rng(2016);
-end
 end
 

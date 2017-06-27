@@ -6,20 +6,17 @@
 %  (2) normal CNMF-E parameters.
 %  (3) other parameters.
 
-% codeDir='/home/shijiegu/cnmf_e/';
-% addpath(genpath(codeDir));
-% codeDir2='/home/shijiegu/caprocessing/';
-% addpath(genpath(codeDir2));
+codeDir='/home/shijiegu/cnmf_e/'; % codeDir2='/home/shijiegu/caprocessing/';
+addpath(genpath(codeDir)); % addpath(genpath(codeDir2));
 
 %(1)
 [datadir,sampledir,outputdir,filelist,samplelist]=...
            InputOutput('datadir','/Volumes/data0-shared/elm/ProcessedCalciumData/7030FirstFewDaysForBatch/JustAFewToTest/',...
                        'sampledir',[],...
-                       'outputdir','/Users/gushijie/Documents/Fee/',...
+                       'outputdir','/Volumes/shared/EmilyShijieShared/BatchResultTest/',...
                        'datakind','*CaELM*',...
                        'samplekind','*CaELM*',...
-                       'SamplingMethod','manual',...
-                       'running_on_cluster','true');
+                       'SamplingMethod','auto');
 
 %(2)
 gSig=10;
@@ -41,9 +38,13 @@ skewnessthresh=0;
 % Merge similar neurons based on spatial AND temporal correlation
 merge_thr=[0.7,0.7]; 
 
+%(4)
+running_on_cluster=true;
+
 % Finally, save all these parameters/variables into LogisticscnmfeBatchVer.mat
 save([outputdir 'LogisticscnmfeBatchVer.mat'])
 
 %% B. Work on cluster from now
-load('LogisticscnmfeBatchVer.mat')
+load(fullfile('/Volumes/shared/EmilyShijieShared/BatchResultTest/','LogisticscnmfeBatchVer.mat'))
+addpath(genpath(codeDir));
 cnmfeBatchVer_ClusterPart

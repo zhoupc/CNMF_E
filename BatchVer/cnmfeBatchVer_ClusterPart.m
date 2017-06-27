@@ -1,3 +1,8 @@
+if running_on_cluster
+    [~, ~, ~] = maybe_spawn_workers(4); 
+    init_par_rng(2016);
+end
+
 File(length(samplelist)) = struct('options',[],'Y',[],'Ysignal',[]); % pre-allocate for parfor loop. 
 A0s=cell(1,length(samplelist));
 %%% Running normal CNMF-E for each file
@@ -92,5 +97,5 @@ parfor i= 1:length(filelist)
 end
 fprintf('First %.0f neurons are found in each files while those after that are missing in some files', sum(~ind_del_final));
 fprintf('ALL extractions done');
-eval(sprintf('save %sCNMFE_%s.mat %s -v7.3', outputdir, kind, 'neuron FILE'));
+eval(sprintf('save %sCNMFE_BatchVer.mat %s -v7.3', outputdir, 'neuron FILE'));
 fprintf('ALL data saved, check them out!');
