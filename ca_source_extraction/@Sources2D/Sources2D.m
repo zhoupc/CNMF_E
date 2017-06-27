@@ -700,7 +700,7 @@ classdef Sources2D < handle
             end
             neuron = obj.copy();
             neuron.options.seed_method = seed_method;
-            [center, Cn, pnr] = neuron.initComponents_endoscope(Y, [], patch_par, false, false);
+            [center, Cn, pnr] = neuron.initComponents_endoscope2(Y, [], patch_par, false, false);
             obj.A = [obj.A, neuron.A];
             obj.C = [obj.C; neuron.C];
             obj.S = [obj.S; neuron.S];
