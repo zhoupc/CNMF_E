@@ -2,16 +2,18 @@ function  [merged_ROIs,Ait,Cit,ind_del] = mergeAC(Amask,File,merge_thr)
 %% merge neurons based on simple spatial and temporal correlation
 % input:
 %   Amask: concatnated Amask from neurons from all files.
-%   Concatnated A and C from neurons from all files.
+%   File:  structure, having fields of Ain, Cin (concatnated A and C from neurons from all files).
 %   merge_thr: 1X2 vector, threshold for two metrics {'A', 'C'}. it merge neurons based
 %   on correlations of spatial shapes ('A'),  calcium traces ('C').
-
 % output:
-%   merged_ROIs: cell arrarys, each element contains indices of merged components.
-%   newIDs: vector, each element is the new index of the merged neurons
-%   merged A and C
+%   merged_ROIs: cell arrarys, each element contains indices of merged components of the current merged one.
+%   merged A and C for those neurons that come from merged ones.
+%   ind_del: index for neurons that are involved in merging.
+% note:
+%   A and C, only those involved in merging are taken of. For those not
+%   involved, use ~ind_del for management.
 
-%% Author: Shijie Gu, techel@live.cn, modified from quickMerge() by Pengcheng Zhou
+% Author: Shijie Gu, techel@live.cn, modified from quickMerge() by Pengcheng Zhou
 %  The basic idea is proposed by Eftychios A. Pnevmatikakis: high temporal
 %  correlation + spatial overlap
 %  reference: Pnevmatikakis et.al.(2016). Simultaneous Denoising, Deconvolution, and Demixing of Calcium Imaging Data. Neuron
@@ -58,14 +60,13 @@ Cit=zeros(n2merge,size(C,2));
 
 % start merging
 for m=1:n2merge
-    IDs = find(MC(:, m));   % IDs of neurons within this cluster
+    IDs = find(MC(:, m));  % IDs of neurons within this cluster
     merged_ROIs{m} = IDs;
     
     % determine searching area
-    active_pixel = (sum(A(:,IDs), 2)>0);
+    active_pixel = sum(A(:,IDs), 2)>0;
     
-    % update spatial/temporal components of the merged neuron
-    
+    % update spatial/temporal components of the merged neuron   
     %data = A(active_pixel, IDs)*C(IDs, :);
     data=[];
     for i=1:numel(File)
@@ -74,7 +75,8 @@ for m=1:n2merge
         data = [data FileA(active_pixel, IDs)*FileC(IDs, :)];
     end
     
-    ci = max(C(IDs, :),[],1);
+    [~,I] = max(std(C(IDs, :),0,2));
+    ci=ci(IDs(I),:);
     for miter=1:10
         ai = data*ci'/(ci*ci');
         ci = ai'*data/(ai'*ai);
@@ -84,10 +86,5 @@ for m=1:n2merge
     Cit(m, :) = ci;    
     ind_del(IDs) = true;
 end
-
-% % remove merged neurons and update
-% 
-% A(:, ind_del) = [];
-% C(ind_del, :) = [];
 
 end

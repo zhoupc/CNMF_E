@@ -1,4 +1,23 @@
-function [A0s,File]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,name,Mode,picname,Afinal,File)
+function [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,Afinal,File)
+% [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,Afinal,File)
+% It is converted to function to cater to parfor loop.
+%   Meanwhile, some part of cnmf-e demo is applied to this sampling process while some simplied methods are
+%   applied for later for each file. Use 'mode' variable to specify this.
+% In "initiation" mode, used in sampling data, most processes are the same as the original script,
+% except that (1) initComponents_endoscope calls modified
+%               greedy_ROI_endoscope() which plots PNR and corr for seeds
+%               and non-neuron pixel. This will help you decide which PNR
+%               to use.
+%             (2) output is a File structure. File.options=neuron.options; File.Y=Y(raw signal); File.Ysignal=Ysignal; (Bg-subtracted and denoised Ysignal)
+%                           and A0s, A0s is the output structure containing all A's obtained from each of the sample files.
+% In "massive" mode, which is the process of applying the same A to all
+% data in the folder, many steps are simplified.
+%             (1) No initiation. Just get C from A using background
+%             subtracted data.
+%             (2) Then Deconvolve C.
+%             In this mode, A0s is [], the File output only contains File.A=neuron.A; File.C=neuron.C; File.ind_del=ind_del;
+
+% modified by Shijie Gu from demo_endoscope script by Pengcheng Zhou.
 %% clear workspace 
 global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
     neuron_full Ybg_weights mode Picname nam outputdir; %#ok<NUSED> % global variables, don't change them manually
@@ -10,9 +29,9 @@ cnmfe_choose_data;
 %% create Source2D class object for storing results and parameters
 
 mode=Mode;          % 'initiation' mode or 'massive' mode
-Fs = 30;             % frame rate
-ssub = 1;           % spatial downsampling factor
-tsub = 1;           % temporal downsampling factor
+Fs = FS;             % frame rate
+ssub = SSub;           % spatial downsampling factor
+tsub = TSub;           % temporal downsampling factor
 gSig = gSig;           % width of the gaussian kernel, which can approximates the average neuron shape
 gSiz = gSiz;          % maximum diameter of neurons in the image plane. larger values are preferred.
 neuron_full = Sources2D('d1',d1,'d2',d2, ... % dimensions of datasets
@@ -61,7 +80,7 @@ save_avi = false;   %save the initialization procedure as an avi movie.
 patch_par = [1,1]*1; %1;  % divide the optical field into m X n patches and do initialization patch by patch. It can be used when the data is too large 
 K = []; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
 
-min_corr = 0.85;     % minimum local correlation for a seeding pixel
+min_corr = min_corr;     % minimum local correlation for a seeding pixel
 min_pnr = min_pnr;       % minimum peak-to-noise ratio for a seeding pixel
 min_pixel = 5;      % minimum number of nonzero pixels for each neuron
 bd = 1;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
@@ -76,8 +95,8 @@ if strcmp(mode,'initiation')
     fprintf('Time cost in initializing neurons:     %.2f seconds\n', toc);
 elseif strcmp(mode,'massive')
     % parameters, estimate the background
-    spatial_ds_factor = 1;      % spatial downsampling factor. it's for faster estimation
-    thresh = 10;     % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
+    spatial_ds_factor = 1;              % spatial downsampling factor. it's for faster estimation
+    thresh = 10;                        % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
     bg_neuron_ratio = bg_neuron_ratio;  % spatial range / diameter of neurons
     BackgroundSub
     [C,~]=extract_c(Ysignal,[],Afinal);
@@ -88,8 +107,6 @@ elseif strcmp(mode,'massive')
     File.A=neuron.A;
     File.C=neuron.C;
     File.ind_del=ind_del;
-%    Picname=picname;
-%    ColorAllNeurons(neuron.A);
     return
 end
 
@@ -249,21 +266,14 @@ end
 % center_ac = median(max(neuron.A,[],1)'.*max(neuron.C,[],2)); % the denoised video are mapped to [0, 2*center_ac] of the colormap 
 % cnmfe_save_video;
 
-%% see and save results
+%% for 'initiation' mode see and save results
 Picname=picname;
 ColorAllNeurons(neuron.A);
-
-
 if strcmp(mode,'initiation')
     A0s=neuron.A;
     File.options=neuron.options;
     File.Y=Y;
-%    File.Ybg=Ybg; %Ybg+b0
     File.Ysignal=Ysignal;
-%    File.Ysignal_sn=Ysignal_sn;
-%    File.noise=noise;
-% elseif strcmp(mode,'massive')
-%     File=neuron.C;
 end
 
 %globalVars = who('global');

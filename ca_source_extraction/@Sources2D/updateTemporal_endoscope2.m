@@ -68,16 +68,17 @@ for miter=1:maxIter
                 [ck, sk, deconv_options]= deconvolveCa(temp, deconv_options_0, 'sn', tmp_sn, 'maxIter', 2);
                 smin(k) = deconv_options.smin;
                 kernel_pars{k} = reshape(deconv_options.pars, 1, []);
-            catch
-                ck=zeros(1,size(C,2));
+            catch %if not deconvolved successfully
+                ck = max(0, temp);
                 sk=zeros(1,size(C,2));
+                smin(k) = smin(k-1);
+                kernel_pars{k}=kernel_pars{k-1};
                 ind_del(k) = true;
             end
         else
             ck = max(0, temp);
-        end
-        % save convolution kernels and deconvolution results
-        C(k, :) = ck;
+        end                        
+        C(k, :) = ck;   % save convolution kernels and deconvolution results (or not deconvolutioned)
         
         if sum(ck(2:end))==0
             ind_del(k) = true;
@@ -88,24 +89,22 @@ for miter=1:maxIter
                 S(k, :) = sk;
             end
             C_raw(k, :) = temp;
+            
         end
     end
 end
-%%%
-% obj.A = bsxfun(@times, A, sn);
-% obj.C = bsxfun(@times, C, 1./sn');
-% obj.C_raw = bsxfun(@times, C_raw, 1./sn');
-%%%
-
-
-obj.C = C;
-obj.C_raw = C_raw;
 
 if strcmp(mode,'initiation')
+    obj.A = bsxfun(@times, A, sn);
+    obj.C = bsxfun(@times, C, 1./sn');
+    obj.C_raw = bsxfun(@times, C_raw, 1./sn');
     obj.S = bsxfun(@times, S, 1./sn');
     obj.P.kernel_pars =cell2mat(kernel_pars);
     obj.P.smin = smin/sn;
     obj.P.sn_neuron = sn; 
     obj.delete(ind_del);
+elseif strcmp(mode,'massive')
+    obj.C = C;
+    obj.C_raw = C_raw;
 end
 end

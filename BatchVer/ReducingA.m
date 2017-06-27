@@ -1,4 +1,10 @@
 function weightedA=ReducingA(Aunique,STDunique)
+%Description: Reduce A for those that cannot be merged but has different values in each
+%             sampled file. General method is use std as weight to merge
+%             these.
+%Input: two cells each contains Aunique,STDunique of each file.
+%Output:One big weightedA.
+%author: Shijie Gu, techel@live.cn, (ShanghaiTech University,Harvard-MIT)
     A=cat(2,Aunique{:});    
         STDsum=sum(cat(3,STDunique{:}),3);
         STDcat=cat(2,STDunique{:});

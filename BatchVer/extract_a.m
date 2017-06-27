@@ -1,18 +1,33 @@
-function [ai, ind_success] = extract_a(ci, Y_box, HY_box, Amask, ind_ctr, sz, sn)
+function [ai, ind_success] = extract_a(ci, Y_box, HY_box, Amask, ind_ctr, sz, sn, options)
 % given the temporal component, background-subtracted and denoised calcium imaging data, extract
-% spatial component of one neuron ai. Method is regression. Y=ac+Ybg+noise. Afterwards, 
-% we threshold the spatial shape and remove those too small or emoty results. those If succeed, then
+% spatial component of one neuron ai. Method is regression. 
+    % Y=ac+Ybg+noise for non-denoised Y. 
+    % Y=ac for denoised Y.
+    % Use sn==1 or [] to tell function which one suits current suuply and demand.
+    % Input:
+    % for both, ind_ctr, sz, are needed for quality control.
+    %(1) Y=ac+Ybg+noise for non-denoised Y will need everything.
+    %(2) Y=ac for denoised Y. can have Amask=[] and Y=[].
+% Afterwards, 
+% we threshold the spatial shape and remove those too small or empty results. For those succeeded, then
 % return an indicator ind_succes with value 1; otherwise, 0.
 % some inputs explained:
 %       ind_ctr:    scalar, location of the center
 %       sz:         2 X 1 vector, size of the patch
 
-% Shijie Gu, techel@live.cn. modified from extract_ac() by pcZ.
+%%Shijie Gu, techel@live.cn. modified from extract_ac() by Pengcheng Zhou.
 
 %% preparations 
+if isempty(ci)
+    error('No ci is provided.')
+end
 nr = sz(1);
 nc = sz(2);
-min_pixels = 5;
+if isempty(options)
+    min_pixels=5;
+else
+    min_pixels = options.min_pixels;
+end
 Y=Y_box;
 HY=HY_box;
 
@@ -28,7 +43,7 @@ else
     temp = (X'*X)\(X'*Y'); 
     ai = max(0, temp(3,:)'); 
 end
-%% threshold the spatial shape and remove those too small or emoty results.
+%% threshold the spatial shape and remove those too small or empty results.
 % remove outliers not continuous with the main.
 temp =  full(ai>quantile(ai(:), 0.5)); 
 l = bwlabel(reshape(temp, nr, nc), 4); 
@@ -37,10 +52,7 @@ ai(~temp(:)) = 0;
 
 if sum(ai(:)>0) < min_pixels %the ROI is too small
     ind_success=false;
-    return;
-end
-
-if or(norm(ai)==0,any(isnan(ai)))
+elseif or(norm(ai)==0,any(isnan(ai)))
     ind_success= false;
 else
     ind_success=true;

@@ -1,11 +1,8 @@
 function [results, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, options,debug_on, save_avi)
-%% parameter sweep version
 %% a greedy method for detecting ROIs and initializing CNMF. in each iteration,
 % it searches the one with large (peak-median)/noise level and large local
 % correlation. It's the same with greedyROI_corr.m, but with some features
 % specialized for endoscope data
-
-% modified by Shijie Gu, techel@live.cn
 %% Input:
 %   Y:  d X T matrx, imaging data
 %   K:  scalar, maximum number of neurons to be detected.
@@ -42,7 +39,6 @@ function [results, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, option
 
 %% use correlation to initialize NMF
 %% parameters
-global Picname outputdir
 d1 = options.d1;        % image height
 d2 = options.d2;        % image width
 gSig = options.gSig;    % width of the gaussian kernel approximating one neuron
@@ -85,12 +81,6 @@ Y(isnan(Y)) = 0;    % remove nan values
 Y = double(Y);
 T = size(Y, 2);
 
-PNRCell = {};
-CorrCell = {};
-PNRCellOut = {};
-CorrCellOut = {};
-THRESH = struct('Corr',[],'PNR',[],'CorrOut',[],'PNROut',[]);
-
 %% preprocessing data
 % create a spatial filter for removing background
 psf = fspecial('gaussian', round(gSiz), gSig);
@@ -100,17 +90,17 @@ psf(~ind_nonzero) = 0;
 
 % filter the data
 HY = imfilter(reshape(Y, d1,d2,[]), psf, 'replicate');
+
 HY = reshape(HY, d1*d2, []);
 % HY_med = median(HY, 2);
 % HY_max = max(HY, [], 2)-HY_med;    % maximum projection
 HY = bsxfun(@minus, HY, median(HY, 2));
-HY0= HY;
-
+HY0=HY; % saved as intact filtered result.
 HY_max = max(HY, [], 2);
 Ysig = get_noise_fft(HY, options);
 PNR = reshape(HY_max./Ysig, d1, d2);
 PNR0 = PNR;
-%PNR(PNR<min_pnr) = 0;
+PNR(PNR<min_pnr) = 0;
 
 % estimate noise level and thrshold diff(HY)
 % dHY = diff(HY(:, 1:nf:end), 1, 2);  %
@@ -130,9 +120,6 @@ v_search = Cn.*PNR;
 v_search(or(Cn<min_corr, PNR<min_pnr)) = 0;
 ind_search = false(d1*d2,1);  % showing whether this pixel has been searched before
 ind_search(v_search==0) = true; % ignore pixels with small correlations or low peak-noise-ratio
-ind_neuron = false(d1*d2,1);
-ind_neuron_whole = false(d1*d2,1);
-ind_not_neuron=true(d1*d2,1); % all pixels are not neurons so far
 
 % show local correlation
 if debug_on
@@ -327,11 +314,6 @@ while searching_flag
             end
             ci = reshape(ci, 1,[]);
             center(k, :) = [r, c];
-
-            ind_neuron_whole(ind_nhood)=ai>0;
-            ind_neuron(ind_p)=true;
-            THRESH.PNR=[THRESH.PNR reshape(PNR(ind_p),1,[])];
-            THRESH.Corr=[THRESH.Corr reshape(Cn(ind_p),1,[])];
             
             % avoid searching nearby pixels that are highly correlated with this one
             ind_search(ind_nhood(ai>max(ai)*options.merge_thr)) = true;
@@ -348,8 +330,7 @@ while searching_flag
             Ysig_box = Ysig(ind_nhood_HY);
             temp = max(HY_box, [], 2);
             tmp_PNR = temp./Ysig_box;
-            %tmp_PNR(or(isnan(tmp_PNR), tmp_PNR<min_pnr)) = 0;
-            tmp_PNR(isnan(tmp_PNR)) = 0;
+            tmp_PNR(or(isnan(tmp_PNR), tmp_PNR<min_pnr)) = 0;
             PNR(ind_nhood_HY) = tmp_PNR;
             
             HY_box_thr = HY_box;  %thresholded version of HY
@@ -357,8 +338,7 @@ while searching_flag
             
             % update correlation image
             tmp_Cn = correlation_image(HY_box_thr, [1,2], nr2, nc2);
-            %tmp_Cn(or(isnan(tmp_Cn), tmp_Cn<min_corr)) = 0;
-            tmp_Cn(isnan(tmp_Cn)) = 0;
+            tmp_Cn(or(isnan(tmp_Cn), tmp_Cn<min_corr)) = 0;
             Cn(ind_nhood_HY) = tmp_Cn;
             
             % update search value
@@ -410,12 +390,6 @@ while searching_flag
         end
     end
 end
-ind_not_neuron=not(ind_neuron_whole);
-THRESH.CorrOut=(Cn0(ind_not_neuron))';
-THRESH.PNROut=(PNR0(ind_not_neuron))';
-numberOfNeuron=length(THRESH.Corr);
-
-
 center = center(1:k, :);
 results.Ain = Ain(:, 1:k);
 results.Cin = Cin(1:k, :);
@@ -424,29 +398,6 @@ if deconv_flag
     results.Sin = Sin(1:k, :);
     results.kernel_pars = cell2mat(kernel_pars(1:k));
 end
-
-x = linspace(0,1);
-y = min_pnr*min_corr./x;
-
-figure
-scatter(THRESH.CorrOut,THRESH.PNROut,20,'blue')
-hold on
-scatter(THRESH.Corr,THRESH.PNR,20,'red')
-plot(x,y,'k')
-plot([min_corr min_corr],[0 max(max(THRESH.PNROut),max(THRESH.PNR))],'k')
-plot([0 1],[min_pnr min_pnr],'k')
-MAXPNR=max(max(THRESH.PNROut),max(THRESH.PNR));
-axis([0 1 0 MAXPNR])
-
-title(strcat('Current PNR and Corr cutoff: ',num2str(numberOfNeuron),'neurons'),'interpreter','none');
-xlabel('Corr');
-ylabel(strcat('PNR=',num2str(min_pnr)));
-legend('Those outside neurons','Neuron seeds','Corr*PnrThresh','CorrThresh','PnrThresh')
-
-fignam=[outputdir,Picname,strcat('PNR=',num2str(min_pnr)),'.png'];
-saveas(gcf,fignam);
-
-
 % Cin(Cin<0) = 0;
 Cn = Cn0;
 PNR = PNR0;

@@ -3,35 +3,6 @@
 
 %  Direction of use:
 %  Input in Section1, let other sections run automatically.
-%% 1 Input 
-%  (1) code directory, data directory, how many every files to sample.
-%  (2) normal CNMF-E parameters.
-
-
-codeDir='/home/elm/CaImagingCode/';
-addpath(genpath(codeDir));
-datadir='/net/feevault/data0/elm/ProcessedCalciumData/7030FirstFewDaysForBatch/'; %%%%%
-outputdir=datadir;
-
-kind='*CaELM*';
-Datadir=fullfile(datadir,kind);
-filelist=dir(Datadir);
-if numel(filelist)==0
-    ME = MException('cnmfeBatchVer:NotEnoughInput', 'This is an empty folder. \n Please redefine input.');
-    throw(ME)
-elseif numel(filelist)==1
-    ME2 = MException('cnmfeBatchVer:OnlyOneInput', 'Only one file \n Use normal cnmf-e instead.');
-    throw(ME2)
-end
-
-every_file_num=5;       % choose final A from every every_file_num as samples in the folders.
-if numel(filelist)<=every_file_num
-    error('Zero file for cnmf-e BatchVer sampling. Please lower your every_file_num')
-elseif numel(filelist)<2*every_file_num
-    error('Only one file for cnmf-e BatchVer sampling. Please lower your every_file_num')
-end
-    
-running_on_cluster=true; % running on cluster or not
 
 gSig=10;
 gSiz=17;
@@ -39,19 +10,7 @@ min_pnr=6.5;
 bg_neuron_ratio = 1;    % spatial range / diameter of neurons
 % also "picname" in section2 should be catered to your way of naming files.
 
-if running_on_cluster
-    [poolObj, ownPool, poolSize] = maybe_spawn_workers(4); 
-    init_par_rng(2016);
-end
 %% 2 
-%%% Preparation for getting A from each sample file.
-if sum(cellfun('isempty', {filelist.date}))>0
-    display(['error in folder, might be an empty folder:',datadir])
-    return
-else
-    filelist=filelist(mod(1:numel(filelist),every_file_num)==1); % pick every some files in the folder as our sample for estimating A.    
-end
-
 % pre-allocate for parfor loop. 
 %File is the main output structure of demo_endoscope2. It is different for
 %sampling process (mode="initiation") and for running for each file with a given
@@ -79,7 +38,7 @@ parfor i= 1:length(filelist)
     [A0s{i},File(i)]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,name,mode,picname,[],File(i));
     fprintf('Sampling file number %.0f done\n', i);
 end
-%%
+
 %%% Order similar neurons in the same sequence in each file, not necessary,
 %%% but nice to do. It is fast.
 [ns_storage_1]=Over_Days_findAnn(A0s,0.6,1.1,0);
@@ -101,7 +60,8 @@ ACS(length(filelist)) = struct('Ain',[],'Cin',[],'STD',[]);
 
 parfor i= 1:length(filelist)
     for j=1:length(filelist)
-        ACS(i)=A2C2A(ACS(i),File(i), A0s, j, File(i).options, 1);
+        Aj=A0s{j};
+        ACS(i)=A2C2A(ACS(i), File(i), Aj, File(i).options);
     end
 end
 %% 3 Determine commonA's
@@ -144,7 +104,7 @@ parfor i= 1:length(filelist)
     picname=filelist(i).name(1:35)
     nam=fullfile(datadir,filelist(i).name);
     mode='massive';
-    [~,FILE(i)]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,Afinal,[]);    
+    [~,FILE(i)]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,picname,Afinal,FILE(i));    
 end
 fprintf('Main extraction done');
 
