@@ -44,7 +44,7 @@ samplekind=p.Results.samplekind;
 SamplingMethod=p.Results.SamplingMethod;
 running_on_cluster=p.Results.running_on_cluster;
 
-Datadir=[datadir,datakind];
+Datadir=fullfile(datadir,datakind);
 filelist=dir(Datadir);
 numInFolder=numel(filelist);
 
@@ -61,7 +61,7 @@ if strcmp(SamplingMethod,'auto')
     if isempty(sampledir)
         error('Sample directory is empty.')
     end
-    Sampledir=[sampledir,samplekind];
+    Sampledir=fullfile(sampledir,samplekind);
     samplelist=dir(Sampledir);
     sampleInFolder=numel(samplelist);
     if sampleInFolder==0
