@@ -75,7 +75,8 @@ for m=1:n2merge
         data = [data FileA(active_pixel, IDs)*FileC(IDs, :)];
     end
     
-    [~,I] = max(std(C(IDs, :),0,2));
+    data=data./length(IDs);
+    [~,I] = max(std(C(IDs, :),0,2)); % choose the most confident ci.
     ci=ci(IDs(I),:);
     for miter=1:10
         ai = data*ci'/(ci*ci');

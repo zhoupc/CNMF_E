@@ -9,14 +9,20 @@
 codeDir='/home/shijiegu/cnmf_e/'; % codeDir2='/home/shijiegu/caprocessing/';
 addpath(genpath(codeDir)); % addpath(genpath(codeDir2));
 
-%(1)
-[datadir,sampledir,outputdir,filelist,samplelist]=...
+%(1) Specify where stuffs are on your local machine. This is a parsing
+%step.
+[~,sampledir,outputdir,filelist,samplelist]=...
            InputOutput('datadir','/Volumes/data0-shared/elm/ProcessedCalciumData/7030FirstFewDaysForBatch/JustAFewToTest/',...
                        'sampledir',[],...
                        'outputdir','/Volumes/shared/EmilyShijieShared/BatchResultTest/',...
                        'datakind','*CaELM*',...
                        'samplekind','*CaELM*',...
                        'SamplingMethod','auto');
+%(1.1, replace for actual dir on cluster)
+datadir=strrep(datadir,'/Volumes/data0-shared/','/net/feevault/data0/');
+sampledir=strrep(sampledir,'/Volumes/data0-shared/','/net/feevault/data0/');
+outputdir_local=outputdir;
+outputdir=strrep(outputdir,'/Volumes/','/net/feevault/data0/');
 
 %(2)
 gSig=10;
@@ -42,7 +48,7 @@ merge_thr=[0.7,0.7];
 running_on_cluster=true;
 
 % Finally, save all these parameters/variables into LogisticscnmfeBatchVer.mat
-save([outputdir 'LogisticscnmfeBatchVer.mat'])
+save([outputdir_local 'LogisticscnmfeBatchVer.mat'])
 
 %% B. Work on cluster from now
 load(fullfile('/Volumes/shared/EmilyShijieShared/BatchResultTest/','LogisticscnmfeBatchVer.mat'))
