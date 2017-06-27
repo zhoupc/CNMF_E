@@ -6,6 +6,7 @@
 %  (2) normal CNMF-E parameters.
 %  (3) other parameters.
 
+%(0)
 codeDir='/home/shijiegu/cnmf_e/'; % codeDir2='/home/shijiegu/caprocessing/';
 addpath(genpath(codeDir)); % addpath(genpath(codeDir2));
 
@@ -33,6 +34,13 @@ bg_neuron_ratio = 1;    % spatial range / diameter of neurons
 FS=30;
 SSub=1;
 TSub=1;
+convolveType='ar1';    % convolveType: string, defines the model of the deconvolution kernel. possible options are:
+                                        % 'ar1':  auto-regressive model with order p=1
+                                        % 'ar2':  auto-regressive model with order p=2
+                                        % 'exp2': the convolution kernel is modeled as the difference of two
+                                        %         exponential functions -
+                                        %               h(t) = (exp(-t/tau_d) - exp(-t/tau_r)) / (tau_d-tau_r)
+                                        % 'kernel':   a vector of the convolution kernel
 namepattern=1:35;       % In sampling stage, for each file running cnmfe, save A's so you can roughly check what neuron is picked in which file.
                         % Each pic's name is from some characters from raw
                         % data's filename. Here I use 1:35
@@ -46,11 +54,7 @@ merge_thr=[0.7,0.7];
 
 %(4)
 running_on_cluster=true;
+workersnum=4;
 
 % Finally, save all these parameters/variables into LogisticscnmfeBatchVer.mat
 save([outputdir_local 'LogisticscnmfeBatchVer.mat'])
-
-%% B. Work on cluster from now
-load(fullfile('/Volumes/shared/EmilyShijieShared/BatchResultTest/','LogisticscnmfeBatchVer.mat'))
-addpath(genpath(codeDir));
-cnmfeBatchVer_ClusterPart

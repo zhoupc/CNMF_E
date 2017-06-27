@@ -1,4 +1,4 @@
-function [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,Afinal,File)
+function [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,Afinal,File,convolveType)
 % [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,Afinal,File)
 % It is converted to function to cater to parfor loop.
 %   Meanwhile, some part of cnmf-e demo is applied to this sampling process while some simplied methods are
@@ -53,7 +53,7 @@ else
 end
 
 %% options for running deconvolution 
-neuron_full.options.deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1', 'ar2'}
+neuron_full.options.deconv_options = struct('type', convolveType, ... % model of the calcium traces. {'ar1', 'ar2'}
     'method', 'thresholded', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
     'optimize_pars', true, ...  % optimize AR coefficients
     'optimize_b', false, ... % optimize the baseline

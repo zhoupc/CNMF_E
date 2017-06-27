@@ -7,8 +7,8 @@ function [datadir,sampledir,outputdir,filelist,samplelist]=InputOutput(varargin)
 %                       'datakind','*CaELM*',
 %                       'samplekind','*CaELM*',
 %                       'SamplingMethod','manual');
-%  Input: 1-data directory, 2-sample directory, which can be empty. In
-%         'SamplingMethod' as 'auto', the sample directory will be the same as data directory
+%  Input: 1-data directory, 2-sample directory, which can be empty. If
+%         'SamplingMethod' is 'auto', the sample directory will be the same as data directory
 %         3-output directory, 4/5-what "kind" of data you want to read in to extract cells (for data and sample).
 %         6-how to choose data for sampling, either "auto", every some files will be asked for you
 %         as an input to sample data; or, "manual", a window will pop up for you to choose data from the sampledir you input.

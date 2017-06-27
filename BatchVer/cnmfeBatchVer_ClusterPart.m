@@ -1,5 +1,5 @@
 if running_on_cluster
-    [~, ~, ~] = maybe_spawn_workers(4); 
+    [~, ~, ~] = maybe_spawn_workers(workersnum); 
     init_par_rng(2016);
 end
 
@@ -10,7 +10,7 @@ parfor i= 1:length(samplelist)
     Mode='initiation';
     picname=samplelist(i).name(namepattern) % For each file, save A's so you can roughly check what neuron is picked in which file. 
     name=fullfile(sampledir,samplelist(i).name);
-    [A0s{i},File(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,[],File(i));
+    [A0s{i},File(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,[],File(i),convolveType);
     fprintf('Sampling file number %.0f done\n', i);
 end
 
@@ -73,7 +73,7 @@ FILE(length(filelist)) = struct('A',[],'C',[],'ind_del',[]);
 parfor i= 1:length(filelist)  
     mode='massive';
     nam=fullfile(datadir,filelist(i).name);    
-    [~,FILE(i)]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,[],Afinal,FILE(i));    
+    [~,FILE(i)]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,[],Afinal,FILE(i),convolveType);    
 end
 fprintf('Massive extraction done.');
 save([outputdir 'MassivecnmfeBatchVer.mat'])

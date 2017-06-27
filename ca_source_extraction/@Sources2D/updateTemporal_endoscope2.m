@@ -1,8 +1,7 @@
-function [C_offset,sn,ind_del] = updateTemporal_endoscope2(obj, Y, smin)
+function [C_offset,sn,ind_del] = updateTemporal_endoscope2(obj, Y)
 %% run HALS by fixating all spatial components
 % input:
 %   Y:  d*T, fluorescence data
-%   smin: scalar, threshold for detecting one spikes (>smin*sigma)
 % output:
 %   C_raw: K*T, temporal components without being deconvolved
 
@@ -71,8 +70,11 @@ for miter=1:maxIter
             catch %if not deconvolved successfully
                 ck = max(0, temp);
                 sk=zeros(1,size(C,2));
-                smin(k) = smin(k-1);
-                kernel_pars{k}=kernel_pars{k-1};
+                if or(strcmp(deconv_options_0.type,'ar1'),strcmp(deconv_options_0.type,'kernel'))
+                    kernel_pars{k}=0; 
+                else
+                    kernel_pars{k}=zeros(1,2);
+                end
                 ind_del(k) = true;
             end
         else
