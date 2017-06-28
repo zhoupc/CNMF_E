@@ -39,7 +39,7 @@ save([outputdir 'PartOneOFcnmfeBatchVer.mat'])
 %% 2 Determine commonA's
 %%% Merge similar neurons based on spatial AND temporal correlation
 [~,commonA,commonC,ind_del] = mergeAC(Amask,ACS,merge_thr);
-save([outputdir 'commonAcnmfeBatchVer.mat'])
+save([outputdir 'commonAcnmfeBatchVer.mat'],'-v7.3')
 %% 3 Determine uniqueA's
 Aunique=cell(1,length(samplelist));
 STDunique=cell(1,length(samplelist));
@@ -50,7 +50,7 @@ parfor i=1:length(samplelist)
     STDunique{i}=FileSTD(~ind_del);    
 end
 weightedA=ReducingA(Aunique,STDunique);
-save([outputdir 'uniqueAcnmfeBatchVer.mat'])
+save([outputdir 'uniqueAcnmfeBatchVer.mat'],'-v7.3')
 %% 5 Determine Afinal that will be used to extract C's in each file.
 Afinal=cat(2,commonA,weightedA);
 
@@ -66,17 +66,17 @@ end
 % Just in case some all zero A's got passed to this stage.
 nz_ind=any(Afinal);
 Afinal=Afinal(:,nz_ind);
-save([outputdir 'AfinalcnmfeBatchVer.mat'])
+save([outputdir 'AfinalcnmfeBatchVer.mat'],'-v7.3')
 %% 6 "massive" procedure: Extract A from each file
 FILE(length(filelist)) = struct('A',[],'C',[],'ind_del',[]);
 
 parfor i= 1:length(filelist)  
     mode='massive';
     nam=fullfile(datadir,filelist(i).name);    
-    [~,FILE(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],Afinal,File(i),convolveType);    
+    [~,FILE(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],Afinal,FILE(i),convolveType);    
 end
 fprintf('Massive extraction done.');
-save([outputdir 'MassivecnmfeBatchVer.mat'])
+save([outputdir 'MassivecnmfeBatchVer.mat'],'-v7.3')
 
 neuron(length(filelist)) = struct('signal',[],'filelist',[]);
 %%% Partition between those neurons found in each file and those not.
