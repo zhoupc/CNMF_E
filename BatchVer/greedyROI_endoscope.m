@@ -47,7 +47,7 @@ function [results, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, option
 
 %% use correlation to initialize NMF
 %% parameters
-
+global neuron
 d1 = options.d1;        % image height
 d2 = options.d2;        % image width
 gSig = options.gSig;    % width of the gaussian kernel approximating one neuron
@@ -62,6 +62,8 @@ min_pixel = options.min_pixel;  % minimum number of pixels to be a neuron
 deconv_flag = options.deconv_flag;
 % smin = options.smin;
 % boudnary to avoid for detecting seed pixels
+THRESH=neuron.P.THRESH;
+
 try
     bd = options.bd;
 catch
