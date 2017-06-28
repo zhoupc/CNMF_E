@@ -22,8 +22,11 @@ if nargin < 4
     P_or = [];
 else
     P_or = P;
-    P_or.THRESH.Corr=P.THRESH.Corr(srt);
-    P_or.THRESH.PNR=P.THRESH.PNR(srt);
+    P.THRESH.Corr
+    CORR=P.THRESH.Corr;
+    PNRR=P.THRESH.PNR;
+    P_or.THRESH.Corr=CORR(srt);
+    P_or.THRESH.PNR=PNRR(srt);
     try
         if isfield(P,'gn')&& ~isempty(P.gn); P_or.gn=P.gn(srt); end
         if isfield(P,'b')&& ~isempty(P.b); P_or.b=P.b(srt); end

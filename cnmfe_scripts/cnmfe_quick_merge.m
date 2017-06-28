@@ -38,11 +38,14 @@ if display_merge && ~isempty(merged_ROI)
         end
     end
     
+    neuron.P.THRESH
     neuron.A = [neuron.A(:, ~ind_after), neuron_bk.A(:, ind_before)];
     neuron.C = [neuron.C(~ind_after, :); neuron_bk.C(ind_before, :)];
     neuron.C_raw = [neuron.C_raw(~ind_after, :); neuron_bk.C_raw(ind_before, :)];
     neuron.S = [neuron.S(~ind_after, :); neuron_bk.S(ind_before, :)];
     neuron.P.kernel_pars = [neuron.P.kernel_pars(~ind_after, :); neuron_bk.P.kernel_pars(ind_before, :)];
+    neuron.P.THRESH.Corr=[neuron.P.THRESH.Corr(~ind_after),neuron.P.THRESH.Corr(ind_before)];
+    neuron.P.THRESH.PNR=[neuron.P.THRESH.PNR(~ind_after),neuron.P.THRESH.PNR(ind_before)];    
     close; 
 end
 
