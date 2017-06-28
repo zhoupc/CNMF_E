@@ -104,7 +104,7 @@ for k = 1:K;
     ind_ctr = sub2ind([nr, nc], r-rsub(1)+1, c-csub(1)+1);   % index of the center
 
     sz = [nr, nc];
-    [ai, ind_success_ai] = extract_a(ci, [], HY_box, Amask_box, ind_ctr, sz, 1); 
+    [ai, ind_success_ai] = extract_a(ci, [], HY_box, Amask_box, ind_ctr, sz, 1, []); 
     if ind_success_ai==false
         Ain(:,k)=A(:,k);
     else
