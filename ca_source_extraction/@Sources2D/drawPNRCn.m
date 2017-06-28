@@ -14,6 +14,9 @@ plot(x,y,'k')
 plot([min_corr min_corr],[0 max(max(THRESH.PNROut),max(THRESH.PNR))],'k')
 plot([0 1],[min_pnr min_pnr],'k')
 MAXPNR=max(max(THRESH.PNROut),max(THRESH.PNR));
+display(THRESH.PNROut)
+display(THRESH.PNR)
+display(MAXPNR)
 axis([0 1 0 MAXPNR])
 text(THRESH.Corr,THRESH.PNR,cellstr(num2str((1:numberOfNeuron)'))','Color','black')
 title(strcat('Current PNR and Corr cutoff: ',num2str(numberOfNeuron),'neurons'),'interpreter','none');

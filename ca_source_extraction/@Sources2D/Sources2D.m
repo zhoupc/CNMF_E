@@ -30,7 +30,7 @@ classdef Sources2D < handle
         %% constructor and options setting
         function obj = Sources2D(varargin)
             obj.options = CNMFSetParms();
-            obj.P = struct('p', 2, 'sn', [],'THRESH',struct('Corr',[],'PNR',[],'CorrOut',[],'PNROut',[]));
+            obj.P = struct('p', 2, 'sn', [],'THRESH',[]);
             if nargin>0
                 obj.options = CNMFSetParms(obj.options, varargin{:});
             end
