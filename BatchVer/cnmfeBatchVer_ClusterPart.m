@@ -73,7 +73,7 @@ FILE(length(filelist)) = struct('A',[],'C',[],'ind_del',[]);
 parfor i= 1:length(filelist)  
     mode='massive';
     nam=fullfile(datadir,filelist(i).name);    
-    [~,FILE(i)]=demo_endoscope2(gSig,gSiz,min_pnr,bg_neuron_ratio,nam,mode,[],Afinal,FILE(i),convolveType);    
+    [~,FILE(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],Afinal,File(i),convolveType);    
 end
 fprintf('Massive extraction done.');
 save([outputdir 'MassivecnmfeBatchVer.mat'])
