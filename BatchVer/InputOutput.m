@@ -12,7 +12,6 @@ function [datadir,sampledir,outputdir,filelist,samplelist]=InputOutput(varargin)
 %         3-output directory, 4/5-what "kind" of data you want to read in to extract cells (for data and sample).
 %         6-how to choose data for sampling, either "auto", every some files will be asked for you
 %         as an input to sample data; or, "manual", a window will pop up for you to choose data from the sampledir you input.
-%         7-running_on_cluster(optional), default is true. 
 %  More notes:
 %  "kind" is wildcard in matlab. This is used in dir() function, see
 %         documentation dir() for how to use this well.
