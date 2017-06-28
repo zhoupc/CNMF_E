@@ -68,7 +68,7 @@ for k = 1:K;
     end
     
     % extract ci    
-    [ci_raw,ind_success_ci] = extract_c(Ysignal,Amask(:,k));    
+    [ci_raw,ind_success_ci] = extract_c(Ysignal,Amask(:,k),[]);    
     
     if ~ind_success_ci   % If it is a "poor" ci, no problem, low STD will let not it contribute much to finalA.
         Ain(:,k)=A(:,k); % Since poor ci will get poor A that has bad shapes. Use normal A to fill in the place.
