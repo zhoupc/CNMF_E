@@ -1,4 +1,4 @@
-function [A_or,C_or,S_or,P_or,srt] = order_ROIs(A,C,S,P, srt)
+function [A_or,C_or,S_or,P_or,srt] = order_ROIs(A,C,S,P,srt)
 
 % ordering of the found components based on their maximum temporal
 % activation and their size (through their l_inf norm)
@@ -22,6 +22,8 @@ if nargin < 4
     P_or = [];
 else
     P_or = P;
+    P_or.THRESH.Corr=P.THRESH.Corr(srt);
+    P_or.THRESH.PNR=P.THRESH.PNR(srt);
     try
         if isfield(P,'gn')&& ~isempty(P.gn); P_or.gn=P.gn(srt); end
         if isfield(P,'b')&& ~isempty(P.b); P_or.b=P.b(srt); end

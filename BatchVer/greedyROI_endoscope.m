@@ -413,6 +413,8 @@ end
 ind_not_neuron=not(ind_neuron_whole);
 THRESH.CorrOut=(Cn0(ind_not_neuron))';
 THRESH.PNROut=(PNR0(ind_not_neuron))';
+display(class(THRESH))
+display(THRESH)
 
 center = center(1:k, :);
 results.Ain = Ain(:, 1:k);
