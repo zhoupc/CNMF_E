@@ -22,6 +22,7 @@ if nargin < 4
     P_or = [];
 else
     P_or = P;
+    display(P)
     P.THRESH.Corr
     CORR=P.THRESH.Corr;
     PNRR=P.THRESH.PNR;
