@@ -66,9 +66,9 @@ for miter=1:maxIter
             try
                 [ck, sk, deconv_options]= deconvolveCa(temp, deconv_options_0, 'sn', tmp_sn, 'maxIter', 2);
                 smin(k) = deconv_options.smin;
-                kernel_pars{k} = reshape(deconv_options.pars, 1, []);
+                kernel_pars{k} = reshape(single(deconv_options.pars), 1, []);
                 display('try')
-                display(kernel_pars{k})
+                display(class(kernel_pars{k}))
             catch %if not deconvolved successfully
                 ck = max(0, temp);
                 sk=zeros(1,size(C,2));
