@@ -254,8 +254,9 @@ classdef Sources2D < handle
         function delete(obj, ind)
             obj.A(:, ind) = [];
             obj.C(ind, :) = [];
-            obj.P.THRESH.Corr(ind)=[];
-            obj.P.THRESH.PNR(ind)=[];
+            THRESH=obj.P.THRESH
+            THRESH.Corr(ind)=[];
+            THRESH.PNR(ind)=[];
             if ~isempty(obj.S); obj.S(ind, :) = []; end
             if ~isempty(obj.C_raw); obj.C_raw(ind, :) = []; end
             if isfield(obj.P, 'kernel_pars')&&(  ~isempty(obj.P.kernel_pars))
