@@ -910,6 +910,8 @@ classdef Sources2D < handle
             %             end
             %
             %         end
+       %% New method added by Shijie Gu, since Jun,2017
+       drawPNRCn(obj,min_pnr,min_corr)
         end
         
     end
