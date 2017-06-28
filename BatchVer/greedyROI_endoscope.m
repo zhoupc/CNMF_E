@@ -30,6 +30,9 @@ function [results, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, option
 %           Sin:  K' X T matrix, inferred spike counts within each frame
 %           kernel_pars: K'X1 cell, parameters for the convolution kernel
 %           of each neuron
+%           THRESH: structure, 4 fields, Corr, correlation value (intact orignal Cn) of pixels of neuron seeds. 
+%                                        CorrOut, correlation value (intact orignal Cn) of pixels that are not involved in any neuron shapes.
+%                                        similarly for PNR, and PNROut.
 %       center: K' X 2, coordinate of each neuron's center
 %       Cn:  d1*d2, correlation image
 %       save_avi:  options for saving avi.
@@ -44,7 +47,7 @@ function [results, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, option
 
 %% use correlation to initialize NMF
 %% parameters
-global Picname outputdir
+
 d1 = options.d1;        % image height
 d2 = options.d2;        % image width
 gSig = options.gSig;    % width of the gaussian kernel approximating one neuron
@@ -87,12 +90,6 @@ Y(isnan(Y)) = 0;    % remove nan values
 Y = double(Y);
 T = size(Y, 2);
 
-PNRCell = {};
-CorrCell = {};
-PNRCellOut = {};
-CorrCellOut = {};
-THRESH = struct('Corr',[],'PNR',[],'CorrOut',[],'PNROut',[]);
-
 %% preprocessing data
 % create a spatial filter for removing background
 psf = fspecial('gaussian', round(gSiz), gSig);
@@ -123,9 +120,9 @@ HY_thr(bsxfun(@lt, HY_thr, Ysig*sig)) = 0;
 
 % compute loal correlation
 Cn = correlation_image(HY_thr, [1,2], d1,d2);
-Cn0 = Cn;   % backup
 Cn(isnan(Cn)) = 0;
 Cn = Cn + randn(size(Cn))*(1e-100);
+Cn0 = Cn;   % backup
 
 % screen seeding pixels as center of the neuron
 v_search = Cn.*PNR;
@@ -332,8 +329,8 @@ while searching_flag
 
             ind_neuron_whole(ind_nhood)=ai>0;
             ind_neuron(ind_p)=true;
-            THRESH.PNR=[THRESH.PNR PNR(ind_p)];
-            THRESH.Corr=[THRESH.Corr Cn(ind_p)];
+            THRESH.PNR=[THRESH.PNR PNR0(ind_p)];
+            THRESH.Corr=[THRESH.Corr Cn0(ind_p)];
             
             % avoid searching nearby pixels that are highly correlated with this one
             ind_search(ind_nhood(ai>max(ai)*options.merge_thr)) = true;
@@ -413,10 +410,8 @@ while searching_flag
     end
 end
 ind_not_neuron=not(ind_neuron_whole);
-THRESH.CorrOut=(Cn0(ind_not_neuron))';
-THRESH.PNROut=(PNR0(ind_not_neuron))';
-numberOfNeuron=length(THRESH.Corr);
-
+THRESH.CorrOut=[THRESH.CorrOut (Cn0(ind_not_neuron))'];
+THRESH.PNROut=[THRESH.PNROut (PNR0(ind_not_neuron))'];
 
 center = center(1:k, :);
 results.Ain = Ain(:, 1:k);
@@ -426,30 +421,8 @@ if deconv_flag
     results.Sin = Sin(1:k, :);
     results.kernel_pars = cell2mat(kernel_pars(1:k));
 end
+results.THRESH=THRESH;
 
-x = linspace(0,1);
-y = min_pnr*min_corr./x;
-
-figure
-scatter(THRESH.CorrOut,THRESH.PNROut,20,'blue')
-hold on
-scatter(THRESH.Corr,THRESH.PNR,20,'red')
-plot(x,y,'k')
-plot([min_corr min_corr],[0 max(max(THRESH.PNROut),max(THRESH.PNR))],'k')
-plot([0 1],[min_pnr min_pnr],'k')
-MAXPNR=max(max(THRESH.PNROut),max(THRESH.PNR));
-axis([0 1 0 MAXPNR])
-
-title(strcat('Current PNR and Corr cutoff: ',num2str(numberOfNeuron),'neurons'),'interpreter','none');
-xlabel('Corr');
-ylabel(strcat('PNR=',num2str(min_pnr)));
-legend('Those outside neurons','Neuron seeds','Corr*PnrThresh','CorrThresh','PnrThresh')
-
-fignam=[outputdir,Picname,strcat('PNR=',num2str(min_pnr)),'.png'];
-saveas(gcf,fignam);
-
-
-% Cin(Cin<0) = 0;
 Cn = Cn0;
 PNR = PNR0;
 if exist('avi_file', 'var');

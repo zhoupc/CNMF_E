@@ -30,7 +30,7 @@ classdef Sources2D < handle
         %% constructor and options setting
         function obj = Sources2D(varargin)
             obj.options = CNMFSetParms();
-            obj.P = struct('p', 2, 'sn', []);
+            obj.P = struct('p', 2, 'sn', [],'THRESH',struct('Corr',[],'PNR',[],'CorrOut',[],'PNROut',[]));
             if nargin>0
                 obj.options = CNMFSetParms(obj.options, varargin{:});
             end
@@ -254,6 +254,8 @@ classdef Sources2D < handle
         function delete(obj, ind)
             obj.A(:, ind) = [];
             obj.C(ind, :) = [];
+            obj.P.THRESH.Corr(ind)=[];
+            obj.P.THRESH.PNR(ind)=[];
             if ~isempty(obj.S); obj.S(ind, :) = []; end
             if ~isempty(obj.C_raw); obj.C_raw(ind, :) = []; end
             if isfield(obj.P, 'kernel_pars')&&(  ~isempty(obj.P.kernel_pars))
@@ -700,12 +702,16 @@ classdef Sources2D < handle
             end
             neuron = obj.copy();
             neuron.options.seed_method = seed_method;
-            [center, Cn, pnr] = neuron.initComponents_endoscope2(Y, [], patch_par, false, false);
+            [center, Cn, pnr] = neuron.initComponents_endoscope(Y, [], patch_par, false, false);
             obj.A = [obj.A, neuron.A];
             obj.C = [obj.C; neuron.C];
             obj.S = [obj.S; neuron.S];
             obj.C_raw = [obj.C_raw; neuron.C_raw];
             obj.P.kernel_pars = [obj.P.kernel_pars; neuron.P.kernel_pars];
+            obj.P.THRESH.Corr= [obj.P.THRESH.Corr neuron.P.THRESH.Corr];
+            obj.P.THRESH.CorrOut= [obj.P.THRESH.CorrOut neuron.P.THRESH.CorrOut];
+            obj.P.THRESH.PNR= [obj.P.THRESH.PNR neuron.P.THRESH.PNR];
+            obj.P.THRESH.PNROut= [obj.P.THRESH.PNROut neuron.P.THRESH.PNROut];
         end
         
         %% post process spatial component

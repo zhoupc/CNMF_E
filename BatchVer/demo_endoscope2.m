@@ -220,6 +220,13 @@ end
 % fprintf('Time cost in updating spatial & temporal components:     %.2f seconds\n', toc);
 
 %% for 'initiation' mode see and save results
+resultstring=sprintf('%s_results', Picname);
+neuron.viewNeurons([], neuron.C_raw, resultstring);
+close(gcf);
+
+neuron.drawPNRCn(min_pnr,min_corr)
+close(gcf);
+
 ColorAllNeurons(neuron.A);
 if strcmp(mode,'initiation')
     A0s=neuron.A;

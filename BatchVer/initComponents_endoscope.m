@@ -64,6 +64,7 @@ if (~exist('patch_sz', 'var'))||(isempty(patch_sz))||(max(patch_sz(:))==1)
         obj.S = zeros(size(obj.C));
     end
     obj.Cn = Cn;
+    obj.P.THRESH=results.THRESH;
     return;
 elseif isscalar(patch_sz)
     % patch size has been assigned
