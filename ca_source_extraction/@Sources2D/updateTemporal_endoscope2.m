@@ -72,10 +72,11 @@ for miter=1:maxIter
             catch %if not deconvolved successfully
                 ck = max(0, temp);
                 sk=zeros(1,size(C,2));
+                display('catch')
                 if or(strcmp(deconv_options_0.type,'ar1'),strcmp(deconv_options_0.type,'kernel'))
-                    kernel_pars{k}=0; 
+                    kernel_pars{k}=single(0); 
                 else
-                    kernel_pars{k}=zeros(1,2);
+                    kernel_pars{k}=single(zeros(1,2));
                 end
                 ind_del(k) = true;
             end
