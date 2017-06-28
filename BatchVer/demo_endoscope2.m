@@ -18,10 +18,10 @@ function [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_n
 %             In this mode, A0s is [], the File output only contains File.A=neuron.A; File.C=neuron.C; File.ind_del=ind_del;
 
 % modified by Shijie Gu from demo_endoscope script by Pengcheng Zhou.
-%% clear workspace 
+%% set global variables
 global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
     neuron_full Ybg_weights mode Picname nam outputdir; %#ok<NUSED> % global variables, don't change them manually
-
+Picname=picname;
 %% select data and map it to the RAM
 nam=name;
 cnmfe_choose_data;
@@ -110,12 +110,6 @@ elseif strcmp(mode,'massive')
     return
 end
 
-% show results
-% figure;
-% imagesc(Cn, [0.1, 0.95]);
-% hold on; plot(center(:, 2), center(:, 1), 'or');
-% colormap; axis off tight equal;
-
 % sort neurons
 [~, srt] = sort(max(neuron.C, [], 2), 'descend');
 neuron.orderROIs(srt);
@@ -187,6 +181,7 @@ while miter <= maxIter
     %% stop the iteration 
     temp = size(neuron.C, 1); 
     if or(nC==temp, miter==maxIter)
+        
         break; 
     else
         miter = miter+1; 
@@ -224,50 +219,7 @@ end
 % end
 % fprintf('Time cost in updating spatial & temporal components:     %.2f seconds\n', toc);
 
-%% display neurons
-% dir_neurons = sprintf('%s%s%s_neurons%s', dir_nm, filesep, file_nm, filesep);
-% if exist('dir_neurons', 'dir')
-%     temp = cd();
-%     cd(dir_neurons);
-%     delete *;
-%     cd(temp);
-% else
-%     mkdir(dir_neurons);
-% end
-% neuron.viewNeurons([], neuron.C_raw, dir_neurons);
-% close(gcf); 
-
-%% display contours of the neurons
-% neuron.Coor = neuron.get_contours(0.8); % energy within the contour is 80% of the total 
-% figure;
-% Cnn = correlation_image(neuron.reshape(Ysignal(:, 1:5:end), 2), 4);
-% neuron.Coor = plot_contours(neuron.A, Cnn, 0.8, 0, [], neuron.Coor, 2);
-% colormap winter;
-% axis equal; axis off;
-% title('contours of estimated neurons');
-
-% plot contours with IDs
-% [Cn, pnr] = neuron.correlation_pnr(Y(:, round(linspace(1, T, min(T, 1000)))));
-% figure;
-% Cn = imresize(Cn, [d1, d2]); 
-% plot_contours(neuron.A, Cn, 0.8, 0, [], neuron.Coor, 2);
-% colormap winter;
-% title('contours of estimated neurons');
-
-%% check spatial and temporal components by playing movies
-% save_avi = false;
-% avi_name = 'play_movie.avi';
-% neuron.Cn = Cn;
-% neuron.runMovie(Ysignal, [0, 50], save_avi, avi_name);
-
-%% save video
-% kt = 3;     % play one frame in every kt frames
-% save_avi = true;
-% center_ac = median(max(neuron.A,[],1)'.*max(neuron.C,[],2)); % the denoised video are mapped to [0, 2*center_ac] of the colormap 
-% cnmfe_save_video;
-
 %% for 'initiation' mode see and save results
-Picname=picname;
 ColorAllNeurons(neuron.A);
 if strcmp(mode,'initiation')
     A0s=neuron.A;
@@ -275,6 +227,6 @@ if strcmp(mode,'initiation')
     File.Y=Y;
     File.Ysignal=Ysignal;
 end
-
+clear global
 %globalVars = who('global');
 %eval(sprintf('save %s%s%s_results.mat %s', dir_nm, filesep, file_nm, strjoin(globalVars)));

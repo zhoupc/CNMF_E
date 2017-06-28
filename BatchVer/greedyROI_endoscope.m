@@ -1,11 +1,14 @@
 function [results, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, options,debug_on, save_avi)
-%% parameter sweep version
-%% a greedy method for detecting ROIs and initializing CNMF. in each iteration,
+% (parameter sweep version, modified by Shijie Gu)
+% A greedy method for detecting ROIs and initializing CNMF. In each iteration,
 % it searches the one with large (peak-median)/noise level and large local
-% correlation. It's the same with greedyROI_corr.m, but with some features
-% specialized for endoscope data
-
-% modified by Shijie Gu, techel@live.cn
+%       correlation. It's the same with greedyROI_corr.m, but with some features
+%       specialized for endoscope data.
+% This function has a plotting section added that shows you seeds' pnr&corr
+%       as well as that of pixels not included in any neurons. In the same plot also
+%       shows you the min_pnr*min_corr curve. This helps you
+%       investigate your choice of PNR or corr on the amount and quality of
+%       neurons picked.
 %% Input:
 %   Y:  d X T matrx, imaging data
 %   K:  scalar, maximum number of neurons to be detected.
@@ -15,12 +18,11 @@ function [results, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, option
 %       gSiz:   maximum size of a neuron
 %       nb:     number of background
 %       min_corr: minimum threshold of correlation for segementing neurons
-%   sn:     d X 1 vector, noise level of each pixel
+%       sn:     d X 1 vector, noise level of each pixel
 %   debug_on: options for showing procedure of detecting neurons
 %   save_avi: save the video of initialization procedure. string: save
 %   video; true: just play it; false: interactive mode. (the name of this
 %      argument is very misleading after several updates of the code. sorry)
-
 %% Output:
 %`      results: struct variable with fields {'Ain', 'Cin', 'Sin', 'kernel_pars'}
 %           Ain:  d X K' matrix, estimated spatial component
@@ -330,8 +332,8 @@ while searching_flag
 
             ind_neuron_whole(ind_nhood)=ai>0;
             ind_neuron(ind_p)=true;
-            THRESH.PNR=[THRESH.PNR reshape(PNR(ind_p),1,[])];
-            THRESH.Corr=[THRESH.Corr reshape(Cn(ind_p),1,[])];
+            THRESH.PNR=[THRESH.PNR PNR(ind_p)];
+            THRESH.Corr=[THRESH.Corr Cn(ind_p)];
             
             % avoid searching nearby pixels that are highly correlated with this one
             ind_search(ind_nhood(ai>max(ai)*options.merge_thr)) = true;
