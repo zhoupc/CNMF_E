@@ -3,7 +3,7 @@ if running_on_cluster
     init_par_rng(2016);
 end
 
-File(length(samplelist)) = struct('options',[],'Y',[],'Ysignal',[]); % pre-allocate for parfor loop. 
+File(length(samplelist)) = struct('options',[],'Ysignal',[]); % pre-allocate for parfor loop. 
 A0s=cell(1,length(samplelist));
 %%% Running normal CNMF-E for each file
 parfor i= 1:length(samplelist)

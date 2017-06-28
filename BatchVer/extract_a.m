@@ -3,7 +3,7 @@ function [ai, ind_success] = extract_a(ci, Y_box, HY_box, Amask, ind_ctr, sz, sn
 % spatial component of one neuron ai. Method is regression. 
     % Y=ac+Ybg+noise for non-denoised Y. 
     % Y=ac for denoised Y.
-    % Use sn==1 or [] to tell function which one suits current suuply and demand.
+    % Use sn==1 or [] to tell function which one suits current supply and demand.
     % Input:
     % for both, ind_ctr, sz, are needed for quality control.
     %(1) Y=ac+Ybg+noise for non-denoised Y will need everything.
@@ -28,7 +28,7 @@ if isempty(options)
 else
     min_pixels = options.min_pixels;
 end
-Y=Y_box;
+
 HY=HY_box;
 
 %% estimate ai    
@@ -37,6 +37,7 @@ if sn==1
     temp = (X'*X)\(X'*HY');
     ai = max(0, temp');
 else
+    Y=Y_box;
     T = length(ci); 
     y_bg = median(HY(~Amask, :), 1); 
     X = [ones(T,1), y_bg', ci']; 

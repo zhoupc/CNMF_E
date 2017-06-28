@@ -224,7 +224,6 @@ ColorAllNeurons(neuron.A);
 if strcmp(mode,'initiation')
     A0s=neuron.A;
     File.options=neuron.options;
-    File.Y=Y;
     File.Ysignal=Ysignal;
 end
 clear global
