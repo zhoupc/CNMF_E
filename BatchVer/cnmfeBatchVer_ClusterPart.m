@@ -68,7 +68,7 @@ nz_ind=any(Afinal);
 Afinal=Afinal(:,nz_ind);
 save([outputdir 'AfinalcnmfeBatchVer.mat'],'-v7.3')
 %% 6 "massive" procedure: Extract A from each file
-FILE(length(filelist)) = struct('A',[],'C',[],'ind_del',[]);
+FILE(length(filelist)) = struct('A',[],'C',[],'ind_del',[],'signal',[],'filelist',[],'neuron');
 
 parfor i= 1:length(filelist)  
     mode='massive';
@@ -78,7 +78,7 @@ end
 fprintf('Massive extraction done.');
 save([outputdir 'MassivecnmfeBatchVer.mat'],'-v7.3')
 
-neuron(length(filelist)) = struct('signal',[],'filelist',[]);
+%neuron(length(filelist)) = struct('signal',[],'filelist',[]);
 %%% Partition between those neurons found in each file and those not.
 ind_del_final_cat=cat(2,FILE.ind_del);
 ind_del_final=any(ind_del_final_cat,2);
@@ -94,8 +94,8 @@ parfor i= 1:length(filelist)
     for j=1:size(FILE(i).A,2)
         jA=FILE(i).A(:,j);
         jC=FILE(i).C(j,:);
-        neuron(i).signal(j,:)=median(jA(jA>0)*jC);
-        neuron(i).filelist=filelist(i);
+        FILE(i).signal(j,:)=median(jA(jA>0)*jC);
+        FILE(i).filelist=filelist(i);
     end        
     fprintf('FILE and "neuron" %.0f extraction done\n', i);
 end

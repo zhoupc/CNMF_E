@@ -4,11 +4,13 @@ function [results, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, option
 % it searches the one with large (peak-median)/noise level and large local
 %       correlation. It's the same with greedyROI_corr.m, but with some features
 %       specialized for endoscope data.
-% This function has a plotting section added that shows you seeds' pnr&corr
+% This function has a plotting section (interwoven with the original code) added that shows you seeds' pnr&corr
 %       as well as that of pixels not included in any neurons. In the same plot also
 %       shows you the min_pnr*min_corr curve. This helps you
 %       investigate your choice of PNR or corr on the amount and quality of
-%       neurons picked.
+%       neurons picked. The actual plotting will be done after iteration
+%       where neuron deletion and additions are possible. Method
+%       drawPNRCn() is called in demo_endoscope2 to generate the plot.
 %% Input:
 %   Y:  d X T matrx, imaging data
 %   K:  scalar, maximum number of neurons to be detected.
@@ -33,6 +35,7 @@ function [results, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, option
 %           THRESH: structure, 4 fields, Corr, correlation value (intact orignal Cn) of pixels of neuron seeds. 
 %                                        CorrOut, correlation value (intact orignal Cn) of pixels that are not involved in any neuron shapes.
 %                                        similarly for PNR, and PNROut.
+%                   This will go into neuron.P.THRESH eventually (initComponents_endoscope will do this.).
 %       center: K' X 2, coordinate of each neuron's center
 %       Cn:  d1*d2, correlation image
 %       save_avi:  options for saving avi.
@@ -413,8 +416,6 @@ end
 ind_not_neuron=not(ind_neuron_whole);
 THRESH.CorrOut=(Cn0(ind_not_neuron))';
 THRESH.PNROut=(PNR0(ind_not_neuron))';
-display(class(THRESH))
-display(THRESH)
 
 center = center(1:k, :);
 results.Ain = Ain(:, 1:k);

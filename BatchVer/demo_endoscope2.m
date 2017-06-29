@@ -93,7 +93,6 @@ tic;
 if strcmp(mode,'initiation')
     [center, Cn, pnr] = neuron.initComponents_endoscope(Y, K, patch_par, debug_on, save_avi);
     fprintf('Time cost in initializing neurons:     %.2f seconds\n', toc);
-    display(neuron.P.THRESH)
 elseif strcmp(mode,'massive')
     % parameters, estimate the background
     spatial_ds_factor = 1;              % spatial downsampling factor. it's for faster estimation
@@ -108,6 +107,7 @@ elseif strcmp(mode,'massive')
     File.A=neuron.A;
     File.C=neuron.C;
     File.ind_del=ind_del;
+    File.neuron=neuron;
     return
 end
 

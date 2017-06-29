@@ -13,7 +13,7 @@ function [center, Cn, PNR] = initComponents_endoscope(obj, Y, K, patch_sz, debug
 %   Cn:     correlation image
 %   PNR:    peak to noise ratio
 %% Author: Pengcheng Zhou, Carnegie Mellon University, zhoupc1988@gmail.com
-
+%  modified by Shijie Gu
 %% process parameters
 d1 = obj.options.d1;
 d2 = obj.options.d2;
