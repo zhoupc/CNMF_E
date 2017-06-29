@@ -7,24 +7,25 @@
 %  (3) other parameters.
 
 %(0)
-codedir=...
+clear all
+codedir='C:\Users\emackev\Documents\MATLAB\cnmf_e\BatchVer'; % local computer code path
 addpath(genpath(codedir));
-codeDir='/home/shijiegu/cnmf_e/'; % codeDir2='/home/shijiegu/caprocessing/';
+codeDir='/home/elm/CaImagingCode/cnmf_e/'; % cluster code path
 
-%(1) Specify where stuffs are on your local machine. This is a parsing
+%(1) Specify where data is on your local machine. This is a parsing
 %step.
 [datadir,sampledir,outputdir,filelist,samplelist]=...
-           InputOutput('datadir','/Volumes/data0-shared/elm/ProcessedCalciumData/6938FirstFewDaysForBatch/',...
-                       'sampledir',[],...
-                       'outputdir','/Volumes/shared/EmilyShijieShared/BatchResult/6938FirstFewDaysForBatch/',...
-                       'datakind','*CaELM*',...
-                       'samplekind','*CaELM*',...
-                       'SamplingMethod','auto');
+           InputOutput('datadir','//feevault/data0/ProcessedCalciumData/6922FirstFewDaysForBatch/JustSinging',... % data directory on local computer
+                       'sampledir','//feevault/data0/ProcessedCalciumData/6922FirstFewDaysForBatch/JustSinging',... % directory of sample (seed) examples, if necessary
+                       'outputdir','//feevault/shared/EmilyShijieShared/BatchResult/6922FirstFewDaysForBatch/',...
+                       'datakind','*CaELM*',... % reg exp for data files
+                       'samplekind','*CaELM*',... % reg exp for sample (seed) examples
+                       'SamplingMethod','manual');
 %(1.1, replace for actual dir on cluster)
-datadir=strrep(datadir,'/Volumes/data0-shared/','/net/feevault/data0/');
-sampledir=strrep(sampledir,'/Volumes/data0-shared/','/net/feevault/data0/');
+datadir=strrep(datadir,'//feevault/data0/','/net/feevault/data0/');
+sampledir=strrep(sampledir,'//feevault/data0/','/net/feevault/data0/');
 outputdir_local=outputdir;
-outputdir=strrep(outputdir,'/Volumes/','/net/feevault/data0/');
+outputdir=strrep(outputdir,'//feevault/','/net/feevault/data0/');
 mkdir(outputdir_local)
 
 %(2)
@@ -65,12 +66,12 @@ ininame='LogisticscnmfeBatchVer.mat';
 save([outputdir_local ininame])
 
 %% B. making cluster script
-fileID = fopen('BatchVerSLURM.sh','w');
+fileID = fopen(fullfile(codedir, 'BatchVerSLURM.sh'),'w');
 request={'#!/bin/bash'
     '#SBATCH -n 1'
     '#SBATCH --cpus-per-task=8'
-    '#SBATCH --mem=30000'
-    '#SBATCH -t 0-3:00'
+    '#SBATCH --mem=100000'
+    '#SBATCH -t 0-10:00'
     '#SBATCH --time-min=0-01:00'};
 fprintf(fileID,'%s\n',request{:});
 
