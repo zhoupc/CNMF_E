@@ -1,5 +1,5 @@
 %% Demo for cnmfe (BatchVer)
-%  Shijie Gu, techel@live.cn
+%  Shijie Gu and Emily Mackevicius
 
 %% A. Input on your PC
 %  (1) code directory, data directory, sample directory, what to sample, what to extract.
@@ -45,10 +45,12 @@ namepattern=1:35;       % In sampling stage, for each file running cnmfe, save A
                         % Each pic's name is from some characters from raw
                         % data's filename. Here I use 1:35
 %(3)
-% parameters for putting similar neurons in sequence. type help Over_Days_findAnn
-correlation_thresh=0.6;
-max2max2nd=1.1;
-skewnessthresh=0;
+% parameters for putting similar neurons in sequence. 
+correlation_thresh=0.6; % Those neuron pairs with cross correlation coefficient above 
+                        % correlation_thresh will be considered similar, and
+                        % will be put in similar sequence in initiation.
+max2max2nd=1.1;         % type help Over_Days_findAnn
+skewnessthresh=0;       % type help findn1n2
 % Merge similar neurons based on spatial AND temporal correlation
 merge_thr=[0.7,0.7]; 
 

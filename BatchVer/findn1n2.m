@@ -129,7 +129,7 @@ FilterCoef=and(FilterCoef_temp,Filter4);
 % Filter= and(Filterpvalue,FilterCoef);
 Filter=FilterCoef;
 corrnumber=sum(sum(Filter,1),2);
-fprintf('There are    %f pairs of neurons tracked over two days', corrnumber);
+fprintf('There are %.0f pairs of neurons tracked over two days.\n', corrnumber);
 
 [n1,n2] = find(Filter);
 ns_storage=[n1,n2];
