@@ -22,15 +22,13 @@ if nargin < 4
     P_or = [];
 else
     P_or = P;
-    CORR=P.THRESH.Corr;
-    PNRR=P.THRESH.PNR;
-    P_or.THRESH.Corr=CORR(srt);
-    P_or.THRESH.PNR=PNRR(srt);
+
     try
         if isfield(P,'gn')&& ~isempty(P.gn); P_or.gn=P.gn(srt); end
         if isfield(P,'b')&& ~isempty(P.b); P_or.b=P.b(srt); end
         if isfield(P,'c1')&&~isempty(P.c1); P_or.c1=P.c1(srt); end
         if isfield(P,'neuron_sn')&&~isempty(P.neuron_sn); P_or.neuron_sn=P.neuron_sn(srt); end
+        if isfield(P,'THRESH')&&~isempty(P.THRESH); P_or.THRESH.Corr=P.THRESH.Corr(srt); P_or.THRESH.PNR=P.THRESH.PNR(srt); end
     catch
     end
 end

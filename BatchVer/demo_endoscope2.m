@@ -104,10 +104,10 @@ elseif strcmp(mode,'massive')
     neuron.C=C;
     [~,~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,[]);
     A0s=[];
-    File.A=neuron.A;
-    File.C=neuron.C;
+%     File.A=neuron.A;
+%     File.C=neuron.C;
     File.ind_del=ind_del;
-    File.neuron=neuron;
+    File.neuron=neuron;    
     return
 end
 

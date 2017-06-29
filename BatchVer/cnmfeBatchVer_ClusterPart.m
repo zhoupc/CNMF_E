@@ -68,38 +68,36 @@ nz_ind=any(Afinal);
 Afinal=Afinal(:,nz_ind);
 save([outputdir 'AfinalcnmfeBatchVer.mat'],'-v7.3')
 %% 6 "massive" procedure: Extract A from each file
-FILE(length(filelist)) = struct('A',[],'C',[],'ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
+neuron_batch(length(filelist)) = struct('ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
 
 parfor i= 1:length(filelist)  
     mode='massive';
     nam=fullfile(datadir,filelist(i).name);    
-    [~,FILE(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],Afinal,FILE(i),convolveType);
-    FILE(i).FileOrigin=filelist(i);
+    [~,neuron_batch(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],Afinal,neuron_batch(i),convolveType);
+    neuron_batch(i).FileOrigin=filelist(i); % save origin(filelist)
 end
 fprintf('Massive extraction done.');
 save([outputdir 'MassivecnmfeBatchVer.mat'],'-v7.3')
 
 %neuron(length(filelist)) = struct('signal',[],'filelist',[]);
 %%% Partition between those neurons found in each file and those not.
-ind_del_final_cat=cat(2,FILE.ind_del);
+ind_del_final_cat=cat(2,neuron_batch.ind_del);
 ind_del_final=any(ind_del_final_cat,2);
 parfor i= 1:length(filelist)
-    nA=FILE(i).A;
-    FILE(i).A=[nA(:,~ind_del_final) nA(:,ind_del_final)];
-    fprintf('A extraction done');
-    nC=FILE(i).C;
-    FILE(i).C=[nC(~ind_del_final,:);nC(ind_del_final,:)];
-    fprintf('C extraction done');
-    %%% save each data i's signal and origin(filelist) into neuron(i).signal and
-    %%% neuron(i).filelist
-    for j=1:size(FILE(i).A,2)
-        jA=FILE(i).A(:,j);
-        jC=FILE(i).C(j,:);
-        FILE(i).signal(j,:)=median(jA(jA>0)*jC);
+    neuron_batch(i).neuron.A=[neuron_batch(i).neuron.A(:,~ind_del_final) neuron_batch(i).neuron.A(:,ind_del_final)];
+    fprintf('A extraction done\n');
+    neuron_batch(i).neuron.C=[neuron_batch(i).neuron.C(~ind_del_final,:);neuron_batch(i).neuron.C(ind_del_final,:)];
+    neuron_batch(i).neuron.C_raw=[neuron_batch(i).neuron.C_raw(~ind_del_final,:);neuron_batch(i).neuron.C_raw(ind_del_final,:)];
+    fprintf('C extraction done\n');
+            %%% save each data i's signal into neuron(i).signal and
+    for j=1:size(neuron_batch(i).neuron.A,2)
+        jA=neuron_batch(i).neuron.A(:,j);
+        jC=neuron_batch(i).neuron.C(j,:);
+        neuron_batch(i).signal(j,:)=median(jA(jA>0)*jC);
     end        
-    fprintf('FILE %.0f extraction done\n', i);
+    fprintf('neuron_batch %.0f extraction done\n', i);
 end
 fprintf('First %.0f neurons are found in each files while those after that are missing in some files', sum(~ind_del_final));
 fprintf('ALL extractions done');
-eval(sprintf('save %sCNMFE_BatchVer.mat %s -v7.3', outputdir, 'FILE'));
+eval(sprintf('save %sCNMFE_BatchVer.mat %s -v7.3', outputdir, 'neuron_batch'));
 fprintf('ALL data saved, check them out!');
