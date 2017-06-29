@@ -18,7 +18,7 @@ save([outputdir 'NormalsOFcnmfeBatchVer.mat'],'-v7.3')
 
 %%% Order similar neurons in the same sequence in each file, not necessary,
 %%% but nice to do. It is fast.
-[ns_storage_1]=Over_Days_findAnn(A0s,correlation_thresh,max2max2nd,skewnessthresh);
+[ns_storage_1,A0s]=Over_Days_ResequenceA(A0s,correlation_thresh,max2max2nd,skewnessthresh);
 ns_storage_1
 try
     for i= 1:length(samplelist)

@@ -6,8 +6,7 @@ function [ns_storage]=Over_Days_findAnn(As,correlation_thresh,max2max2nd,skewnes
 % Output:
 %   ns_storage: each column for each day, index for k in A or C such that
 %       when you specify A(ns_storage(:,1)) and A(ns_storage(:,2)),
-%       the permutated As from time point 1 and point 2 are considered the same
-%       across time.
+%       each row of the permutated A?s from time point 1 and point 2 are the index for the same neuron in the original As
 
 % Shijie Gu, techel@live.cn (ShanghaiTech University, Harvard-MIT)
 if or(isempty(As),length(As)==1)
