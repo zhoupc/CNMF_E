@@ -20,16 +20,16 @@ save([outputdir 'NormalsOFcnmfeBatchVer.mat'],'-v7.3')
 %%% but nice to do. It is fast.
 [ns_storage_1,A0s]=Over_Days_ResequenceA(A0s,correlation_thresh,max2max2nd,skewnessthresh);
 ns_storage_1
-try
-    for i= 1:length(samplelist)
-        A0=A0s{i};
-        corr_ind=ns_storage_1(:,i);
-        unique_ind=setdiff(1:size(A0,2),corr_ind);
-        A0s{i}=[A0(:,corr_ind) A0(:,unique_ind)];
-    end
-catch ME
-    fprintf([ME.message '\n'])
-end
+% try
+%     for i= 1:length(samplelist)
+%         A0=A0s{i};
+%         corr_ind=ns_storage_1(:,i);
+%         unique_ind=setdiff(1:size(A0,2),corr_ind);
+%         A0s{i}=[A0(:,corr_ind) A0(:,unique_ind)];
+%     end
+% catch ME
+%     fprintf([ME.message '\n'])
+% end
 
 A=cat(2,A0s{:}); Amask=A>0;  % This A is raw and plain, it is just all A's from all files concatnated together.
 % Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
