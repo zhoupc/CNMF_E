@@ -68,12 +68,13 @@ nz_ind=any(Afinal);
 Afinal=Afinal(:,nz_ind);
 save([outputdir 'AfinalcnmfeBatchVer.mat'],'-v7.3')
 %% 6 "massive" procedure: Extract A from each file
-FILE(length(filelist)) = struct('A',[],'C',[],'ind_del',[],'signal',[],'filelist',[],'neuron',[]);
+FILE(length(filelist)) = struct('A',[],'C',[],'ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
 
 parfor i= 1:length(filelist)  
     mode='massive';
     nam=fullfile(datadir,filelist(i).name);    
-    [~,FILE(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],Afinal,FILE(i),convolveType);    
+    [~,FILE(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],Afinal,FILE(i),convolveType);
+    FILE(i).FileOrigin=filelist(i);
 end
 fprintf('Massive extraction done.');
 save([outputdir 'MassivecnmfeBatchVer.mat'],'-v7.3')
@@ -95,11 +96,10 @@ parfor i= 1:length(filelist)
         jA=FILE(i).A(:,j);
         jC=FILE(i).C(j,:);
         FILE(i).signal(j,:)=median(jA(jA>0)*jC);
-        FILE(i).filelist=filelist(i);
     end        
-    fprintf('FILE and "neuron" %.0f extraction done\n', i);
+    fprintf('FILE %.0f extraction done\n', i);
 end
 fprintf('First %.0f neurons are found in each files while those after that are missing in some files', sum(~ind_del_final));
 fprintf('ALL extractions done');
-eval(sprintf('save %sCNMFE_BatchVer.mat %s -v7.3', outputdir, 'neuron FILE'));
+eval(sprintf('save %sCNMFE_BatchVer.mat %s -v7.3', outputdir, 'FILE'));
 fprintf('ALL data saved, check them out!');
