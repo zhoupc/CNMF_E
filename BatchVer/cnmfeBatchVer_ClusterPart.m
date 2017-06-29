@@ -68,7 +68,7 @@ nz_ind=any(Afinal);
 Afinal=Afinal(:,nz_ind);
 save([outputdir 'AfinalcnmfeBatchVer.mat'],'-v7.3')
 %% 6 "massive" procedure: Extract A from each file
-FILE(length(filelist)) = struct('A',[],'C',[],'ind_del',[],'signal',[],'filelist',[],'neuron');
+FILE(length(filelist)) = struct('A',[],'C',[],'ind_del',[],'signal',[],'filelist',[],'neuron',[]);
 
 parfor i= 1:length(filelist)  
     mode='massive';
