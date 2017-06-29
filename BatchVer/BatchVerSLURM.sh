@@ -8,5 +8,5 @@
 #SBATCH -e /net/feevault/data0/shared/EmilyShijieShared/BatchResultTest/job_%A.err
 cd /net/feevault/data0/shared/EmilyShijieShared/BatchResultTest/
 module add mit/matlab/2016b
-matlab -nodisplay -singleCompThread -r "addpath(genpath('/home/shijiegu/cnmf_e/')); \ 
+matlab -nodisplay -singleCompThread -r "addpath(genpath('/home/shijiegu/cnmf_e/'));\
 load(fullfile('/net/feevault/data0/shared/EmilyShijieShared/BatchResultTest/','LogisticscnmfeBatchVer.mat')); cnmfeBatchVer_ClusterPart "
