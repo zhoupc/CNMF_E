@@ -69,7 +69,7 @@ fileID = fopen('BatchVerSLURM.sh','w');
 request={'#!/bin/bash'
     '#SBATCH -n 1'
     '#SBATCH --cpus-per-task=8'
-    '#SBATCH --mem=300000'
+    '#SBATCH --mem=30000'
     '#SBATCH -t 0-3:00'
     '#SBATCH --time-min=0-01:00'};
 fprintf(fileID,'%s\n',request{:});
