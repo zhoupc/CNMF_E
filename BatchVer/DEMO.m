@@ -7,8 +7,9 @@
 %  (3) other parameters.
 
 %(0)
+codedir=...
+addpath(genpath(codedir));
 codeDir='/home/shijiegu/cnmf_e/'; % codeDir2='/home/shijiegu/caprocessing/';
-addpath(genpath(codeDir)); % addpath(genpath(codeDir2));
 
 %(1) Specify where stuffs are on your local machine. This is a parsing
 %step.
@@ -60,6 +61,26 @@ running_on_cluster=true;
 workersnum=4;
 
 % Finally, save all these parameters/variables into LogisticscnmfeBatchVer.mat
-save([outputdir_local 'LogisticscnmfeBatchVer.mat'])
+ininame='LogisticscnmfeBatchVer.mat';
+save([outputdir_local ininame])
 
+%% B. making cluster script
+fileID = fopen('BatchVerSLURM.sh','w');
+request={'#!/bin/bash'
+    '#SBATCH -n 1'
+    '#SBATCH --cpus-per-task=8'
+    '#SBATCH --mem=300000'
+    '#SBATCH -t 0-3:00'
+    '#SBATCH --time-min=0-01:00'};
+fprintf(fileID,'%s\n',request{:});
 
+errorANDoutAndcd= ['#SBATCH -o %sjob_%%A.out\n#SBATCH -e %sjob_%%A.err\n',...
+    'cd %s\n'];
+fprintf(fileID,errorANDoutAndcd,outputdir,outputdir,outputdir);
+
+MATLABcommands=['module add mit/matlab/2016b\n',...
+    'matlab -nodisplay -singleCompThread -r "addpath(genpath(''%s'')); \\ \n',...
+    'load(fullfile(''%s'',''%s'')); cnmfeBatchVer_ClusterPart "'];
+fprintf(fileID,MATLABcommands,codeDir,outputdir,ininame);
+
+fclose(fileID);
