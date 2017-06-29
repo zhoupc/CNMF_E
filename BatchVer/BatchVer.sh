@@ -8,6 +8,6 @@
 #SBATCH -o /net/feevault/data0/shared/EmilyShijieShared/BatchResult/7030FirstFewDaysForBatch/job_%A.out
 #SBATCH -e /net/feevault/data0/shared/EmilyShijieShared/BatchResult/7030FirstFewDaysForBatch/job_%A.err
 
-cd /net/feevault/data0/shared/EmilyShijieShared/BatchResult/7030FirstFewDaysForBatch/
+cd /net/feevault/data0/shared/EmilyShijieShared/BatchResult/6938FirstFewDaysForBatch/
 module add mit/matlab/2016b
 matlab -nodisplay -singleCompThread -r "addpath(genpath('/home/shijiegu/cnmf_e/')); BatchVerScript"

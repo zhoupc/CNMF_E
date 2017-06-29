@@ -6,6 +6,7 @@ function [ns_storage] = findn1n2(A1,A2,correlation_thresh,max2max2nd,skewnessthr
 %       While those skewness with a lot of overlapping with other neurons
 %       will have many median level coor coef. skewness can very
 %       efficiently distinguish these.
+% Output: if there is no tracked neurons over days. The output is [].
 % This function is the base for TrackingNeuronOverDays.m and Over_Days_findAnn.m
 
 % by Shijie Gu, techel@live.cn, ShanghaiTech University, Harvard-MIT.
