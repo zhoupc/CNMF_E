@@ -10,5 +10,5 @@
 
 cd /net/feevault/data0/shared/EmilyShijieShared/BatchResultTest/
 module add mit/matlab/2016b
-matlab -nodisplay -singleCompThread -r "addpath(genpath('/home/shijiegu/cnmf_e/')); 
+matlab -nodisplay -singleCompThread -r "addpath(genpath('/home/shijiegu/cnmf_e/')); \n 
 BatchVerScript"
