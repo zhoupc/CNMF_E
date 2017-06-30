@@ -20,14 +20,15 @@ codeDir='/home/elm/CaImagingCode/cnmf_e/'; % cluster code path
                        'outputdir','//feevault/shared/EmilyShijieShared/BatchResult/6922FirstFewDaysForBatch/',...
                        'datakind','*CaELM*',... % reg exp for data files
                        'samplekind','*CaELM*',... % reg exp for sample (seed) examples
-                       'SamplingMethod','manual');
+                       'SamplingMethod','auto');
 %(1.1, replace for actual dir on cluster)
-datadir=strrep(datadir,'\\feevault\data0\','/net/feevault/data0/');
+datadir=strrep(datadir,'\\feevault\data0\','/net/feevault/data0/elm/');
 datadir=strrep(datadir,'\','/');
-sampledir=strrep(sampledir,'\\feevault\data0\','/net/feevault/data0/');
+sampledir=strrep(sampledir,'\\feevault\data0\','/net/feevault/data0/elm/');
 sampledir=strrep(sampledir,'\','/');
 outputdir_local=outputdir;
-outputdir=strrep(outputdir,'//feevault/','/net/feevault/data0/');
+outputdir=strrep(outputdir,'//feevault/','/net/feevault/data0/elm/');
+sampledir=strrep(sampledir,'\','/');
 mkdir(outputdir_local)
 
 %(2)
