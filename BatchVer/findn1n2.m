@@ -91,14 +91,22 @@ Filter1=and(Filter1r,Filter1c);
 % (2) Confidence that the neuron is the neuron we trace comes from the fact that
 %     (i) this correlation is unique.
 %     (ii) it is spatitally not overlapped with others.
-%     We use product to model this.
+
 Coef_sorted=sort(CoefMatrix,2,'descend');
-ConfidentRow=(Coef_sorted(:,1)./Coef_sorted(:,2))>max2max2nd;
-Filter3r=repmat(ConfidentRow,1,size(A2,2));
+try
+    ConfidentRow=(Coef_sorted(:,1)./Coef_sorted(:,2))>max2max2nd;
+    Filter3r=repmat(ConfidentRow,1,size(A2,2));
+catch
+    Filter3r=true(size(Coef_sorted,1),1);
+end
 
 Coef_sorted2=sort(CoefMatrix,1,'descend');
-ConfidentCol=(Coef_sorted2(1,:)./Coef_sorted2(2,:))>max2max2nd;
-Filter3c=repmat(ConfidentCol,size(A1,2),1);
+try
+    ConfidentCol=(Coef_sorted2(1,:)./Coef_sorted2(2,:))>max2max2nd;
+    Filter3c=repmat(ConfidentCol,size(A1,2),1);
+catch
+    Filter3c=true(1,size(Coef_sorted,2));
+end
 Filter3=Filter3r&Filter3c;
 
 %[skewness_sorted,ind]=sort(skewness(CoefMatrix,1,2),'descend');
