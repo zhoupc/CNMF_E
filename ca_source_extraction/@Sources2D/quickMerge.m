@@ -43,6 +43,7 @@ if ~exist('X', 'var')|| isempty(X)
 end
 
 S = obj.S;
+display(obj.C)
 if isempty(S) || (size(S, 1)~=size(obj.C, 1))
     S = diff(obj.C, 1, 2);
     try        

@@ -91,6 +91,8 @@ neuron.options.nk = 1;  % number of knots for detrending
 % greedy method for initialization
 tic;
 if strcmp(mode,'initiation')
+    display('working on')
+    display(nam)
     [center, Cn, pnr] = neuron.initComponents_endoscope(Y, K, patch_par, debug_on, save_avi);
     fprintf('Time cost in initializing neurons:     %.2f seconds\n', toc);
 elseif strcmp(mode,'massive')

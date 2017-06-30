@@ -5,18 +5,18 @@
 %  (1) code directory, data directory, sample directory, what to sample, what to extract.
 %  (2) normal CNMF-E parameters.
 %  (3) other parameters.
-
+clear all
 %(0)
-codedir=...
-addpath(genpath(codedir));
+%codedir=...
+%addpath(genpath(codedir));
 codeDir='/home/shijiegu/cnmf_e/'; % codeDir2='/home/shijiegu/caprocessing/';
 
 %(1) Specify where stuffs are on your local machine. This is a parsing
 %step.
 [datadir,sampledir,outputdir,filelist,samplelist]=...
-           InputOutput('datadir','/Volumes/data0-shared/elm/ProcessedCalciumData/7030FirstFewDaysForBatch/',...
+           InputOutput('datadir','/Volumes/data0-shared/elm/ProcessedCalciumData/6922FirstFewDaysForBatch/JustSinging/',...
                        'sampledir',[],...
-                       'outputdir','/Volumes/shared/EmilyShijieShared/BatchResult/6938FirstFewDaysForBatch/',...
+                       'outputdir','/Volumes/shared/EmilyShijieShared/BatchResult/6922FirstFewDaysForBatch/',...
                        'datakind','*CaELM*',...
                        'samplekind','*CaELM*',...
                        'SamplingMethod','auto');
@@ -67,10 +67,11 @@ save([outputdir_local ininame])
 %% B. making cluster script
 fileID = fopen('BatchVerSLURM.sh','w');
 request={'#!/bin/bash'
+    ''
     '#SBATCH -n 1'
     '#SBATCH --cpus-per-task=8'
-    '#SBATCH --mem=30000'
-    '#SBATCH -t 0-3:00'
+    '#SBATCH --mem=100000'
+    '#SBATCH -t 0-10:00'
     '#SBATCH --time-min=0-01:00'};
 fprintf(fileID,'%s\n',request{:});
 
