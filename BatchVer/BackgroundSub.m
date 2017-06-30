@@ -14,5 +14,5 @@ if ~isfield(neuron.P, 'sn') || isempty(neuron.P.sn)
     end     
     Ysignal = bsxfun(@minus, Ysignal, b0);
     neuron.P.sn = sn;
-    Ysignal = bsxfun(@minus, Ysignal, sn);
+    %Ysignal = bsxfun(@minus, Ysignal, sn);
 end
