@@ -16,6 +16,7 @@ function  [merged_ROIs, newIDs] = quickMerge(obj, merge_thr)
 
 %% variables & parameters
 A = obj.A;          % spatial components
+display(obj.A)
 if isempty(obj.C_raw)
     obj.C_raw = obj.C;
 end
