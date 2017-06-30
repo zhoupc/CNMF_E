@@ -22,8 +22,10 @@ codeDir='/home/elm/CaImagingCode/cnmf_e/'; % cluster code path
                        'samplekind','*CaELM*',... % reg exp for sample (seed) examples
                        'SamplingMethod','manual');
 %(1.1, replace for actual dir on cluster)
-datadir=strrep(datadir,'//feevault/data0/','/net/feevault/data0/');
-sampledir=strrep(sampledir,'//feevault/data0/','/net/feevault/data0/');
+datadir=strrep(datadir,'\\feevault\data0\','/net/feevault/data0/');
+datadir=strrep(datadir,'\','/');
+sampledir=strrep(sampledir,'\\feevault\data0\','/net/feevault/data0/');
+sampledir=strrep(sampledir,'\','/');
 outputdir_local=outputdir;
 outputdir=strrep(outputdir,'//feevault/','/net/feevault/data0/');
 mkdir(outputdir_local)
