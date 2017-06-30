@@ -419,14 +419,8 @@ THRESH.PNROut=(PNR0(ind_not_neuron))';
 
 center = center(1:k, :);
 results.Ain = Ain(:, 1:k);
-display('Ain')
-display(results.Ain)
 results.Cin = Cin(1:k, :);
-display('Cin')
-display(results.Cin)
 results.Cin_raw = Cin_raw(1:k, :);
-display('Cin_raw')
-display(results.Cin_raw)
 if deconv_flag
     results.Sin = Sin(1:k, :);
     results.kernel_pars = cell2mat(kernel_pars(1:k));
