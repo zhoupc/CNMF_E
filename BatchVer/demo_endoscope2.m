@@ -91,10 +91,16 @@ neuron.options.nk = 1;  % number of knots for detrending
 % greedy method for initialization
 tic;
 if strcmp(mode,'initiation')
-    display('working on')
-    display(nam)
+    display(['working on ',nam])
     [center, Cn, pnr] = neuron.initComponents_endoscope(Y, K, patch_par, debug_on, save_avi);
     fprintf('Time cost in initializing neurons:     %.2f seconds\n', toc);
+    if isempty(neuron.A)
+        A0s=neuron.A;
+        File.options=neuron.options;
+        clear global
+        return
+    end
+        
 elseif strcmp(mode,'massive')
     % parameters, estimate the background
     spatial_ds_factor = 1;              % spatial downsampling factor. it's for faster estimation

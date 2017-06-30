@@ -14,6 +14,16 @@ parfor i= 1:length(samplelist)
     fprintf('Sampling file number %.0f done\n', i);
 end
 
+%%% delete samples that have no neurons.
+emptyA0s_ind=find(cellfun('isempty', A0s));
+if ~isempty(emptyA0s_ind)
+    warning(['sample file number ',num2str(emptyA0s_ind),' with name below has/have no neuron extracted in it.\n'])
+    samplelist(emptyA0s_ind).name
+    fprintf('Deleting these samples in the pool.');
+    samplelist(emptyA0s_ind)=[];
+    A0s(emptyA0s_ind)=[];
+    File(emptyA0s_ind)=[];
+end
 save([outputdir 'NormalsOFcnmfeBatchVer.mat'],'-v7.3')
 
 %%% Order similar neurons in the same sequence in each file, not necessary,

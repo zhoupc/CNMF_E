@@ -21,9 +21,11 @@ function [ci,ind_success] = extract_c(Ysignal,Amask,A)
 if ~isempty(A)
     X = A; 
     ci = (X'*X)\(X'*Ysignal);
+    ci(isnan(ci)) = 0; 
 elseif ~isempty(Amask)    
     cs=Ysignal(Amask,:);
     ci=mean(cs);
+    ci(isnan(ci)) = 0; 
 else
     error('error in extract_c, please provide A or Amask.')
 end
