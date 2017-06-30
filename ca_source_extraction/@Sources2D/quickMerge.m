@@ -45,7 +45,10 @@ end
 S = obj.S;
 if isempty(S) || (size(S, 1)~=size(obj.C, 1))
     S = diff(obj.C, 1, 2);
-    S(bsxfun(@lt, S, 2*get_noise_fft(S))) = 0;
+    try        
+        S(bsxfun(@lt, S, 2*get_noise_fft(S))) = 0;
+    catch
+    end
 end
 S_corr = corr(S') - eye(K);
 C_corr = corr(C')-eye(K);
