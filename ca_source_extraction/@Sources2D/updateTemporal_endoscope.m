@@ -1,8 +1,8 @@
-function [C_offset] = updateTemporal_endoscope(obj, Y, smin)
+function [C_offset] = updateTemporal_endoscope(obj, Y, allow_deletion)
 %% run HALS by fixating all spatial components
 % input:
 %   Y:  d*T, fluorescence data
-%   smin: scalar, threshold for detecting one spikes (>smin*sigma)
+%   allow_deletion: boolean, allow deletion (default: true) 
 % output:
 %   C_raw: K*T, temporal components without being deconvolved
 
@@ -12,10 +12,8 @@ function [C_offset] = updateTemporal_endoscope(obj, Y, smin)
 maxIter = obj.options.maxIter;
 deconv_options_0 = obj.options.deconv_options;
 
-if ~exist('smin', 'var')
-    smin = [];
-else
-    deconv_options_0.optimize_smin = false;
+if ~exist('allow_deletion', 'var')
+    allow_deletion = true; 
 end
 %% initialization
 A = obj.A;
@@ -41,7 +39,7 @@ for miter=1:maxIter
         end
         temp = C(k, :) + (U(k, :)-V(k, :)*C)/aa(k);
         %remove baseline and estimate noise level
-        if range(temp)/std(temp)>8
+        if range(temp)/std(temp)>6
             [b, tmp_sn] = estimate_baseline_noise(temp);
         else
             b = mean(temp(temp<median(temp)));
@@ -60,10 +58,7 @@ for miter=1:maxIter
         
         % deconvolution
         if obj.options.deconv_flag
-            if miter>1  % use the parameters in the previous initialization
-                deconv_options.pars = kernel_pars{k};
-            end
-            [ck, sk, deconv_options]= deconvolveCa(temp, deconv_options_0, 'sn', tmp_sn, 'maxIter', 2);
+            [ck, sk, deconv_options]= deconvolveCa(temp, deconv_options_0, 'maxIter', 2);
             smin(k) = deconv_options.smin;
             kernel_pars{k} = reshape(deconv_options.pars, 1, []);
         else
@@ -91,4 +86,6 @@ obj.S = bsxfun(@times, S, 1./sn');
 obj.P.kernel_pars =cell2mat( kernel_pars);
 obj.P.smin = smin/sn;
 obj.P.sn_neuron = sn; 
-obj.delete(ind_del);
+if allow_deletion
+    obj.delete(ind_del);
+end

@@ -56,7 +56,7 @@ classdef Sources2D < handle
         %% fast initialization for microendoscopic data
         [center, Cn, pnr] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi);
         
-        [center] = initComponents_2p(obj,Y, K, options, sn, debug_on, save_avi); 
+        [center] = initComponents_2p(obj,Y, K, options, sn, debug_on, save_avi);
         %% update spatial components
         function updateSpatial(obj, Y)
             [obj.A, obj.b, obj.C] = update_spatial_components(Y, ...
@@ -84,7 +84,7 @@ classdef Sources2D < handle
         end
         
         %% udpate temporal components with fast deconvolution
-        updateTemporal_endoscope(obj, Y, smin)
+        updateTemporal_endoscope(obj, Y, allow_deletion)
         updateTemporal_endoscope_parallel(obj, Y, smin)
         
         %% update temporal components without background
@@ -287,16 +287,16 @@ classdef Sources2D < handle
         
         %% deconvolve all temporal components
         function C_ = deconvTemporal(obj)
-            C_raw_ = obj.C_raw; 
+            C_raw_ = obj.C_raw;
             K = size(C_raw_, 1);
             C_ = zeros(size(C_raw_));
             S_ = C_;
             kernel_pars = cell(K, 1);
-            for m=1:size(C_raw_,1)         
-                [b_, sn] = estimate_baseline_noise(C_raw_(m, :)); 
+            for m=1:size(C_raw_,1)
+                [b_, sn] = estimate_baseline_noise(C_raw_(m, :));
                 [C_(m, :), S_(m,:), temp_options] = deconvolveCa(C_raw_(m, :)-b_, obj.options.deconv_options, 'sn', sn);
                 kernel_pars{m} = temp_options.pars;
-                obj.C_raw(m, :) = obj.C_raw(m, :)-b_; 
+                obj.C_raw(m, :) = obj.C_raw(m, :)-b_;
             end
             obj.C = C_;
             obj.S = S_;
@@ -579,6 +579,14 @@ classdef Sources2D < handle
             elseif strcmpi(file_type, '.tif') || strcmpi(file_type, '.tiff')
                 numFrame = length(imfinfo(nam));
                 img = imread(nam);
+            elseif strcmpi(file_type, '.h5') || strcmpi(file_type, '.hdf5')
+                temp = h5info(nam);
+                dataset_nam = ['/', temp.Datasets.Name];
+                dataset_info = h5info(nam, dataset_nam);
+                dims = dataset_info.Dataspace.Size;
+                ndims = length(dims);
+                numFrame = dims(end);
+                img = squeeze(h5read(nam, dataset_nam, ones(1, ndims), [1,d1, d2, 1, 1]));
             end
             num2read = min(num2read, numFrame-sframe+1); % frames to read
             
@@ -588,6 +596,8 @@ classdef Sources2D < handle
                     Yraw = data.Y(:, :, (1:num2read)+sframe-1);
                 elseif strcmpi(file_type, '.tif') || strcmpi(file_type, '.tiff')
                     Yraw = bigread2(nam, sframe, num2read);
+                elseif strcmpi(file_type, '.h5') || strcmpi(file_type, 'hdf5')
+                    Yraw = squeeze(h5read(nam, dataset_nam, ones(1, ndims), [1, d1, d2, 1, num2read]));
                 else
                     fprintf('\nThe input file format is not supported yet\n\n');
                     return;
@@ -606,7 +616,11 @@ classdef Sources2D < handle
                         fprintf('load data from frame %d to frame %d of %d total frames\n', sframe, sframe+tmp_num2read-1, lastframe);
                         Yraw = data.Y(:, :, sframe:(sframe+tmp_num2read-1));
                     elseif strcmpi(file_type, '.tif') || strcmpi(file_type, '.tiff')
+                        fprintf('load data from frame %d to frame %d of %d total frames\n', sframe, sframe+tmp_num2read-1, lastframe);
                         Yraw = bigread2(nam, sframe, tmp_num2read);
+                    elseif strcmpi(file_type, '.h5') || strcmpi(file_type, 'hdf5')
+                        fprintf('load data from frame %d to frame %d of %d total frames\n', sframe, sframe+tmp_num2read-1, lastframe);
+                        Yraw = squeeze(h5read(nam, dataset_nam, [1,1,1,1,sframe], [1, d1, d2, 1, tmp_num2read]));
                     else
                         fprintf('\nThe input file format is not supported yet\n\n');
                         return;
@@ -855,67 +869,67 @@ classdef Sources2D < handle
                 temp =  cumsum(temp);
                 ff = find(temp > (1-thr)*temp(end),1,'first');
                 if ~isempty(ff)
-                    pvpairs = { 'LevelList' , [0,0]+A_temp(ind(ff)), 'ZData', obj.reshape(A_temp,2)}; 
+                    pvpairs = { 'LevelList' , [0,0]+A_temp(ind(ff)), 'ZData', obj.reshape(A_temp,2)};
                     h = matlab.graphics.chart.primitive.Contour(pvpairs{:});
-                    temp = h.ContourMatrix; 
+                    temp = h.ContourMatrix;
                     temp = medfilt1(temp')';
-                    Coor{m} = temp(:, 3:end); 
+                    Coor{m} = temp(:, 3:end);
                 end
                 
             end
         end
-            %         function Coor = get_contours(obj, thr, ind)
-            %             A_ = obj.A;
-            %             if exist('ind', 'var')
-            %                 A_ = A_(:, ind);
-            %             end
-            %             if ~exist('thr', 'var') || isempty(thr)
-            %                 thr = 0.995;
-            %             end
-            %             num_neuron = size(A_,2);
-            %             if num_neuron==0
-            %                 Coor ={};
-            %                 return;
-            %             else
-            %                 Coor = cell(num_neuron,1);
-            %             end
-            %             for m=1:num_neuron
-            %                 % smooth the image with median filter
-            %                 img = medfilt2(obj.reshape(full(A_(:, m)),2), [3, 3]);
-            %                 % find the threshold for detecting nonzero pixels
-            %                 temp = sort(img(img>1e-9));
-            %                 if ~any(temp)
-            %                     Coor{m} = [];
-            %                     continue;
-            %                 end
-            %                 temp_sum = cumsum(temp);
-            %                 ind = find(temp_sum>=temp_sum(end)*(1-thr),1);
-            %                 v_thr = temp(ind);
-            %
-            %                 % find the connected components
-            %                 [~, ind_max] = max(img(:));
-            %                 temp = bwlabel(img>v_thr);
-            %                 img = double(temp==temp(ind_max));
-            %                 v_nonzero = imfilter(img, [0,-1/4,0;-1/4,1,-1/4; 0,-1/4,0]);
-            %                 vv = v_nonzero(v_nonzero>1e-9)';
-            %                 [y, x] = find(v_nonzero>1e-9);
-            %                 xmx = bsxfun(@minus, x, x');
-            %                 ymy = bsxfun(@minus, y, y');
-            %                 dist_pair = xmx.^2 + ymy.^2;
-            %                 dist_pair(diag(true(length(x),1))) = inf;
-            %                 seq = ones(length(x)+1,1);
-            %                 for mm=1:length(x)-1
-            %                     [v_min, seq(mm+1)] = min(dist_pair(seq(mm), :)+vv);
-            %                     dist_pair(:,seq(mm)) = inf;
-            %                     if v_min>3
-            %                         seq(mm+1) = 1;
-            %                         break;
-            %                     end
-            %                 end
-            %                 Coor{m} = [smooth(x(seq), 2)'; smooth(y(seq),2)'];
-            %             end
-            %
-            %         end
-        end
-        
+        %         function Coor = get_contours(obj, thr, ind)
+        %             A_ = obj.A;
+        %             if exist('ind', 'var')
+        %                 A_ = A_(:, ind);
+        %             end
+        %             if ~exist('thr', 'var') || isempty(thr)
+        %                 thr = 0.995;
+        %             end
+        %             num_neuron = size(A_,2);
+        %             if num_neuron==0
+        %                 Coor ={};
+        %                 return;
+        %             else
+        %                 Coor = cell(num_neuron,1);
+        %             end
+        %             for m=1:num_neuron
+        %                 % smooth the image with median filter
+        %                 img = medfilt2(obj.reshape(full(A_(:, m)),2), [3, 3]);
+        %                 % find the threshold for detecting nonzero pixels
+        %                 temp = sort(img(img>1e-9));
+        %                 if ~any(temp)
+        %                     Coor{m} = [];
+        %                     continue;
+        %                 end
+        %                 temp_sum = cumsum(temp);
+        %                 ind = find(temp_sum>=temp_sum(end)*(1-thr),1);
+        %                 v_thr = temp(ind);
+        %
+        %                 % find the connected components
+        %                 [~, ind_max] = max(img(:));
+        %                 temp = bwlabel(img>v_thr);
+        %                 img = double(temp==temp(ind_max));
+        %                 v_nonzero = imfilter(img, [0,-1/4,0;-1/4,1,-1/4; 0,-1/4,0]);
+        %                 vv = v_nonzero(v_nonzero>1e-9)';
+        %                 [y, x] = find(v_nonzero>1e-9);
+        %                 xmx = bsxfun(@minus, x, x');
+        %                 ymy = bsxfun(@minus, y, y');
+        %                 dist_pair = xmx.^2 + ymy.^2;
+        %                 dist_pair(diag(true(length(x),1))) = inf;
+        %                 seq = ones(length(x)+1,1);
+        %                 for mm=1:length(x)-1
+        %                     [v_min, seq(mm+1)] = min(dist_pair(seq(mm), :)+vv);
+        %                     dist_pair(:,seq(mm)) = inf;
+        %                     if v_min>3
+        %                         seq(mm+1) = 1;
+        %                         break;
+        %                     end
+        %                 end
+        %                 Coor{m} = [smooth(x(seq), 2)'; smooth(y(seq),2)'];
+        %             end
+        %
+        %         end
     end
+    
+end

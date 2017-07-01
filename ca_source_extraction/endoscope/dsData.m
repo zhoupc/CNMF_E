@@ -40,4 +40,4 @@ if tsub>1
 end
 
 % spatial downsampling 
-Y_ds = imresize(Y, 1/ssub); 
+Y_ds = imresize(Y, 1/ssub, 'box'); 

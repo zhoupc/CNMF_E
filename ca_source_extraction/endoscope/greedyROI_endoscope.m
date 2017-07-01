@@ -239,9 +239,9 @@ while searching_flag
         y0 = HY(ind_p, :);
         y0_std = std(diff(y0));
         %         y0(y0<median(y0)) = 0;
-        if (k>=1) && any(corr(Cin(1:k, :)', y0')>0.9) %already found similar temporal traces
-            continue;
-        end
+%         if (k>=1) && any(corr(Cin(1:k, :)', y0')>0.9) %already found similar temporal traces
+%             continue;
+%         end
         if max(diff(y0))< 3*y0_std % signal is weak
             continue;
         end
@@ -289,7 +289,11 @@ while searching_flag
         
         %% extract ai, ci
         sz = [nr, nc];
-        [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
+        if options.center_psf
+            [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
+        else
+            [ai, ci_raw, ind_success] =  extract_ac_2p(HY_box, Y_box, ind_ctr, sz);
+        end
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
         %         if max(ci_raw)<min_pnr;
         %             ind_success=false;

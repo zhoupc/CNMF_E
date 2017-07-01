@@ -83,6 +83,7 @@ while and(m>=1, m<=length(ind))
         
         plot(t, obj.C(ind(m), :)*max(obj.A(:, ind(m))));
     end
+    xlim([t(1), t(end)]); 
     xlabel(str_xlabel);
     
     %% save images
