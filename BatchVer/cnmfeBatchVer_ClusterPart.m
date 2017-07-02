@@ -34,14 +34,21 @@ A0s=Over_Days_ResequenceA(A0s,correlation_thresh,max2max2nd,skewnessthresh);
 A=cat(2,A0s{:}); Amask=A>0;  % This A is raw and plain, it is just all A's from all files concatnated together.
 % Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
 ACS(length(samplelist)) = struct('Ain',[],'Cin',[],'STD',[]);
+S_R=length(samplelist_reduced);
 parfor i= 1:length(samplelist)
-    for j=1:length(samplelist_reduced)
+    Ain=[];
+    Cin=[];
+    STD=[];
+    for j=1:S_R % parfor needs this
         Aj=A0s{j};
         ACS_temp=A2C2A(File(i), Aj, File(i).options);
-        ACS(i).Ain = [ACS.(i).Ain ACS_temp.Ain];
-        ACS(i).Cin = [ACS.(i).Cin; ACS_temp.Cin];
-        ACS(i).STD=[ACS.(i).STD ACS_temp.STD];
+        Ain = [Ain ACS_temp.Ain];
+        Cin = [Cin; ACS_temp.Cin];
+        STD=[STD ACS_temp.STD];
     end
+    ACS(i).Ain=Ain;
+    ACS(i).Cin=Cin;
+    ACS(i).STD=STD;
 end
 save([outputdir 'PartOneOFcnmfeBatchVer.mat'],'-v7.3')
 %% 2 Determine commonA's
