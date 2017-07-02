@@ -19,35 +19,28 @@ emptyA0s_ind=find(cellfun('isempty', A0s));
 if ~isempty(emptyA0s_ind)
     warning(['sample file number ',num2str(emptyA0s_ind),' with name below has/have no neuron extracted in it.\n'])
     samplelist(emptyA0s_ind).name
-    fprintf('Deleting these samples in the pool.');
-    samplelist(emptyA0s_ind)=[];
+    fprintf('Deleting these sample A0s.');
+    samplelist_reduced=samplelist;
+    samplelist_reduced(emptyA0s_ind)=[];
     A0s(emptyA0s_ind)=[];
-    File(emptyA0s_ind)=[];
+    %File(emptyA0s_ind)=[];
 end
 save([outputdir 'NormalsOFcnmfeBatchVer.mat'],'-v7.3')
 
 %%% Order similar neurons in the same sequence in each file, not necessary,
 %%% but nice to do. It is fast.
-[ns_storage_1,A0s]=Over_Days_ResequenceA(A0s,correlation_thresh,max2max2nd,skewnessthresh);
-ns_storage_1
-% try
-%     for i= 1:length(samplelist)
-%         A0=A0s{i};
-%         corr_ind=ns_storage_1(:,i);
-%         unique_ind=setdiff(1:size(A0,2),corr_ind);
-%         A0s{i}=[A0(:,corr_ind) A0(:,unique_ind)];
-%     end
-% catch ME
-%     fprintf([ME.message '\n'])
-% end
+A0s=Over_Days_ResequenceA(A0s,correlation_thresh,max2max2nd,skewnessthresh);
 
 A=cat(2,A0s{:}); Amask=A>0;  % This A is raw and plain, it is just all A's from all files concatnated together.
 % Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
 ACS(length(samplelist)) = struct('Ain',[],'Cin',[],'STD',[]);
 parfor i= 1:length(samplelist)
-    for j=1:length(samplelist)
+    for j=1:length(samplelist_reduced)
         Aj=A0s{j};
-        ACS(i)=A2C2A(ACS(i), File(i), Aj, File(i).options);
+        ACS_temp=A2C2A(File(i), Aj, File(i).options);
+        ACS(i).Ain = [ACS.(i).Ain ACS_temp.Ain];
+        ACS(i).Cin = [ACS.(i).Cin; ACS_temp.Cin];
+        ACS(i).STD=[ACS.(i).STD ACS_temp.STD];
     end
 end
 save([outputdir 'PartOneOFcnmfeBatchVer.mat'],'-v7.3')

@@ -4,7 +4,7 @@ function weightedA=ReducingA(Aunique,STDunique)
 %             these.
 %Input: two cells each contains Aunique,STDunique of each file.
 %Output:One big weightedA.
-%author: Shijie Gu, techel@live.cn, (ShanghaiTech University,Harvard-MIT)
+%author: Shijie Gu, techel@live.cn, (ShanghaiTech University; Fee Lab at MIT-BCS)
     A=cat(2,Aunique{:});    
         STDsum=sum(cat(3,STDunique{:}),3);
         STDcat=cat(2,STDunique{:});

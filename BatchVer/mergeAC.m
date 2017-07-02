@@ -67,7 +67,7 @@ for m=1:n2merge
     active_pixel = sum(A(:,IDs), 2)>0;
     
     % update spatial/temporal components of the merged neuron   
-    %data = A(active_pixel, IDs)*C(IDs, :);
+    % data = A(active_pixel, IDs)*C(IDs, :);
     data=[];
     for i=1:numel(File)
         FileA=File(i).Ain;

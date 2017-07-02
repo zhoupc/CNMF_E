@@ -1,16 +1,12 @@
-function ACS=A2C2A(ACS, File, A, options)
+function ACS_temp=A2C2A(File, A, options)
 % ACS=A2C2A(ACS, File, A, options)
 % General Description:
-%      This function is designed to go in de-noised signal
-%      from A's Amask to C in File and its paired A.
+%      This function is designed to extract C in de-noised signal
+%      from A's Amask in File. After getting C, it will find its paired(corresponding) A.
 %      For each neuron, from Amask, get C from mean(see help extract_c), then regress for A.
-%      For successful ai extraction, peel A*C off Ysignal.
+%      For each successful ai extraction, peel A*C off Ysignal.
 %      Iterate for all the neurons indicated by Amask.
 % Input: 
-% ACS is a structure for each file in the folder with fields: A,C,whose
-%       standard deviation,STD for all the A's concatnated from each file in
-%       the sampling stage. This structure is used for merging. Input here
-%       would be an empty but pre-structured structure.
 % File is a structure that contains at least one field: Ysignal(denoised-Bgsubtracted)
 % A is used for Amask and center calculation(for rough checking and trimming A).
 % options: struct data of paramters/options
@@ -23,7 +19,9 @@ function ACS=A2C2A(ACS, File, A, options)
     %    deconv_options
     %    deconv_flag    
 % Output:
-% Filling ACS.
+% ACS_temp is a structure with three fields: A,C,and C's
+%       standard deviation(STD). This structure is used for merging in later steps in cnmf_e-BatchVer. 
+
 % Modified from "greedyROI_endoscope"
 % Main dependences are "extract_a", "extract_c", and "com" for neuron center by Pengcheng Zhou.
 
@@ -39,7 +37,7 @@ Acenter = round(com(A, d1, d2)); %nr x 2 matrix, with the center of mass coordin
 Amask=A>0;
 
 Ysignal=File.Ysignal;
-Ysignal(isnan(Ysignal)) = 0;    % remove nan values
+Ysignal(isnan(Ysignal)) = 0;     % remove nan values
 Ysignal = double(Ysignal);
 T = size(Ysignal, 2);
 
@@ -112,7 +110,8 @@ for k = 1:K;
         Ysignal(ind_nhood, :) = HY_box - ai*ci;  % update data
     end  
 end
-    ACS.Ain = [ACS.Ain Ain];
-    ACS.Cin = [ACS.Cin; Cin];
-    ACS.STD=[ACS.STD STD];
+ACS_temp=struct('Ain',[],'Cin',[],'STD',[]);
+ACS_temp.Ain = Ain;
+ACS_temp.Cin = Cin;
+ACS_temp.STD = STD;
 end

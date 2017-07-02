@@ -1,55 +1,36 @@
-function [ns_storage,Ass]=Over_Days_ResequenceA(As,correlation_thresh,max2max2nd,skewnessthresh)
+function As=Over_Days_ResequenceA(As,correlation_thresh,max2max2nd,skewnessthresh)
+% General description: This function puts neurons that are roughly checked(findn1n2)
+% as similar over two consecutive days in similar order. This should help
+% make cnmfe-BatchVer more robust since the sequence of initiation might
+% effect the result of extracted temporal traces. This function intends to
+% preserve the sequence of some similar neurons. The idea is illustrated in
+% the following example. If in day1 neuron 2 and 3 is tracked similared to
+% neuron 4 and 3 in day2. Then the neurons in day2 will be resequenced as 3
+% and 4 while other neurons that have nothing to do with day1's neuron do
+% not move.
 % Input: 
 %   As={A1,A2,A3,A4...}
 %   Filters for saying they are the same neuron: correlation_thresh, ratio of first max/second max correlation coef, skewnessthresh.
 %   Type help findn1n2 for more information for skewnessthresh.
 % Output:
-%   ns_storage: each column for each day, index for k in A or C such that
-%       when you specify A(ns_storage(:,1)) and A(ns_storage(:,2)),
-%       each row of the permutated As from time point 1 and point 2 are the index for the same neuron in the original As
-%   Ass: in some cases it is impossible to find the same neurons that can be 
-%       tracked over many many days, i.e, the ns_storage will be empty. It
-%       would be nice to have some resequencing technique that only depends
-%       on adjacent two days' A. The implementation here resequence all the
-%       A's across days based on the new incoming day's A. Similar neurons
-%       will be put in front with those that could not found similar ones
-%       tagged behind. Ass is the resequenced As.
-% Shijie Gu, techel@live.cn
+%   As: re-sequenced As.
+% Shijie Gu, techel@live.cn, ShanghaiTech University; Fee Lab at MIT-BCS.
 
 if or(isempty(As),length(As)==1)
     error('As is empty or has only one A in it. No sense to use this function. Please check data selected.')
-elseif length(As)==2;
-    ns_storage=findn1n2(As{1},As{2},correlation_thresh,max2max2nd,skewnessthresh);
-    ns1=ns_storage(:,1); nn1=1:size(As{1},2); nu1=setdiff(nn1,ns1);
-    ns2=ns_storage(:,2); nn2=1:size(As{2},2); nu2=setdiff(nn2,ns2);
-    As{1}=[As{1}(:,ns1) As{1}(:,nu1)];
-    As{2}=[As{2}(:,ns2) As{2}(:,nu2)];
 else
-    ns_storage=findn1n2(As{1},As{2},correlation_thresh,max2max2nd,skewnessthresh);
-    ns1=ns_storage(:,1); nn1=1:size(As{1},2); nu1=setdiff(nn1,ns1);
-    ns2=ns_storage(:,2); nn2=1:size(As{2},2); nu2=setdiff(nn2,ns2);
-    As{1}=[As{1}(:,ns1) As{1}(:,nu1)];
-    As{2}=[As{2}(:,ns2) As{2}(:,nu2)];
-    
-    for i=2:length(As)-1
-        ns_next=findn1n2(As{i},As{i+1},correlation_thresh,max2max2nd,skewnessthresh);
-        [ind_row_storage,ind_row_next] = ismember(ns_storage(:,end),ns_next(:,1));
-        
-            ind_row_next=ind_row_next(ind_row_next~=0); 
-            ns_next=ns_next(:,2);
-        ns_next=ns_next(ind_row_next);
-        nn1=1:size(ns_storage,1); ns1=nn1(ind_row_storage);
-                
-        for j=1:i
-            nn1=1:size(As{j},2);
-            nu1=setdiff(nn1,ns1);
-            As{j}=[As{j}(:,ns1) As{j}(:,nu1)];
+    for i=1:length(As)-1
+        ns_storage=findn1n2(As{i},As{1+1},correlation_thresh,max2max2nd,skewnessthresh);
+        if or(isempty(ns_storage),size(ns_storage,1)==1) % no need to re-sequence them.
+            continue
+        else
+            [~,ns_storage_descend_i]=sort(ns_storage(:,1),1,'descend');
+            ns_storage=ns_storage(ns_storage_descend_i,:);
+            new_location=ns_storage(:,2);
+            all_location=1:size(As{i+1},2);
+            new_location_old=sort(new_location);
+            all_location(new_location_old)=new_location;
+            As{i+1}=As{i+1}(:,all_location);
         end
-        ns2=ns_next; nn2=1:size(As{i+1},2); nu2=setdiff(nn2,ns2);
-        As{i+1}=[As{i+1}(:,ns2) As{i+1}(:,nu2)];
-        ns_storage=ns_storage(ind_row_storage,:);
-        ns_storage=[ns_storage ns_next];
-    end
-end
-Ass=As;
+    end 
 end
