@@ -20,7 +20,7 @@ if or(isempty(As),length(As)==1)
     error('As is empty or has only one A in it. No sense to use this function. Please check data selected.')
 else
     for i=1:length(As)-1
-        ns_storage=findn1n2(As{i},As{1+1},correlation_thresh,max2max2nd,skewnessthresh);
+        ns_storage=findn1n2(As{i},As{i+1},correlation_thresh,max2max2nd,skewnessthresh);
         if or(isempty(ns_storage),size(ns_storage,1)==1) % no need to re-sequence them.
             continue
         else
@@ -30,7 +30,7 @@ else
             all_location=1:size(As{i+1},2);
             new_location_old=sort(new_location);
             all_location(new_location_old)=new_location;
-            As{i+1}=As{i+1}(:,all_location);
+            As{i+1}=As{i+1}(:,all_location);                
         end
     end 
 end

@@ -22,7 +22,7 @@ if ~isempty(emptyA0s_ind)
     fprintf('Deleting these sample A0s.');
     samplelist_reduced=samplelist;
     samplelist_reduced(emptyA0s_ind)=[];
-    A0s(emptyA0s_ind)=[];
+    A0s(emptyA0s_ind)=[];    
     %File(emptyA0s_ind)=[];
 end
 save([outputdir 'NormalsOFcnmfeBatchVer.mat'],'-v7.3')
