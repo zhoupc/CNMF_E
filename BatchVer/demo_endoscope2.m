@@ -97,6 +97,12 @@ if strcmp(mode,'initiation')
     if isempty(neuron.A)
         A0s=neuron.A;
         File.options=neuron.options;
+            % parameters, estimate the background
+        spatial_ds_factor = 1;              % spatial downsampling factor. it's for faster estimation
+        thresh = 10;                        % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
+        bg_neuron_ratio = bg_neuron_ratio;  % spatial range / diameter of neurons
+        BackgroundSub
+        File.Ysignal=Ysignal;
         clear global
         return
     end
