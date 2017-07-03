@@ -32,7 +32,6 @@ save([outputdir 'NormalsOFcnmfeBatchVer.mat'],'-v7.3')
 %%% but nice to do. It is fast.
 A0s=Over_Days_ResequenceA(A0s,correlation_thresh,max2max2nd,skewnessthresh);
 
-A=cat(2,A0s{:}); Amask=A>0;  % This A is raw and plain, it is just all A's from all files concatnated together.
 % Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
 ACS(length(samplelist)) = struct('Ain',[],'Cin',[],'STD',[]);
 S_R=length(samplelist_reduced);
@@ -52,23 +51,35 @@ parfor i= 1:length(samplelist)
     ACS(i).STD=STD;
 end
 save([outputdir 'PartOneOFcnmfeBatchVer.mat'],'-v7.3')
-%% 2 Determine commonA's
+%% 2 Merge similar neurons
 %%% Merge similar neurons based on spatial AND temporal correlation
-[~,commonA,commonC,ind_del] = mergeAC(Amask,ACS,merge_thr);
+C_all=cat(2,ACS.Cin);
+
+Amask_temp=cat(2,A0s{1:2})>0;
+C_temp=C_all(1:size(Amask_temp,2),:);
+[Amask_temp,C_temp,ACS] = mergeAC(Amask_temp,C_temp,ACS,merge_thr);
+
+merge2start=1+size(A0s{1},2)+size(A0s{2},2);
+for i=3:length(samplelist_reduced)
+    Amask_temp=cat(2,Amask_temp,A0s{i})>0;
+    
+    C_temp=cat(1,C_temp,C_all(merge2start:merge2start+size(A0s{i},2),:)-1,:);
+
+    [Amask_temp,C_temp,ACS] = mergeAC(Amask_temp,C_temp,ACS,merge_thr);
+    merge2start=merge2start+size(A0s{i},2);
+end
+
 save([outputdir 'commonAcnmfeBatchVer.mat'],'-v7.3')
 %% 3 Determine uniqueA's
-Aunique=cell(1,length(samplelist));
-STDunique=cell(1,length(samplelist));
+As=cell(1,length(samplelist));
+STDs=cell(1,length(samplelist));
 parfor i=1:length(samplelist)
-    FileA=ACS(i).Ain;
-    FileSTD=ACS(i).STD;
-    Aunique{i}=FileA(:,~ind_del);
-    STDunique{i}=FileSTD(~ind_del);    
+    As{i}=ACS(i).Ain;
+    STDs{i}=ACS(i).STD;    
 end
-weightedA=ReducingA(Aunique,STDunique);
+Afinal=ReducingA(As,STDs);
 save([outputdir 'uniqueAcnmfeBatchVer.mat'],'-v7.3')
 %% 5 Determine Afinal that will be used to extract C's in each file.
-Afinal=cat(2,commonA,weightedA);
 
 %%% Some processes making Afinal nicer, modified from Pengcheng Zhou's
 %%% idea.

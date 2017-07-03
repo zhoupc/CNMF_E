@@ -1,23 +1,21 @@
-function  [merged_ROIs,Ait,Cit,ind_del] = mergeAC(Amask,File,merge_thr)
+function  [Amask,C,ACS] = mergeAC(Amask,C,ACS,merge_thr)
 %% merge neurons based on simple spatial and temporal correlation
 % input:
-%   Amask: concatnated Amask from neurons from all files.
-%   File:  structure, having fields of Ain, Cin (concatnated A and C from neurons from all files).
+%   Amask: concatnated Amask from neurons from one or many files.
+%   C: concatnated temporal trace from neurons from one or many files.
+%   ACS:  structure, having fields of Ain, Cin (concatnated A and C from
+%         neurons from all files), and STD of Cin.
 %   merge_thr: 1X2 vector, threshold for two metrics {'A', 'C'}. it merge neurons based
-%   on correlations of spatial shapes ('A'),  calcium traces ('C').
+%         on correlations of spatial shapes ('A'),  calcium traces ('C').
 % output:
-%   merged_ROIs: cell arrarys, each element contains indices of merged components of the current merged one.
-%   merged A and C for those neurons that come from merged ones.
-%   ind_del: index for neurons that are involved in merging.
-% note:
-%   A and C, only those involved in merging are taken of. For those not
-%   involved, use ~ind_del for management.
+%   Merged-component reduced Amask, C and ACS. After merging, previously
+%       each file's ACS has different A. Now they all have the same A as well
+%       as STD.
 
 % Author: Shijie Gu, techel@live.cn, modified from quickMerge() by Pengcheng Zhou
 %  The basic idea is proposed by Eftychios A. Pnevmatikakis: high temporal
 %  correlation + spatial overlap
 %  reference: Pnevmatikakis et.al.(2016). Simultaneous Denoising, Deconvolution, and Demixing of Calcium Imaging Data. Neuron
-
 %% variables & parameters
 if ~exist('merge_thr', 'var') || isempty(merge_thr) || numel(merge_thr)~=2
     merge_thr = [0.7, 0.7];
@@ -25,9 +23,8 @@ end
 
 A_thr = merge_thr(1);
 C_thr = merge_thr(2);
-C=cat(2,File.Cin);
-A=cat(2,File.Ain);
 K = size(C,1);   % number of neurons
+
 %% find neuron pairs to merge
 % compute spatial correlation
 temp = bsxfun(@times, Amask, 1./sqrt(sum(Amask)));
@@ -44,48 +41,49 @@ MC = bsxfun(@eq, reshape(l, [],1), 1:c);
 MC(:, sum(MC,1)==1) = [];
 if isempty(MC)
     fprintf('All pairs of neurons are below the merging criterion!\n\n');
-    merged_ROIs = [];
-    newIDs = [];
     return;
 else
     fprintf('%d neurons will be merged into %d new neurons\n\n', sum(MC(:)), size(MC,2));
 end
 
 [nr, n2merge] = size(MC);
-ind_del = false(nr, 1);    % indicator of deleting corresponding neurons
 merged_ROIs = cell(n2merge,1);
-newIDs = zeros(nr, 1);
-Ait=zeros(size(Amask,1),n2merge);
-Cit=zeros(n2merge,size(C,2));
 
 % start merging
 for m=1:n2merge
     IDs = find(MC(:, m));  % IDs of neurons within this cluster
     merged_ROIs{m} = IDs;
     
-    % determine searching area
-    active_pixel = sum(A(:,IDs), 2)>0;
-    
     % update spatial/temporal components of the merged neuron   
     % data = A(active_pixel, IDs)*C(IDs, :);
     data=[];
-    for i=1:numel(File)
-        FileA=File(i).Ain;
-        FileC=File(i).Cin;
-        data = [data FileA(active_pixel, IDs)*FileC(IDs, :)];
+    C_start=1;
+    for i=1:numel(ACS)
+        data = [data ACS(i).Ain(:, IDs)*C(IDs, C_start:C_start+size(ACS(i).Cin,2)-1)];
+        C_start=C_start+size(ACS(i).Cin,2);
     end
     
     data=data./length(IDs);
-    [~,I] = max(std(C(IDs, :),0,2)); % choose the most confident ci.
+    [~,I] = max(std(C(IDs, :),0,2)); % choose the most confident(with biggest std) ci.
     ci=C(IDs(I),:);
     for miter=1:10
         ai = data*ci'/(ci*ci');
         ci = ai'*data/(ai'*ai);
     end
     
-    Ait(active_pixel,m) = ai;
-    Cit(m, :) = ci;    
-    ind_del(IDs) = true;
+    % making ai nicer.
+%     temp = ai>quantile(ai, 0.3, 1);
+%     ai(~temp(:)) = 0;
+   
+    Amask(:,IDs(1)) = ai>0;
+    Amask(:,IDs(2:end))=[];
+    C(IDs(1), :) = ci;
+    C(IDs(2:end), :) = [];
+    for i=1:numel(ACS)
+        FileA=ACS(i).Ain; FileA(:,IDs(1))=ai; FileA(:,IDs(2:end))=[]; ACS(i).Ain=FileA;             
+        FileSTD=ACS(i).STD; FileSTD(IDs(1))=std(ci);   FileSTD(IDs(2:end))=[]; ACS(i).STD=FileSTD;        
+    end
+    
 end
 
 end
