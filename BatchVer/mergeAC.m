@@ -48,10 +48,13 @@ end
 
 [nr, n2merge] = size(MC);
 merged_ROIs = cell(n2merge,1);
+ind_del=false(nr,1);
 
 % start merging
 for m=1:n2merge
+    oldIDs=IDs;
     IDs = find(MC(:, m));  % IDs of neurons within this cluster
+%    IDs=setdiff(IDs,oldIDs);
     merged_ROIs{m} = IDs;
     
     % update spatial/temporal components of the merged neuron   
@@ -59,7 +62,7 @@ for m=1:n2merge
     data=[];
     C_start=1;
     for i=1:numel(ACS)
-        data = [data ACS(i).Ain(:, IDs)*C(IDs, C_start:C_start+size(ACS(i).Cin,2)-1)];
+        data = [data ACS(i).Ain(:, IDs)*C(IDs, C_start:(C_start+size(ACS(i).Cin,2)-1))];
         C_start=C_start+size(ACS(i).Cin,2);
     end
     
@@ -70,20 +73,23 @@ for m=1:n2merge
         ai = data*ci'/(ci*ci');
         ci = ai'*data/(ai'*ai);
     end
-    
+    ind_del(IDs(2:end))=true;
     % making ai nicer.
 %     temp = ai>quantile(ai, 0.3, 1);
 %     ai(~temp(:)) = 0;
    
-    Amask(:,IDs(1)) = ai>0;
-    Amask(:,IDs(2:end))=[];
+    Amask(:,IDs(1)) = ai>0;    
     C(IDs(1), :) = ci;
-    C(IDs(2:end), :) = [];
     for i=1:numel(ACS)
-        FileA=ACS(i).Ain; FileA(:,IDs(1))=ai; FileA(:,IDs(2:end))=[]; ACS(i).Ain=FileA;             
-        FileSTD=ACS(i).STD; FileSTD(IDs(1))=std(ci);   FileSTD(IDs(2:end))=[]; ACS(i).STD=FileSTD;        
-    end
-    
+        FileA=ACS(i).Ain; FileA(:,IDs(1))=ai;   
+        FileSTD=ACS(i).STD; FileSTD(IDs(1))=std(ci);
+    end    
 end
+Amask(:,ind_del)=[];
+C(ind_del, :) = [];
+for i=1:numel(ACS)
+    FileA(:,ind_del)=[]; ACS(i).Ain=FileA;
+    FileSTD(ind_del)=[]; ACS(i).STD=FileSTD;
+end   
 
 end
