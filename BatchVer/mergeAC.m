@@ -52,7 +52,7 @@ ind_del=false(nr,1);
 
 % start merging
 for m=1:n2merge
-    oldIDs=IDs;
+    %oldIDs=IDs;
     IDs = find(MC(:, m));  % IDs of neurons within this cluster
 %    IDs=setdiff(IDs,oldIDs);
     merged_ROIs{m} = IDs;
