@@ -81,15 +81,16 @@ for m=1:n2merge
     Amask(:,IDs(1)) = ai>0;    
     C(IDs(1), :) = ci;
     for i=1:numel(ACS)
-        FileA=ACS(i).Ain; FileA(:,IDs(1))=ai;   
+        FileA=ACS(i).Ain;   FileA(:,IDs(1))=ai;   
         FileSTD=ACS(i).STD; FileSTD(IDs(1))=std(ci);
     end    
 end
+
 Amask(:,ind_del)=[];
 C(ind_del, :) = [];
 for i=1:numel(ACS)
-    FileA(:,ind_del)=[]; ACS(i).Ain=FileA;
-    FileSTD(ind_del)=[]; ACS(i).STD=FileSTD;
+    FileA=ACS(i).Ain;   FileA(:,ind_del)=[]; ACS(i).Ain=FileA;
+    FileSTD=ACS(i).STD; FileSTD(ind_del)=[]; ACS(i).STD=FileSTD;
 end   
 
 end
