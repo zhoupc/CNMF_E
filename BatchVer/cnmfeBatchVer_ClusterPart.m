@@ -1,11 +1,13 @@
-if running_on_cluster
+%% C Run All below on cluster!
+%% 0. Get cluster ready
+if running_on_cluster % some procedures making cluster use robust
     [~, ~, ~] = maybe_spawn_workers(workersnum); 
     init_par_rng(2016);
 end
 
+%% 1A. Run normal CNMF-E for each file
 File(length(samplelist)) = struct('options',[],'Ysignal',[]); % pre-allocate for parfor loop. 
 A0s=cell(1,length(samplelist));
-%%% Running normal CNMF-E for each file
 parfor i= 1:length(samplelist)
     Mode='initiation';
     picname=samplelist(i).name(namepattern) % For each file, save A's so you can roughly check what neuron is picked in which file. 
@@ -20,8 +22,7 @@ if ~isempty(emptyA0s_ind)
     warning(['sample file number ',num2str(emptyA0s_ind),' with name below has/have no neuron extracted in it.\n'])
     samplelist(emptyA0s_ind).name
     fprintf('Deleting these sample A0s.');
-    samplelist_reduced=samplelist;
-    samplelist_reduced(emptyA0s_ind)=[];
+
     samplelist(emptyA0s_ind)=[];
     A0s(emptyA0s_ind)=[];    
     File(emptyA0s_ind)=[];
@@ -32,10 +33,10 @@ save([outputdir 'NormalsOFcnmfeBatchVer.mat'],'-v7.3')
 %%% but nice to do. It is fast.
 A0s=Over_Days_ResequenceA(A0s,correlation_thresh,max2max2nd,skewnessthresh);
 
-% Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
+%% 1B. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
 ACS(length(samplelist)) = struct('Ain',[],'Cin',[],'STD',[]);
-S_R=length(samplelist_reduced);
-parfor i= 1:length(samplelist)
+S_R=length(samplelist);
+parfor i= 1:S_R
     Ain=[];
     Cin=[];
     STD=[];
@@ -60,7 +61,7 @@ C_temp=C_all(1:size(Amask_temp,2),:);
 [Amask_temp,C_temp,ACS] = mergeAC(Amask_temp,C_temp,ACS,merge_thr);
 
 merge2start=1+size(A0s{1},2)+size(A0s{2},2);
-for i=3:length(samplelist_reduced)
+for i=3:length(samplelist)
     Amask_temp=cat(2,Amask_temp,A0s{i})>0;
     
     C_temp=[C_temp;C_all(merge2start:merge2start+size(A0s{i},2)-1,:)];
@@ -70,7 +71,7 @@ for i=3:length(samplelist_reduced)
 end
 
 save([outputdir 'commonAcnmfeBatchVer.mat'],'-v7.3')
-%% 3 Determine uniqueA's
+%% 3 Collapsing A's
 As=cell(1,length(samplelist));
 STDs=cell(1,length(samplelist));
 parfor i=1:length(samplelist)
@@ -79,7 +80,7 @@ parfor i=1:length(samplelist)
 end
 Afinal=ReducingA(As,STDs);
 save([outputdir 'uniqueAcnmfeBatchVer.mat'],'-v7.3')
-%% 5 Determine Afinal that will be used to extract C's in each file.
+%% 4 Determine Afinal that will be used to extract C's in each file.
 
 %%% Some processes making Afinal nicer, modified from Pengcheng Zhou's
 %%% idea.
@@ -94,7 +95,7 @@ end
 nz_ind=any(Afinal);
 Afinal=Afinal(:,nz_ind);
 save([outputdir 'AfinalcnmfeBatchVer.mat'],'-v7.3')
-%% 6 "massive" procedure: Extract A from each file
+%% 5 "massive" procedure: Extract A from each file
 neuron_batch(length(filelist)) = struct('ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
 
 parfor i= 1:length(filelist)  
@@ -106,8 +107,7 @@ end
 fprintf('Massive extraction done.');
 save([outputdir 'MassivecnmfeBatchVer.mat'],'-v7.3')
 
-%neuron(length(filelist)) = struct('signal',[],'filelist',[]);
-%%% Partition between those neurons found in each file and those not.
+%% 6 Partition between those neurons found in each file and those not. Save results.
 ind_del_final_cat=cat(2,neuron_batch.ind_del);
 ind_del_final=any(ind_del_final_cat,2);
 parfor i= 1:length(filelist)

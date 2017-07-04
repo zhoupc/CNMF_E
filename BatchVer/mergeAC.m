@@ -78,7 +78,7 @@ for m=1:n2merge
 %     temp = ai>quantile(ai, 0.3, 1);
 %     ai(~temp(:)) = 0;
    
-    Amask(:,IDs(1)) = ai>0;    
+    Amask(:,IDs(1)) = ai>0;
     C(IDs(1), :) = ci;
     for i=1:numel(ACS)
         FileA=ACS(i).Ain;   FileA(:,IDs(1))=ai;   
