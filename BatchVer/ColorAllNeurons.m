@@ -1,5 +1,4 @@
-function  ColorAllNeurons(A)
-    global d1 d2 Picname outputdir
+function  ColorAllNeurons(A,d1,d2,Picname,outputdir)
     
     figure; 
     hold all

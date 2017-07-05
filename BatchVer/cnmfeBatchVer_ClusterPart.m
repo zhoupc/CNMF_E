@@ -5,14 +5,14 @@ if running_on_cluster % some procedures making cluster use robust
     init_par_rng(2016);
 end
 
-%% 1A. Run normal CNMF-E for each file
+%% 1. Run normal CNMF-E for each file
 File(length(samplelist)) = struct('options',[],'Ysignal',[]); % pre-allocate for parfor loop. 
 A0s=cell(1,length(samplelist));
 parfor i= 1:length(samplelist)
     Mode='initiation';
     picname=samplelist(i).name(namepattern) % For each file, save A's so you can roughly check what neuron is picked in which file. 
     name=fullfile(sampledir,samplelist(i).name);
-    [A0s{i},File(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,[],File(i),convolveType);
+    [A0s{i},File(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,[],File(i),convolveType,merge_thr);
     fprintf('Sampling file number %.0f done\n', i);
 end
 
@@ -33,32 +33,26 @@ save([outputdir 'NormalsOFcnmfeBatchVer.mat'],'-v7.3')
 %%% but nice to do. It is fast.
 A0s=Over_Days_ResequenceA(A0s,correlation_thresh,max2max2nd,skewnessthresh);
 
-%% 1B. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
+%% 2. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
 ACS(length(samplelist)) = struct('Ain',[],'Cin',[],'STD',[]);
 S_R=length(samplelist);
 parfor i= 1:S_R
-    Ain=[];
-    Cin=[];
-    STD=[];
+    Ain=[]; Cin=[]; STD=[];
     for j=1:S_R % parfor needs this
         Aj=A0s{j};
         ACS_temp=A2C2A(File(i), Aj, File(i).options);
-        Ain = [Ain ACS_temp.Ain];
-        Cin = [Cin; ACS_temp.Cin];
-        STD=[STD ACS_temp.STD];
+        Ain = [Ain ACS_temp.Ain]; Cin = [Cin; ACS_temp.Cin]; STD=[STD ACS_temp.STD];
     end
-    ACS(i).Ain=Ain;
-    ACS(i).Cin=Cin;
-    ACS(i).STD=STD;
+    ACS(i).Ain=Ain; ACS(i).Cin=Cin; ACS(i).STD=STD;
 end
 save([outputdir 'PartOneOFcnmfeBatchVer.mat'],'-v7.3')
-%% 2 Merge similar neurons
+%% 3 Merge similar neurons
 %%% Merge similar neurons based on spatial AND temporal correlation
 C_all=cat(2,ACS.Cin);
 
 Amask_temp=cat(2,A0s{1:2})>0;
 C_temp=C_all(1:size(Amask_temp,2),:);
-[Amask_temp,C_temp,ACS] = mergeAC(Amask_temp,C_temp,ACS,merge_thr);
+[Amask_temp,C_temp,ACS] = mergeAC(Amask_temp,C_temp,ACS,merge_thr_2);
 
 merge2start=1+size(A0s{1},2)+size(A0s{2},2);
 for i=3:length(samplelist)
@@ -66,21 +60,21 @@ for i=3:length(samplelist)
     
     C_temp=[C_temp;C_all(merge2start:merge2start+size(A0s{i},2)-1,:)];
 
-    [Amask_temp,C_temp,ACS] = mergeAC(Amask_temp,C_temp,ACS,merge_thr);
+    [Amask_temp,C_temp,ACS] = mergeAC(Amask_temp,C_temp,ACS,merge_thr_2);
     merge2start=merge2start+size(A0s{i},2);
 end
 
 save([outputdir 'commonAcnmfeBatchVer.mat'],'-v7.3')
-%% 3 Collapsing A's
+%% 4 Collapsing A's
 As=cell(1,length(samplelist));
 STDs=cell(1,length(samplelist));
 parfor i=1:length(samplelist)
     As{i}=ACS(i).Ain;
     STDs{i}=ACS(i).STD;    
 end
-Afinal=ReducingA(As,STDs);
+Afinal=ReducingA(As,STDs); % the format for cell input is designed for potential other applications.
 save([outputdir 'uniqueAcnmfeBatchVer.mat'],'-v7.3')
-%% 4 Determine Afinal that will be used to extract C's in each file.
+%% 4.5 Determine Afinal that will be used to extract C's in each file.
 
 %%% Some processes making Afinal nicer, modified from Pengcheng Zhou's
 %%% idea.
@@ -101,7 +95,7 @@ neuron_batch(length(filelist)) = struct('ind_del',[],'signal',[],'FileOrigin',[]
 parfor i= 1:length(filelist)  
     mode='massive';
     nam=fullfile(datadir,filelist(i).name);    
-    [~,neuron_batch(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],Afinal,neuron_batch(i),convolveType);
+    [~,neuron_batch(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],Afinal,neuron_batch(i),convolveType,merge_thr);
     neuron_batch(i).FileOrigin=filelist(i); % save origin(filelist)
 end
 fprintf('Massive extraction done.');

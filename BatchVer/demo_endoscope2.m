@@ -1,4 +1,4 @@
-function [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,Afinal,File,convolveType)
+function [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,Afinal,File,convolveType,merge_thr)
 % [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,Afinal,File)
 % It is converted to function to cater to parfor loop.
 %   Meanwhile, some part of cnmf-e demo is applied to this sampling process while some simplied methods are
@@ -123,6 +123,13 @@ elseif strcmp(mode,'massive')
     File.ind_del=ind_del;
     File.neuron=neuron;    
     return
+elseif strcmp(mode,'BackgroundSubOnly')
+    % parameters, estimate the background
+    spatial_ds_factor = 1;              % spatial downsampling factor. it's for faster estimation
+    thresh = 10;                        % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
+    bg_neuron_ratio = bg_neuron_ratio;  % spatial range / diameter of neurons
+    BackgroundSub
+    return
 end
 
 % sort neurons
@@ -161,7 +168,7 @@ while miter <= maxIter
         % corresponding to {sptial overlaps, temporal correlation of C,
         %temporal correlation of S}
     else
-        merge_thr = [0.6, 0.5, 0.1]; 
+        merge_thr = merge_thr; 
     end
     % merge neurons
     cnmfe_quick_merge;              % run neuron merges
@@ -242,7 +249,7 @@ close(gcf);
 neuron.drawPNRCn(min_pnr,min_corr)
 close(gcf);
 
-ColorAllNeurons(neuron.A);
+ColorAllNeurons(neuron.A,d1,d2,Picname,outputdir);
 if strcmp(mode,'initiation')
     A0s=neuron.A;
     File.options=neuron.options;

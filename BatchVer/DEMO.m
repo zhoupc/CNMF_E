@@ -43,6 +43,7 @@ convolveType='ar1';    % convolveType: string, defines the model of the deconvol
                                         %         exponential functions -
                                         %               h(t) = (exp(-t/tau_d) - exp(-t/tau_r)) / (tau_d-tau_r)
                                         % 'kernel':   a vector of the convolution kernel
+merge_thr=[0.7,0.7,0.4];
 namepattern=1:35;       % In sampling stage, for each file running cnmfe, save A's so you can roughly check what neuron is picked in which file.
                         % Each pic's name is from some characters from raw
                         % data's filename. Here I use 1:35
@@ -54,7 +55,7 @@ correlation_thresh=0.6; % Those neuron pairs with cross correlation coefficient 
 max2max2nd=1.1;         % type help Over_Days_findAnn
 skewnessthresh=0;       % type help findn1n2
 % Merge similar neurons based on spatial AND temporal correlation
-merge_thr=[0.7,0.7]; 
+merge_thr_2=[0.7,0.7];
 
 %(4)
 running_on_cluster=true;

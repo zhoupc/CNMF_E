@@ -4,13 +4,15 @@ function  [Amask,C,ACS] = mergeAC(Amask,C,ACS,merge_thr)
 %   Amask: concatnated Amask from neurons from one or many files.
 %   C: concatnated temporal trace from neurons from one or many files.
 %   ACS:  structure, having fields of Ain, Cin (concatnated A and C from
-%         neurons from all files), and STD of Cin.
+%         neurons from all files), and std of Cin(STD).
 %   merge_thr: 1X2 vector, threshold for two metrics {'A', 'C'}. it merge neurons based
 %         on correlations of spatial shapes ('A'),  calcium traces ('C').
 % output:
-%   Merged-component reduced Amask, C and ACS. After merging, previously
-%       each file's ACS has different A. Now they all have the same A as well
-%       as STD.
+%   Merged-component reduced Amask, C and ACS. For those neurons that are merged, they all have the same A as well
+%       as STD in each file's ACS. For example, if neuron 1,3,5 are merged,
+%       neuron 1 in each file's ACS's A and STD will be the same while neuron 3,5 are
+%       deleted in all files's ACS's A and STD. Since C is not used in
+%       later steps, C in ACS is not updated.
 
 % Author: Shijie Gu, techel@live.cn, modified from quickMerge() by Pengcheng Zhou
 %  The basic idea is proposed by Eftychios A. Pnevmatikakis: high temporal
