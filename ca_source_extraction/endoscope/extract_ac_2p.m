@@ -1,4 +1,4 @@
-function [ai, ci, ind_success, sn] = extract_ac(HY, Y, ind_ctr, sz)
+function [ai, ci, ind_success, sn] = extract_ac_2p(HY, Y, ind_ctr, sz)
 %% given a patch of raw & high-pass filtered calcium imaging data, extract
 % spatial and temporal component of one neuron (ai, ci). if succeed, then
 % return an indicator ind_succes with value 1; otherwise, 0.
@@ -13,7 +13,7 @@ function [ai, ci, ind_success, sn] = extract_ac(HY, Y, ind_ctr, sz)
 %% parameters 
 nr = sz(1);
 nc = sz(2);
-min_corr = 0.9;
+min_corr = 0.7;
 min_pixels = 5;
 
 %% find pixels highly correlated with the center
@@ -58,7 +58,7 @@ temp = (X'*X)\(X'*Y');
 ai = max(0, temp(3,:)'); 
 
 %% threshold the spatial shape and remove outliers 
-% remove outliers and trim
+% remove outliers 
 temp =  full(ai>quantile(ai(:), 0.5)); 
 l = bwlabel(reshape(temp, nr, nc), 4); 
 temp(l~=l(ind_ctr)) = false; 

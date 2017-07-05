@@ -1,7 +1,8 @@
-function [C_offset,sn,ind_del] = updateTemporal_endoscope2(obj, Y,smin)
+function [C_offset,ind_del] = updateTemporal_endoscope(obj, Y, allow_deletion)
 %% run HALS by fixating all spatial components
 % input:
 %   Y:  d*T, fluorescence data
+%   allow_deletion: boolean, allow deletion (default: true) 
 % output:
 %   C_raw: K*T, temporal components without being deconvolved
 
@@ -12,10 +13,8 @@ global mode
 maxIter = obj.options.maxIter;
 deconv_options_0 = obj.options.deconv_options;
 
-if ~exist('smin', 'var')
-    smin = [];
-else
-    deconv_options_0.optimize_smin = false;
+if ~exist('allow_deletion', 'var')
+    allow_deletion = true; 
 end
 %% initialization
 A = obj.A;
@@ -41,7 +40,7 @@ for miter=1:maxIter
         end
         temp = C(k, :) + (U(k, :)-V(k, :)*C)/aa(k);
         %remove baseline and estimate noise level
-        if range(temp)/std(temp)>8
+        if range(temp)/std(temp)>6
             [b, tmp_sn] = estimate_baseline_noise(temp);
         else
             b = mean(temp(temp<median(temp)));
@@ -60,9 +59,6 @@ for miter=1:maxIter
         
         % deconvolution
         if obj.options.deconv_flag
-            if miter>1  % use the parameters in the previous initialization
-                deconv_options.pars = kernel_pars{k};
-            end
             try
                 [ck, sk, deconv_options]= deconvolveCa(temp, deconv_options_0, 'sn', tmp_sn, 'maxIter', 2);
                 smin(k) = deconv_options.smin;
@@ -96,17 +92,16 @@ for miter=1:maxIter
     end
 end
 
+obj.A = bsxfun(@times, A, sn);
+obj.C = bsxfun(@times, C, 1./sn');
+obj.C_raw = bsxfun(@times, C_raw, 1./sn');
+obj.S = bsxfun(@times, S, 1./sn');
+obj.P.kernel_pars =cell2mat(kernel_pars);
+obj.P.smin = smin/sn;
+obj.P.sn_neuron = sn;
 if strcmp(mode,'initiation')
-    obj.A = bsxfun(@times, A, sn);
-    obj.C = bsxfun(@times, C, 1./sn');
-    obj.C_raw = bsxfun(@times, C_raw, 1./sn');
-    obj.S = bsxfun(@times, S, 1./sn');
-    obj.P.kernel_pars =cell2mat(kernel_pars);
-    obj.P.smin = smin/sn;
-    obj.P.sn_neuron = sn; 
-    obj.delete(ind_del);
-elseif strcmp(mode,'massive')
-    obj.C = C;
-    obj.C_raw = C_raw;
+    if allow_deletion
+        obj.delete(ind_del);
+    end    
 end
-end
+

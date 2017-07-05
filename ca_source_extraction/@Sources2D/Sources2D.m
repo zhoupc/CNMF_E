@@ -56,7 +56,7 @@ classdef Sources2D < handle
         %% fast initialization for microendoscopic data
         [center, Cn, pnr] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi);
         
-        [center] = initComponents_2p(obj,Y, K, options, sn, debug_on, save_avi); 
+        [center] = initComponents_2p(obj,Y, K, options, sn, debug_on, save_avi);
         %% update spatial components
         function updateSpatial(obj, Y)
             [obj.A, obj.b, obj.C] = update_spatial_components(Y, ...
@@ -84,9 +84,7 @@ classdef Sources2D < handle
         end
         
         %% udpate temporal components with fast deconvolution
-        function [C_offset,sn,ind_del]= updateTemporal_endoscope(obj, Y, smin)
-            [C_offset,sn,ind_del]= updateTemporal_endoscope2(obj, Y, smin);
-        end
+        [C_offset,ind_del]= updateTemporal_endoscope(obj, Y, allow_deletion)
         updateTemporal_endoscope_parallel(obj, Y, smin)
         
         %% update temporal components without background
@@ -291,9 +289,21 @@ classdef Sources2D < handle
         end
         
         %% deconvolve all temporal components
-        function C0 = deconvTemporal(obj)
-            C0 = obj.C;
-            [obj.C, obj.P, obj.S] = deconv_temporal(obj.C, obj.P, obj.options);
+        function C_ = deconvTemporal(obj)
+            C_raw_ = obj.C_raw;
+            K = size(C_raw_, 1);
+            C_ = zeros(size(C_raw_));
+            S_ = C_;
+            kernel_pars = cell(K, 1);
+            for m=1:size(C_raw_,1)
+                [b_, sn] = estimate_baseline_noise(C_raw_(m, :));
+                [C_(m, :), S_(m,:), temp_options] = deconvolveCa(C_raw_(m, :)-b_, obj.options.deconv_options, 'sn', sn);
+                kernel_pars{m} = temp_options.pars;
+                obj.C_raw(m, :) = obj.C_raw(m, :)-b_;
+            end
+            obj.C = C_;
+            obj.S = S_;
+            obj.P.kernel_pars = kernel_pars;
         end
         
         %% update background
@@ -572,6 +582,14 @@ classdef Sources2D < handle
             elseif strcmpi(file_type, '.tif') || strcmpi(file_type, '.tiff')
                 numFrame = length(imfinfo(nam));
                 img = imread(nam);
+            elseif strcmpi(file_type, '.h5') || strcmpi(file_type, '.hdf5')
+                temp = h5info(nam);
+                dataset_nam = ['/', temp.Datasets.Name];
+                dataset_info = h5info(nam, dataset_nam);
+                dims = dataset_info.Dataspace.Size;
+                ndims = length(dims);
+                numFrame = dims(end);
+                img = squeeze(h5read(nam, dataset_nam, ones(1, ndims), [1,d1, d2, 1, 1]));
             end
             num2read = min(num2read, numFrame-sframe+1); % frames to read
             
@@ -581,6 +599,8 @@ classdef Sources2D < handle
                     Yraw = data.Y(:, :, (1:num2read)+sframe-1);
                 elseif strcmpi(file_type, '.tif') || strcmpi(file_type, '.tiff')
                     Yraw = bigread2(nam, sframe, num2read);
+                elseif strcmpi(file_type, '.h5') || strcmpi(file_type, 'hdf5')
+                    Yraw = squeeze(h5read(nam, dataset_nam, ones(1, ndims), [1, d1, d2, 1, num2read]));
                 else
                     fprintf('\nThe input file format is not supported yet\n\n');
                     return;
@@ -599,7 +619,11 @@ classdef Sources2D < handle
                         fprintf('load data from frame %d to frame %d of %d total frames\n', sframe, sframe+tmp_num2read-1, lastframe);
                         Yraw = data.Y(:, :, sframe:(sframe+tmp_num2read-1));
                     elseif strcmpi(file_type, '.tif') || strcmpi(file_type, '.tiff')
+                        fprintf('load data from frame %d to frame %d of %d total frames\n', sframe, sframe+tmp_num2read-1, lastframe);
                         Yraw = bigread2(nam, sframe, tmp_num2read);
+                    elseif strcmpi(file_type, '.h5') || strcmpi(file_type, 'hdf5')
+                        fprintf('load data from frame %d to frame %d of %d total frames\n', sframe, sframe+tmp_num2read-1, lastframe);
+                        Yraw = squeeze(h5read(nam, dataset_nam, [1,1,1,1,sframe], [1, d1, d2, 1, tmp_num2read]));
                     else
                         fprintf('\nThe input file format is not supported yet\n\n');
                         return;
@@ -706,9 +730,11 @@ classdef Sources2D < handle
             [center, Cn, pnr] = neuron.initComponents_endoscope(Y, [], patch_par, false, false);
             obj.A = [obj.A, neuron.A];
             obj.C = [obj.C; neuron.C];
-            obj.S = [obj.S; neuron.S];
             obj.C_raw = [obj.C_raw; neuron.C_raw];
-            obj.P.kernel_pars = [obj.P.kernel_pars; neuron.P.kernel_pars];
+            if obj.options.deconv_flag
+                obj.P.kernel_pars = [obj.P.kernel_pars; neuron.P.kernel_pars];
+                obj.S = [obj.S; neuron.S];
+            end
             obj.P.THRESH.Corr= [obj.P.THRESH.Corr neuron.P.THRESH.Corr];
             obj.P.THRESH.CorrOut= [obj.P.THRESH.CorrOut neuron.P.THRESH.CorrOut];
             obj.P.THRESH.PNR= [obj.P.THRESH.PNR neuron.P.THRESH.PNR];
@@ -850,11 +876,11 @@ classdef Sources2D < handle
                 temp =  cumsum(temp);
                 ff = find(temp > (1-thr)*temp(end),1,'first');
                 if ~isempty(ff)
-                    pvpairs = { 'LevelList' , [0,0]+A_temp(ind(ff)), 'ZData', obj.reshape(A_temp,2)}; 
+                    pvpairs = { 'LevelList' , [0,0]+A_temp(ind(ff)), 'ZData', obj.reshape(A_temp,2)};
                     h = matlab.graphics.chart.primitive.Contour(pvpairs{:});
-                    temp = h.ContourMatrix; 
+                    temp = h.ContourMatrix;
                     temp = medfilt1(temp')';
-                    Coor{m} = temp(:, 3:end); 
+                    Coor{m} = temp(:, 3:end);
                 end
                 
             end
@@ -913,6 +939,5 @@ classdef Sources2D < handle
             %         end
        %% New method added by Shijie Gu, since Jun,2017
        drawPNRCn(obj,min_pnr,min_corr)
-        end
-        
-    end
+    end     
+end    
