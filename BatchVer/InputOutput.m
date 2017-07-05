@@ -6,11 +6,12 @@ function [datadir,sampledir,outputdir,filelist,samplelist]=InputOutput(varargin)
 %                       'outputdir','/Users/gushijie/Documents/Fee/',
 %                       'datakind','*CaELM*',
 %                       'samplekind','*CaELM*',
-%                       'SamplingMethod','manual');
+%                       'SamplingMethod','manual'
+%                       'DataMethod','manual');
 %  Input: 1-data directory, 2-sample directory, which can be empty. If
 %         'SamplingMethod' is 'auto', the sample directory will be the same as data directory
 %         3-output directory, 4/5-what "kind" of data you want to read in to extract cells (for data and sample).
-%         6-how to choose data for sampling, either "auto", every some files will be asked for you
+%         6/7-how to choose data for sampling or extraction, either "auto", every some files will be asked for you
 %         as an input to sample data; or, "manual", a window will pop up for you to choose data from the sampledir you input.
 %  More notes:
 %  "kind" is wildcard in matlab. This is used in dir() function, see
@@ -30,6 +31,7 @@ addParameter(p,'datakind',kinddefault);
 addParameter(p,'samplekind',kinddefault);
 expectedmethod = {'auto','manual'};
 addParameter(p,'SamplingMethod','auto', @(x) any(validatestring(x,expectedmethod)));
+addParameter(p,'DataMethod','manual', @(x) any(validatestring(x,expectedmethod)));
 
 parse(p, varargin{:});
 
@@ -39,18 +41,36 @@ outputdir=p.Results.outputdir;
 datakind=p.Results.datakind;
 samplekind=p.Results.samplekind;
 SamplingMethod=p.Results.SamplingMethod;
+DataMethod=p.Results.DataMethod;
 
-Datadir=fullfile(datadir,datakind);
-filelist=dir(Datadir);
-numInFolder=numel(filelist);
-
-%first check how many input data files are there. Minimum requirement is two.
-if numInFolder==0
-    ME = MException('cnmfeBatchVer:NotEnoughInput', 'This is an empty data folder or a incorrectly specified folder. \n Please redefine input.');
-    throw(ME)
-elseif numInFolder==1
-    ME2 = MException('cnmfeBatchVer:OnlyOneInput', 'Only one file \n Use normal cnmf-e instead.');
-    throw(ME2)
+if strcmp(DataMethod,'auto')
+    Datadir=fullfile(datadir,datakind);
+    filelist=dir(Datadir);
+    numInFolder=numel(filelist);
+    %first check how many input data files are there. Minimum requirement is two.
+    if numInFolder==0
+        ME = MException('cnmfeBatchVer:NotEnoughInput', 'This is an empty data folder or a incorrectly specified folder. \n Please redefine input.');
+        throw(ME)
+    elseif numInFolder==1
+        ME2 = MException('cnmfeBatchVer:OnlyOneInput', 'Only one file \n Use normal cnmf-e instead.');
+        throw(ME2)
+    end
+else
+    [FileName,PathName,~] = uigetfile({'*.*';datakind},'cnmfe(BatchVer)-Manually Choose Data',datadir,'MultiSelect','on');
+    datadir=PathName; %Just in case in practice, user changed directory in the folder.
+    numInFolder=numel(FileName);
+        %first check how many input data files are there. Minimum requirement is two.
+    if numInFolder==0
+        ME = MException('cnmfeBatchVer:NotEnoughInput', 'This is an empty data folder or a incorrectly specified folder. \n Please redefine input.');
+        throw(ME)
+    elseif numInFolder==1
+        ME2 = MException('cnmfeBatchVer:OnlyOneInput', 'Only one file \n Use normal cnmf-e instead.');
+        throw(ME2)
+    end
+    sprintf('Chosen %.0f files to extract in the end. \n', numInFolder);
+    for i=1:length(FileName)
+        filelist(i)= dir(fullfile(PathName,FileName{i}));
+    end
 end
 
 if strcmp(SamplingMethod,'auto')
@@ -74,19 +94,22 @@ if strcmp(SamplingMethod,'auto')
     if numel(filelist)<=every_file_num
         error('Zero file for cnmf-e BatchVer sampling. Please lower your every_file_num')
     elseif numel(filelist)<2*every_file_num
-        error('Only one file for cnmf-e BatchVer sampling. Please lower your every_file_num')
+        warning('Only one file for cnmf-e BatchVer sampling. Lowering your every_file_num is suggested.')
     elseif sum(choose_ind)<5
         warning('less than 5 files selected as sample for data. Be aware of this.')
     end
     samplelist=filelist(choose_ind);
 else
-    [FileName,PathName,~] = uigetfile({'*.*';samplekind},'cnmfe(BatchVer)-Manually Choose Data',sampledir,'MultiSelect','on');
-    if numel(FileName)<5
+    [FileName,PathName,~] = uigetfile({'*.*';samplekind},'cnmfe(BatchVer)-Manually Choose Sample',sampledir,'MultiSelect','on');
+    sprintf('Chosen %.0f files as samples. \n', length(FileName));
+    if numel(FileName)==1
+        warning('Only one file for cnmf-e BatchVer sampling. Lowering your every_file_num is suggested.')
+    elseif numel(FileName)<5
         warning('less than 5 files selected as sample for data. Be aware of this.')        
     end
     sampledir=PathName; %Just in case in practice, user changed directory in the folder.
     samplelist = struct('name',FileName);
 end
-    
+
 end
 

@@ -116,7 +116,7 @@ elseif strcmp(mode,'massive')
     [C,~]=extract_c(Ysignal,[],Afinal);
     neuron.A=Afinal;
     neuron.C=C;
-    [~,~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,[]);
+    [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
     A0s=[];
 %     File.A=neuron.A;
 %     File.C=neuron.C;
@@ -183,7 +183,7 @@ while miter <= maxIter
     tic;
     for m=1:2  
         %temporal
-        neuron.updateTemporal_endoscope(Ysignal,[]);
+        neuron.updateTemporal_endoscope(Ysignal,true);
         cnmfe_quick_merge;              % run neuron merges
         %spatial
         neuron.updateSpatial_endoscope(Ysignal, Nspatial, update_spatial_method);
