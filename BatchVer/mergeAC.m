@@ -90,8 +90,8 @@ for m=1:n2merge
     % data = A(active_pixel, IDs)*C(IDs, :);
     data=[];
     for i=1:numel(ACS)
-        FileA=File(i).Ain;
-        FileC=File(i).Cin;
+        FileA=ACS(i).Ain;
+        FileC=ACS(i).Cin;
         data = [data FileA(active_pixel, IDs)*FileC(IDs, :)];
     end
     
