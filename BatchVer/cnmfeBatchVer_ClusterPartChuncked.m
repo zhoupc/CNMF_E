@@ -4,25 +4,12 @@ if running_on_cluster % some procedures making cluster use robust
     [~, ~, ~] = maybe_spawn_workers(workersnum); 
     init_par_rng(2016);
 end
-%% 3 Merge similar neurons
-%%% Merge similar neurons based on spatial AND temporal correlation
-C_all=cat(2,ACS.Cin);
-Amask_temp=cat(2,A0s{1:2});
+%%
+Amask_temp=cat(2,A0s{:});
 Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
+%C_all=cat(2,ACS.Cin);
 
-C_temp=C_all(1:size(Amask_temp,2),:);
-[Amask_temp,C_temp,ACS] = mergeAC(Amask_temp,C_temp,ACS,merge_thr_2);
-
-merge2start=1+size(A0s{1},2)+size(A0s{2},2);
-for i=3:length(samplelist)
-    Amask_temp=cat(2,Amask_temp,A0s{i});
-    Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3));
-    
-    C_temp=[C_temp;C_all(merge2start:merge2start+size(A0s{i},2)-1,:)];
-
-    [Amask_temp,C_temp,ACS] = mergeAC(Amask_temp,C_temp,ACS,merge_thr_2);
-    merge2start=merge2start+size(A0s{i},2);
-end
+[ACS,MC,newIDs,merged_ROIs] = mergeAC(Amask_temp,ACS,merge_thr_2);
 
 save([outputdir 'commonAcnmfeBatchVer.mat'],'-v7.3')
 %% 4 Collapsing A's
