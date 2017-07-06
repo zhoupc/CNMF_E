@@ -96,7 +96,7 @@ for m=1:n2merge
     end
     
     data=data./length(IDs);
-    [~,I] = max(std(C(IDs, :))); % choose the most confident(with biggest std) ci.
+    [~,I] = max(std(C(IDs, :),0,2)); % choose the most confident(with biggest std) ci.
     ci=C(IDs(I),:);
     for miter=1:10
         ai = data*ci'/(ci*ci');
