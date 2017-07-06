@@ -74,12 +74,7 @@ else
 end
 
 if strcmp(SamplingMethod,'auto')
-    if isempty(sampledir)
-        sampledir=datadir;
-    end
-    Sampledir=fullfile(sampledir,samplekind);
-    samplelist=dir(Sampledir);
-    sampleInFolder=numel(samplelist);
+    sampleInFolder=numel(filelist);
     if sampleInFolder==0
         ME3 = MException('cnmfeBatchVer:NotEnoughSampleInput', 'There is no sample input. \n Please redefine sample input.');
         throw(ME3)
@@ -100,6 +95,9 @@ if strcmp(SamplingMethod,'auto')
     end
     samplelist=filelist(choose_ind);
 else
+    if isempty(sampledir)
+        sampledir=datadir;
+    end
     [FileName,PathName,~] = uigetfile({'*.*';samplekind},'cnmfe(BatchVer)-Manually Choose Sample',sampledir,'MultiSelect','on');
     sprintf('Chosen %.0f files as samples. \n', length(FileName));
     if numel(FileName)==1

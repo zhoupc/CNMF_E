@@ -49,14 +49,16 @@ save([outputdir 'PartOneOFcnmfeBatchVer.mat'],'-v7.3')
 %% 3 Merge similar neurons
 %%% Merge similar neurons based on spatial AND temporal correlation
 C_all=cat(2,ACS.Cin);
+Amask_temp=cat(2,A0s{1:2});
+Amask_temp=bsxfun(@lt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
 
-Amask_temp=cat(2,A0s{1:2})>0;
 C_temp=C_all(1:size(Amask_temp,2),:);
 [Amask_temp,C_temp,ACS] = mergeAC(Amask_temp,C_temp,ACS,merge_thr_2);
 
 merge2start=1+size(A0s{1},2)+size(A0s{2},2);
 for i=3:length(samplelist)
-    Amask_temp=cat(2,Amask_temp,A0s{i})>0;
+    Amask_temp=cat(2,Amask_temp,A0s{i});
+    Amask_temp=bsxfun(@lt,Amask_temp,quantile(Amask_temp,0.3));
     
     C_temp=[C_temp;C_all(merge2start:merge2start+size(A0s{i},2)-1,:)];
 
