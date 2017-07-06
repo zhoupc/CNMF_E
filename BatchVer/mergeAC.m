@@ -111,7 +111,7 @@ for m=1:n2merge
     %Amask(:,IDs(1)) = ai>0;
     %C(IDs(1), :) = ci;
     for i=1:numel(ACS)
-        ACS(i).Ain(:,IDs(1))=ai;
+        ACS(i).Ain(active_pixel,IDs(1))=ai;
         ACS(i).STD(IDs(1))=std(ci);
         %FileSTD=ACS(i).STD; FileSTD(IDs(1))=std(ci);   ACS(i).STD=FileSTD;
     end    
