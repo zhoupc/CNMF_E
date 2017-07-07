@@ -85,7 +85,7 @@ for k = 1:K;
             ci=ci';
         catch
             Cin(k, :)=ci_raw;
-            ci=ci_raw';
+            ci=ci_raw;
             STD(k)=std(ci_raw);                        
         end      
     end
@@ -108,7 +108,7 @@ for k = 1:K;
     else
         Ain(ind_nhood,k)=ai;        
     end
-    Ysignal(ind_nhood, :) = HY_box - ai_raw*ci_raw';  % update data
+    Ysignal(ind_nhood, :) = HY_box - ai_raw*ci_raw;  % update data
 end
 ACS_temp=struct('Ain',[],'Cin',[],'STD',[]);
 ACS_temp.Ain = Ain;
