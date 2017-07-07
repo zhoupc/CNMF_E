@@ -51,11 +51,12 @@ for i=1:size(flag_merge,1)
         mergegroups{end+1}=ind_temp;
     end
 end
-
+display(mergegroups);
 allneurons=1:size(flag_merge,1);
 MC=cellfun(@(x) ismember(allneurons,x),mergegroups,'UniformOutput',false);
 MC=cat(1,MC{:});
 MC=MC';
+display(MC)
 
 %%%%
 % [l,c] = graph_connected_comp(sparse(flag_merge));     % extract connected components
@@ -77,6 +78,7 @@ ind_del=false(nr,1);
 
 % start merging
 for m=1:n2merge
+    display(m)
     %oldIDs=IDs;
     IDs = find(MC(:, m));  % IDs of neurons within this cluster
 %    IDs=setdiff(IDs,oldIDs);
@@ -96,8 +98,13 @@ for m=1:n2merge
     end
     
     data=data./length(IDs);
+    display(size(data))
     [~,I] = max(std(C(IDs, :),0,2)); % choose the most confident(with biggest std) ci.
     ci=C(IDs(I),:);
+    display('size(ai)')
+    display(size(ai))
+    display('size(ci)')
+    display(size(ci))
     for miter=1:10
         ai = data*ci'/(ci*ci');
         ci = ai'*data/(ai'*ai);
