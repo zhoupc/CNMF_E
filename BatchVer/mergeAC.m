@@ -122,7 +122,6 @@ for m=1:n2merge
     for i=1:numel(ACS)
         ACS(i).Ain(active_pixel,IDs(1))=ai;
         ACS(i).STD(IDs(1))=std(ci);
-        ACS(i).Cin(IDs(1),:)=ci;
         %FileSTD=ACS(i).STD; FileSTD(IDs(1))=std(ci);   ACS(i).STD=FileSTD;
     end    
 end
@@ -132,7 +131,6 @@ end
 for i=1:numel(ACS)
     ACS(i).Ain(:,ind_del)=[];
     ACS(i).STD(ind_del)=[];
-    ACS(i).Cin(ind_del,:)=[];
 %     FileA=ACS(i).Ain;   FileA(:,ind_del)=[]; ACS(i).Ain=FileA;
 %     FileSTD=ACS(i).STD; FileSTD(ind_del)=[]; ACS(i).STD=FileSTD;
 end
