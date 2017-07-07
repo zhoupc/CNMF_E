@@ -69,7 +69,7 @@ THRESH=struct('Corr',[],'PNR',[],'CorrOut',[],'PNROut',[]);
 try
     bd = options.bd;
 catch
-    bd = gSig*2;
+    bd = round(gSiz/2);
 end
 sig = 5;    % thresholding noise by sig*std()
 
@@ -97,9 +97,12 @@ T = size(Y, 2);
 %% preprocessing data
 % create a spatial filter for removing background
 psf = fspecial('gaussian', round(gSiz), gSig);
-ind_nonzero = (psf(:)>=max(psf(:,1)));
-psf = psf-mean(psf(ind_nonzero));
-psf(~ind_nonzero) = 0;
+if options.center_psf
+    ind_nonzero = (psf(:)>=max(psf(:,1)));
+    psf = psf-mean(psf(ind_nonzero));
+    psf(~ind_nonzero) = 0;
+end
+
 
 % filter the data
 HY = imfilter(reshape(Y, d1,d2,[]), psf, 'replicate');
@@ -125,7 +128,7 @@ HY_thr(bsxfun(@lt, HY_thr, Ysig*sig)) = 0;
 % compute loal correlation
 Cn = correlation_image(HY_thr, [1,2], d1,d2);
 Cn(isnan(Cn)) = 0;
-Cn = Cn + randn(size(Cn))*(1e-100);
+%Cn = Cn + randn(size(Cn))*(1e-100);
 Cn0 = Cn;   % backup
 
 % screen seeding pixels as center of the neuron
@@ -164,9 +167,10 @@ if debug_on
 end
 
 %% start initialization
-if ~exist('K', 'var')||isempty(K); K = sum(v_search(:)>0);
+if ~exist('K', 'var')||isempty(K); 
+    K = floor(sum(v_search(:)>0)/10);
 else
-    K = min(sum(v_search(:)>0), K);
+    K = min(floor(sum(v_search(:)>0)/10), K);
 end
 Ain = zeros(d1*d2, K);  % spatial components
 Cin = zeros(K, T);      % temporal components
@@ -187,8 +191,8 @@ ind_bd(:, (end-bd):end) = true;
 while searching_flag
     %% find local maximum as initialization point
     %find all local maximum as initialization point
-    tmp_d = 2*round(gSig)+1;
-    v_search = medfilt2(v_search, [gSig, gSig]); %+randn(size(v_search))*(1e-100);
+    tmp_d = 2*round(gSiz/4)+1;
+    v_search = medfilt2(v_search, round(gSiz/4)*[1, 1]); %+randn(size(v_search))*(1e-100);
     v_search(ind_search) = 0;
     v_max = ordfilt2(v_search, tmp_d^2, true(tmp_d));
     % set boundary to be 0
@@ -253,9 +257,9 @@ while searching_flag
         y0 = HY(ind_p, :);
         y0_std = std(diff(y0));
         %         y0(y0<median(y0)) = 0;
-        if (k>=1) && any(corr(Cin(1:k, :)', y0')>0.9) %already found similar temporal traces
-            continue;
-        end
+%         if (k>=1) && any(corr(Cin(1:k, :)', y0')>0.9) %already found similar temporal traces
+%             continue;
+%         end
         if max(diff(y0))< 3*y0_std % signal is weak
             continue;
         end
@@ -303,7 +307,12 @@ while searching_flag
         
         %% extract ai, ci
         sz = [nr, nc];
-        [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
+        if options.center_psf
+            [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
+        else
+            [ai, ci_raw, ind_success] =  extract_ac_2p(HY_box, Y_box, ind_ctr, sz);
+        end
+
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
         %         if max(ci_raw)<min_pnr;
         %             ind_success=false;
@@ -351,8 +360,8 @@ while searching_flag
             Ysig_box = Ysig(ind_nhood_HY);
             temp = max(HY_box, [], 2);
             tmp_PNR = temp./Ysig_box;
-            %tmp_PNR(or(isnan(tmp_PNR), tmp_PNR<min_pnr)) = 0;
-            tmp_PNR(isnan(tmp_PNR)) = 0;
+            tmp_PNR(or(isnan(tmp_PNR), tmp_PNR<min_pnr)) = 0;
+            %tmp_PNR(isnan(tmp_PNR)) = 0;
             PNR(ind_nhood_HY) = tmp_PNR;
             
             HY_box_thr = HY_box;  %thresholded version of HY
@@ -360,8 +369,8 @@ while searching_flag
             
             % update correlation image
             tmp_Cn = correlation_image(HY_box_thr, [1,2], nr2, nc2);
-            %tmp_Cn(or(isnan(tmp_Cn), tmp_Cn<min_corr)) = 0;
-            tmp_Cn(isnan(tmp_Cn)) = 0;
+            tmp_Cn(or(isnan(tmp_Cn), tmp_Cn<min_corr)) = 0;
+            %tmp_Cn(isnan(tmp_Cn)) = 0;
             Cn(ind_nhood_HY) = tmp_Cn;
             
             % update search value

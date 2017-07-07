@@ -96,7 +96,10 @@ end
 % Just in case some all zero A's got passed to this stage.
 nz_ind=any(Afinal);
 Afinal=Afinal(:,nz_ind);
+newIDs=newIDs(nz_ind);
+
 save([outputdir 'AfinalcnmfeBatchVer.mat'],'-v7.3')
+
 %% 5 "massive" procedure: Extract A from each file
 neuron_batch(length(filelist)) = struct('ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
 

@@ -4,7 +4,68 @@ if running_on_cluster % some procedures making cluster use robust
     [~, ~, ~] = maybe_spawn_workers(workersnum); 
     init_par_rng(2016);
 end
-%%
+
+%% 1. Run normal CNMF-E for each file
+File(length(samplelist)) = struct('options',[],'Ysignal',[]); % pre-allocate for parfor loop. 
+A0s=cell(1,length(samplelist));
+parfor i= 1:length(samplelist)
+    Mode='initiation';
+    picname=samplelist(i).name(namepattern) % For each file, save A's so you can roughly check what neuron is picked in which file. 
+    name=fullfile(sampledir,samplelist(i).name);
+    [A0s{i},File(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,[],File(i),convolveType,merge_thr);
+    fprintf('Sampling file number %.0f done\n', i);
+end
+
+%%% delete samples that have no neurons.
+emptyA0s_ind=find(cellfun('isempty', A0s));
+if ~isempty(emptyA0s_ind)
+    warning(['sample file number ',num2str(emptyA0s_ind),' with name below has/have no neuron extracted in it.\n'])
+    samplelist(emptyA0s_ind).name
+    fprintf('Deleting these sample A0s.');
+
+    samplelist(emptyA0s_ind)=[];
+    A0s(emptyA0s_ind)=[];    
+    File(emptyA0s_ind)=[];
+end
+save([outputdir 'NormalsOFcnmfeBatchVer.mat'],'-v7.3')
+
+%%% Order similar neurons in the same sequence in each file, not necessary,
+%%% but nice to do. It is fast.
+A0s=Over_Days_ResequenceA(A0s,correlation_thresh,max2max2nd,skewnessthresh);
+
+%% 2. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
+ACS(length(samplelist)) = struct('Ain',[],'Cin',[],'STD',[]);
+S_R=length(samplelist);
+parfor i= 1:S_R
+    Ain=[]; Cin=[]; STD=[];
+    for j=1:S_R % parfor needs this
+        Aj=A0s{j};
+        ACS_temp=A2C2A(File(i), Aj, File(i).options);
+        Ain = [Ain ACS_temp.Ain]; Cin = [Cin; ACS_temp.Cin]; STD=[STD ACS_temp.STD];
+    end
+    ACS(i).Ain=Ain; ACS(i).Cin=Cin; ACS(i).STD=STD;
+end
+save([outputdir 'PartOneOFcnmfeBatchVer.mat'],'-v7.3')
+%% 3 Merge similar neurons
+%%% Merge similar neurons based on spatial AND temporal correlation
+% C_all=cat(2,ACS.Cin);
+% Amask_temp=cat(2,A0s{1:2});
+% Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
+
+% C_temp=C_all(1:size(Amask_temp,2),:);
+% [Amask_temp,C_temp,ACS] = mergeAC(Amask_temp,C_temp,ACS,merge_thr_2);
+% 
+% merge2start=1+size(A0s{1},2)+size(A0s{2},2);
+% for i=3:length(samplelist)
+%     Amask_temp=cat(2,Amask_temp,A0s{i});
+%     Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3));
+%     
+%     C_temp=[C_temp;C_all(merge2start:merge2start+size(A0s{i},2)-1,:)];
+% 
+%     [Amask_temp,C_temp,ACS] = mergeAC(Amask_temp,C_temp,ACS,merge_thr_2);
+%     merge2start=merge2start+size(A0s{i},2);
+% end
+
 Amask_temp=cat(2,A0s{:});
 Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
 %C_all=cat(2,ACS.Cin);
@@ -35,4 +96,6 @@ end
 % Just in case some all zero A's got passed to this stage.
 nz_ind=any(Afinal);
 Afinal=Afinal(:,nz_ind);
+newIDs=newIDs(nz_ind);
+
 save([outputdir 'AfinalcnmfeBatchVer.mat'],'-v7.3')
