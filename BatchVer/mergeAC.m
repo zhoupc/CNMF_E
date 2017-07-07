@@ -43,9 +43,11 @@ flag_merge = (A_overlap>A_thr)&(C_corr>C_thr);
 
 mergegroups={};
 for i=1:size(flag_merge,1)
-    ind_temp=[i find(flag_merge(i,:))];
+    ind_temp=find(flag_merge(i,:));
     if isempty(ind_temp)
         continue
+    else
+        ind_temp=[i ind_temp];
     end
     mergegroups_intersect = cellfun(@(x) intersect(x,ind_temp),mergegroups,'UniformOutput', false);
     mergegroups_idx = find(~cellfun('isempty',mergegroups_intersect));
