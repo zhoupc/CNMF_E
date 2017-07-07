@@ -101,13 +101,13 @@ for m=1:n2merge
     display(size(data))
     [~,I] = max(std(C(IDs, :),0,2)); % choose the most confident(with biggest std) ci.
     ci=C(IDs(I),:);
-    display('size(ai)')
-    display(size(ai))
-    display('size(ci)')
-    display(size(ci))
     for miter=1:10
         ai = data*ci'/(ci*ci');
         ci = ai'*data/(ai'*ai);
+        display('size(ai)')
+        display(size(ai))
+        display('size(ci)')
+        display(size(ci))
     end
     ind_del(IDs(2:end))=true;
     newIDs(IDs(1)) = IDs(1);
