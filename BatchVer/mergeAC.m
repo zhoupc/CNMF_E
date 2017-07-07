@@ -40,9 +40,13 @@ C_corr = corr(C')-eye(K);
 
 % using merging criterion to detect paired neurons
 flag_merge = (A_overlap>A_thr)&(C_corr>C_thr);
+
 mergegroups={};
 for i=1:size(flag_merge,1)
     ind_temp=find(flag_merge(i,:));
+    if isempty(ind_temp)
+        continue
+    end
     mergegroups_intersect = cellfun(@(x) intersect(x,ind_temp),mergegroups,'UniformOutput', false);
     mergegroups_idx = find(~cellfun('isempty',mergegroups_intersect));
     if mergegroups_idx>0;
