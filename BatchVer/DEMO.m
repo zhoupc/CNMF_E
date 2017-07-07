@@ -16,23 +16,28 @@ codeDir='/home/shijiegu/cnmf_e/'; % codeDir2='/home/shijiegu/caprocessing/';
 [datadir,sampledir,outputdir,filelist,samplelist]=...
            InputOutput('datadir','/Volumes/data0-shared/elm/ProcessedCalciumData/6922FirstFewDaysForBatch/JustSinging/',...
                        'sampledir',[],...
-                       'outputdir','/Volumes/shared/EmilyShijieShared/BatchResult/6922FirstFewDays2017032930/',...
+                       'outputdir','/Volumes/shared-1/EmilyShijieShared/BatchResult/6922FirstFewDays2017032930NewMerging/',...
                        'datakind','*',...
-                       'samplekind','*',...
+                       'samplekind','*Ca*',...
                        'SamplingMethod','auto',...
                        'dataMethod','manual');
 %(1.1, replace for actual dir on cluster)
 datadir=strrep(datadir,'/Volumes/data0-shared/','/net/feevault/data0/');
 sampledir=strrep(sampledir,'/Volumes/data0-shared/','/net/feevault/data0/');
 outputdir_local=outputdir;
-outputdir=strrep(outputdir,'/Volumes/','/net/feevault/data0/');
-mkdir(outputdir_local)
+outputdir=strrep(outputdir,'/Volumes/shared-1/','/net/feevault/data0/shared/');
+if ~exist(outputdir_local,'dir')
+    mkdir(outputdir_local)
+end
 
 %(2)
 gSig=10;
 gSiz=17;
 min_corr=0.85;
 min_pnr=6.5;
+min_pixel = 50;      % minimum number of nonzero pixels for each neuron
+bd = 1;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
+
 bg_neuron_ratio = 1;    % spatial range / diameter of neurons
 FS=30;
 SSub=1;

@@ -12,7 +12,7 @@ parfor i= 1:length(samplelist)
     Mode='initiation';
     picname=samplelist(i).name(namepattern) % For each file, save A's so you can roughly check what neuron is picked in which file. 
     name=fullfile(sampledir,samplelist(i).name);
-    [A0s{i},File(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,[],File(i),convolveType,merge_thr);
+    [A0s{i},File(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,[],File(i),convolveType,merge_thr);
     fprintf('Sampling file number %.0f done\n', i);
 end
 
@@ -106,7 +106,7 @@ neuron_batch(length(filelist)) = struct('ind_del',[],'signal',[],'FileOrigin',[]
 parfor i= 1:length(filelist)  
     mode='massive';
     nam=fullfile(datadir,filelist(i).name);    
-    [~,neuron_batch(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],Afinal,neuron_batch(i),convolveType,merge_thr);
+    [~,neuron_batch(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],Afinal,neuron_batch(i),convolveType,merge_thr);
     neuron_batch(i).FileOrigin=filelist(i); % save origin(filelist)
 end
 fprintf('Massive extraction done.');

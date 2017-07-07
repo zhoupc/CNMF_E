@@ -1,4 +1,4 @@
-function [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,Afinal,File,convolveType,merge_thr)
+function [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,Afinal,File,convolveType,merge_thr)
 % [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,Afinal,File)
 % It is converted to function to cater to parfor loop.
 %   Meanwhile, some part of cnmf-e demo is applied to this sampling process while some simplied methods are
@@ -82,8 +82,8 @@ K = []; % maximum number of neurons to search within each patch. you can use [] 
 
 min_corr = min_corr;     % minimum local correlation for a seeding pixel
 min_pnr = min_pnr;       % minimum peak-to-noise ratio for a seeding pixel
-min_pixel = 5;      % minimum number of nonzero pixels for each neuron
-bd = 1;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
+min_pixel = min_pixel;      % minimum number of nonzero pixels for each neuron
+bd = bd;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
 neuron.updateParams('min_corr', min_corr, 'min_pnr', min_pnr, ...
     'min_pixel', min_pixel, 'bd', bd);
 neuron.options.nk = 1;  % number of knots for detrending 
