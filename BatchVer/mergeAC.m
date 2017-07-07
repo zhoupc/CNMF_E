@@ -79,7 +79,7 @@ end
 
 [nr, n2merge] = size(MC);
 merged_ROIs = cell(n2merge,1);
-newIDs = zeros(nr, 1);
+newIDs = num2cell(1:nr);
 ind_del=false(nr,1);
 
 % start merging
@@ -110,13 +110,9 @@ for m=1:n2merge
     for miter=1:10
         ai = data*ci'/(ci*ci');
         ci = ai'*data/(ai'*ai);
-        display('size(ai)')
-        display(size(ai))
-        display('size(ci)')
-        display(size(ci))
     end
     ind_del(IDs(2:end))=true;
-    newIDs(IDs) = IDs(1);
+    newIDs{IDs(1)} = IDs;
     % making ai nicer.
 %     temp = ai>quantile(ai, 0.3, 1);
 %     ai(~temp(:)) = 0;
@@ -126,6 +122,7 @@ for m=1:n2merge
     for i=1:numel(ACS)
         ACS(i).Ain(active_pixel,IDs(1))=ai;
         ACS(i).STD(IDs(1))=std(ci);
+        ACS(i).Cin(IDs(1),:)=ci;
         %FileSTD=ACS(i).STD; FileSTD(IDs(1))=std(ci);   ACS(i).STD=FileSTD;
     end    
 end
@@ -135,9 +132,13 @@ end
 for i=1:numel(ACS)
     ACS(i).Ain(:,ind_del)=[];
     ACS(i).STD(ind_del)=[];
+    ACS(i).Cin(ind_del,:)=[];
 %     FileA=ACS(i).Ain;   FileA(:,ind_del)=[]; ACS(i).Ain=FileA;
 %     FileSTD=ACS(i).STD; FileSTD(ind_del)=[]; ACS(i).STD=FileSTD;
-end   
+end
+
+newIDs(ind_del) = [];
+
 % newIDs(ind_del) = [];
 % newIDs = find(newIDs);
 end
