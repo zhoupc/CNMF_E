@@ -52,7 +52,11 @@ for i=1:size(flag_merge,1)
     mergegroups_intersect = cellfun(@(x) intersect(x,ind_temp),mergegroups,'UniformOutput', false);
     mergegroups_idx = find(~cellfun('isempty',mergegroups_intersect));
     if mergegroups_idx>0;
-        mergegroups{mergegroups_idx}=union(ind_temp,mergegroups{mergegroups_idx});
+        %mergegroups{mergegroups_idx}=union(ind_temp,mergegroups{mergegroups_idx});
+        mergegroups{mergegroups_idx(1)}=unique(cat(ind_temp,mergegroups{mergegroups_idx}));
+        if length(mergegroups_idx)>1
+            mergegroups(mergegroups_idx(2:end))=[];
+        end
     else        
         mergegroups{end+1}=ind_temp;
     end
