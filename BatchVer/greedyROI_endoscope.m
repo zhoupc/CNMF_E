@@ -312,7 +312,7 @@ while searching_flag
         else
             [ai, ci_raw, ind_success] =  extract_ac_2p(HY_box, Y_box, ind_ctr, sz);
         end
-
+        
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
         %         if max(ci_raw)<min_pnr;
         %             ind_success=false;
@@ -349,10 +349,10 @@ while searching_flag
             ind_search(ind_nhood(ai>max(ai)*options.merge_thr)) = true;
             
             % update the raw data
-            Y(ind_nhood, :) = Y_box - ai*ci;
+            Y(ind_nhood, :) = Y_box - ai*ci_raw';
             % update filtered data
             Hai = imfilter(reshape(Ain(ind_nhood_HY, k), nr2, nc2), psf, 'replicate');
-            HY_box = HY(ind_nhood_HY, :) - Hai(:)*ci;
+            HY_box = HY(ind_nhood_HY, :) - Hai(:)*ci_raw';
             %             HY_box = bsxfun(@minus, HY_box, median(HY_box, 2));
             HY(ind_nhood_HY, :) = HY_box;
             

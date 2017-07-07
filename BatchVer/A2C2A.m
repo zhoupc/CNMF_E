@@ -102,13 +102,13 @@ for k = 1:K;
     ind_ctr = sub2ind([nr, nc], r-rsub(1)+1, c-csub(1)+1);   % index of the center
 
     sz = [nr, nc];
-    [ai, ind_success_ai] = extract_a(ci, [], HY_box, Amask_box, ind_ctr, sz, 1, []); 
+    [ai,ai_raw,ind_success_ai] = extract_a(ci, [], HY_box, Amask_box, ind_ctr, sz, 1, []); 
     if ind_success_ai==false
         Ain(:,k)=A(:,k);
     else
-        Ain(ind_nhood,k)=ai;
-        Ysignal(ind_nhood, :) = HY_box - ai*ci;  % update data
-    end  
+        Ain(ind_nhood,k)=ai;        
+    end
+    Ysignal(ind_nhood, :) = HY_box - ai_raw*ci_raw';  % update data
 end
 ACS_temp=struct('Ain',[],'Cin',[],'STD',[]);
 ACS_temp.Ain = Ain;

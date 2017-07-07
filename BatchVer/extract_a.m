@@ -1,4 +1,4 @@
-function [ai, ind_success] = extract_a(ci, Y_box, HY_box, Amask, ind_ctr, sz, sn, options)
+function [ai, ai_raw, ind_success] = extract_a(ci, Y_box, HY_box, Amask, ind_ctr, sz, sn, options)
 % given the temporal component, background-subtracted and denoised calcium imaging data, extract
 % spatial component of one neuron ai. Method is regression. 
     % Y=ac+Ybg+noise for non-denoised Y. 
@@ -44,6 +44,10 @@ else
     temp = (X'*X)\(X'*Y'); 
     ai = max(0, temp(3,:)'); 
 end
+
+%%
+ai(isnan(ai))=0;
+ai_raw=ai;
 %% threshold the spatial shape and remove those too small or empty results.
 % remove outliers not continuous with the main.
 temp =  full(ai>quantile(ai(:), 0.5)); 
@@ -53,7 +57,7 @@ ai(~temp(:)) = 0;
 
 if sum(ai(:)>0) < min_pixels %the ROI is too small
     ind_success=false;
-elseif or(norm(ai)==0,any(isnan(ai)))
+elseif norm(ai)==0
     ind_success= false;
 else
     ind_success=true;

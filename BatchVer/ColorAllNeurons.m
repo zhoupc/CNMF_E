@@ -30,7 +30,7 @@ function  ColorAllNeurons(A,d1,d2,Picname,outputdir)
         Position(2,i)=mean(row_ind);
         Position(1,i)=mean(col_ind);
     end    
-    text(Position(1,:),Position(2,:),cellstr(num2str((1:k)'))','Color','black')
+    text(Position(1,:),Position(2,:),cellstr(num2str((1:k)'))','Color','white')
     title(Picname,'interpreter','none')
 
     fignam=[outputdir Picname,'.png'];
