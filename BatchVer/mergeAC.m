@@ -43,7 +43,7 @@ flag_merge = (A_overlap>A_thr)&(C_corr>C_thr);
 
 mergegroups={};
 for i=1:size(flag_merge,1)
-    ind_temp=find(flag_merge(i,:));
+    ind_temp=[i find(flag_merge(i,:))];
     if isempty(ind_temp)
         continue
     end
@@ -114,7 +114,7 @@ for m=1:n2merge
         display(size(ci))
     end
     ind_del(IDs(2:end))=true;
-    newIDs(IDs(1)) = IDs(1);
+    newIDs(IDs) = IDs(1);
     % making ai nicer.
 %     temp = ai>quantile(ai, 0.3, 1);
 %     ai(~temp(:)) = 0;
@@ -136,6 +136,6 @@ for i=1:numel(ACS)
 %     FileA=ACS(i).Ain;   FileA(:,ind_del)=[]; ACS(i).Ain=FileA;
 %     FileSTD=ACS(i).STD; FileSTD(ind_del)=[]; ACS(i).STD=FileSTD;
 end   
-newIDs(ind_del) = [];
-newIDs = find(newIDs);
+% newIDs(ind_del) = [];
+% newIDs = find(newIDs);
 end

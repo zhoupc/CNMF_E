@@ -36,36 +36,3 @@ end
 nz_ind=any(Afinal);
 Afinal=Afinal(:,nz_ind);
 save([outputdir 'AfinalcnmfeBatchVer.mat'],'-v7.3')
-%% 5 "massive" procedure: Extract A from each file
-neuron_batch(length(filelist)) = struct('ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
-
-parfor i= 1:length(filelist)  
-    mode='massive';
-    nam=fullfile(datadir,filelist(i).name);    
-    [~,neuron_batch(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],Afinal,neuron_batch(i),convolveType,merge_thr);
-    neuron_batch(i).FileOrigin=filelist(i); % save origin(filelist)
-end
-fprintf('Massive extraction done.');
-save([outputdir 'MassivecnmfeBatchVer.mat'],'-v7.3')
-
-%% 6 Partition between those neurons found in each file and those not. Save results.
-ind_del_final_cat=cat(2,neuron_batch.ind_del);
-ind_del_final=any(ind_del_final_cat,2);
-parfor i= 1:length(filelist)
-    neuron_batch(i).neuron.A=[neuron_batch(i).neuron.A(:,~ind_del_final) neuron_batch(i).neuron.A(:,ind_del_final)];
-    fprintf('A extraction done\n');
-    neuron_batch(i).neuron.C=[neuron_batch(i).neuron.C(~ind_del_final,:);neuron_batch(i).neuron.C(ind_del_final,:)];
-    neuron_batch(i).neuron.C_raw=[neuron_batch(i).neuron.C_raw(~ind_del_final,:);neuron_batch(i).neuron.C_raw(ind_del_final,:)];
-    fprintf('C extraction done\n');
-            %%% save each data i's signal into neuron(i).signal and
-    for j=1:size(neuron_batch(i).neuron.A,2)
-        jA=neuron_batch(i).neuron.A(:,j);
-        jC=neuron_batch(i).neuron.C(j,:);
-        neuron_batch(i).signal(j,:)=median(jA(jA>0)*jC);
-    end        
-    fprintf('neuron_batch %.0f extraction done\n', i);
-end
-fprintf('First %.0f neurons are successfully deconvolved in each files while those after that are missing in some files\n', sum(~ind_del_final));
-fprintf('ALL extractions done.\n');
-eval(sprintf('save %sCNMFE_BatchVer.mat %s -v7.3', outputdir, 'neuron_batch'));
-fprintf('ALL data saved, check them out!');

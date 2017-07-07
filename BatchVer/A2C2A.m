@@ -58,7 +58,7 @@ for k = 1:K;
     ind_p=sub2ind([d1 d2], r, c);
     y0 = Ysignal(ind_p, :);    
     y0_std = std(diff(y0));
-    if max(diff(y0))< 3*y0_std % signal is weak
+    if max(diff(y0))< y0_std % signal is weak
         Ain(:,k)=A(:,k);       % If it is a "poor" ci, no problem, low STD will let not it contribute much to finalA.
         Cin(k,:)=y0;           % Since poor ci will get poor A that has bad shapes. Use normal A to fill in the place.
         STD(k)=std(y0);

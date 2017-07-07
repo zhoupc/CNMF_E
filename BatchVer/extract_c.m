@@ -25,7 +25,7 @@ if ~isempty(A)
     ci(isnan(ci)) = 0; 
 elseif ~isempty(Amask)    
     cs=Ysignal(Amask,:);
-    ci=mean(cs);
+    ci=median(cs);
     ci(isnan(ci)) = 0; 
 else
     error('error in extract_c, please provide A or Amask.')
