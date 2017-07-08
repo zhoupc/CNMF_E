@@ -90,7 +90,7 @@ end
 
 [nr, n2merge] = size(MC);
 merged_ROIs = cell(n2merge,1);
-newIDs=cells(1,nr); %newIDs = num2cell(1:nr);
+newIDs=cell(1,nr); %newIDs = num2cell(1:nr);
 ind_del=true(nr,1);
 Afinal=zeros(size(Amask));
 
