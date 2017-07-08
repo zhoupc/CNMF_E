@@ -148,7 +148,7 @@ end
 % end
 
 newIDs(ind_del) = [];
-Afinal(ind_del) = [];
+Afinal(:,ind_del) = [];
 
 % newIDs(ind_del) = [];
 % newIDs = find(newIDs);
