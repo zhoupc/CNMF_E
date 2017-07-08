@@ -16,7 +16,7 @@ codeDir='/home/shijiegu/cnmf_e/'; % codeDir2='/home/shijiegu/caprocessing/';
 [datadir,sampledir,outputdir,filelist,samplelist]=...
            InputOutput('datadir','/Volumes/data0-shared/elm/ProcessedCalciumData/6922FirstFewDaysForBatch/JustSinging/',...
                        'sampledir',[],...
-                       'outputdir','/Volumes/shared-1/EmilyShijieShared/BatchResult/6922FirstFewDays2017032930NewMerging/',...
+                       'outputdir','/Volumes/shared-1/EmilyShijieShared/BatchResult/6922FirstFewDays2017032930NewMerging/NightResult/',...
                        'datakind','*',...
                        'samplekind','*Ca*',...
                        'SamplingMethod','auto',...
@@ -34,7 +34,7 @@ end
 gSig=10;
 gSiz=17;
 min_corr=0.85;
-min_pnr=6.5;
+min_pnr=8;
 min_pixel = 50;      % minimum number of nonzero pixels for each neuron
 bd = 1;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
 
@@ -77,7 +77,7 @@ request={'#!/bin/bash'
     ''
     '#SBATCH -n 1'
     '#SBATCH --cpus-per-task=8'
-    '#SBATCH --mem=200000'
+    '#SBATCH --mem=100000'
     '#SBATCH -t 0-10:00'
     '#SBATCH --time-min=0-01:00'};
 fprintf(fileID,'%s\n',request{:});

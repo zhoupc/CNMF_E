@@ -12,6 +12,9 @@ function  [ACS,MC,newIDs,merged_ROIs] = mergeAC(Amask,ACS,merge_thr)
 %       neuron 1 in each file's ACS's A and STD will be the same while neuron 3,5 are
 %       deleted in all files's ACS's A and STD. Since C is not used in
 %       later steps, C in ACS is not updated.
+%   newIDs: cell array, dim: 1*(number of neurons after merging). Each
+%       cell element has the neuron number it has merged from (the nueron number is cumsum across the second dim of A0s) or simply a single number which means that the
+%       neuron has not been merged with others.
 %   Other outputs are the same as the original quickMerge().
 
 % Author: Shijie Gu, techel@live.cn, modified from quickMerge() by Pengcheng Zhou
