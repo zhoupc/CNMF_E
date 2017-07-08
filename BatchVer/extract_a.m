@@ -24,7 +24,7 @@ end
 nr = sz(1);
 nc = sz(2);
 if isempty(options)
-    min_pixels=5;
+    min_pixels=15;
 else
     min_pixels = options.min_pixels;
 end

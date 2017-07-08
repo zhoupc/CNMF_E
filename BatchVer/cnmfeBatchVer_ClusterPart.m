@@ -70,18 +70,19 @@ Amask_temp=cat(2,A0s{:});
 Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
 %C_all=cat(2,ACS.Cin);
 
-[ACS,MC,newIDs,merged_ROIs] = mergeAC(Amask_temp,ACS,merge_thr_2);
-
+[Afinal,MC,newIDs,merged_ROIs] = mergeAC(Amask_temp,ACS,merge_thr_2);
+% [size1,~]=cellfun(@size,newIDs);
+% ACS(size1~=1)
 save([outputdir 'commonAcnmfeBatchVer.mat'],'-v7.3')
 %% 4 Collapsing A's
-As=cell(1,length(samplelist));
-STDs=cell(1,length(samplelist));
-parfor i=1:length(samplelist)
-    As{i}=ACS(i).Ain;
-    STDs{i}=ACS(i).STD;    
-end
-Afinal=ReducingA(As,STDs); % the format for cell input is designed for potential other applications.
-save([outputdir 'uniqueAcnmfeBatchVer.mat'],'-v7.3')
+% As=cell(1,length(samplelist));
+% STDs=cell(1,length(samplelist));
+% parfor i=1:length(samplelist)
+%     As{i}=ACS(i).Ain;
+%     STDs{i}=ACS(i).STD;    
+% end
+% Afinal=ReducingA(As,STDs); % the format for cell input is designed for potential other applications.
+% save([outputdir 'uniqueAcnmfeBatchVer.mat'],'-v7.3')
 %% 4.5 Determine Afinal that will be used to extract C's in each file.
 
 %%% Some processes making Afinal nicer, modified from Pengcheng Zhou's

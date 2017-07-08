@@ -55,15 +55,15 @@ for k = 1:K;
     c=Acenter(k,2);
     
     % Use center point data to roughly check whether this is a good starting point
-    ind_p=sub2ind([d1 d2], r, c);
-    y0 = Ysignal(ind_p, :);    
-    y0_std = std(diff(y0));
-    if max(diff(y0))< y0_std % signal is weak
-        Ain(:,k)=A(:,k);       % If it is a "poor" ci, no problem, low STD will let not it contribute much to finalA.
-        Cin(k,:)=y0;           % Since poor ci will get poor A that has bad shapes. Use normal A to fill in the place.
-        STD(k)=std(y0);
-        continue;
-    end
+%    ind_p=sub2ind([d1 d2], r, c);
+%     y0 = Ysignal(ind_p, :);    
+%     y0_std = std(diff(y0));
+%     if max(diff(y0))< y0_std % signal is weak
+%         Ain(:,k)=A(:,k);       % If it is a "poor" ci, no problem, low STD will let not it contribute much to finalA.
+%         Cin(k,:)=y0;           % Since poor ci will get poor A that has bad shapes. Use normal A to fill in the place.
+%         STD(k)=std(y0);
+%         continue;
+%     end
     
     % extract ci    
     [ci_raw,ind_success_ci] = extract_c(Ysignal,Amask(:,k),[]);    
@@ -92,6 +92,13 @@ for k = 1:K;
     % extract ai        
     % select its neighbours for estimation of ai, the box size is
     %[2*gSiz+1, 2*gSiz+1]
+    % if the c is poor
+    ci_std = std(diff(ci));
+    if max(diff(ci))< ci_std % signal is weak
+        Ain(:,k)=A(:,k);
+        display('Poor C, skipping estimating A.')
+        continue
+    end
     rsub = max(1, -gSiz+r):min(d1, gSiz+r);
     csub = max(1, -gSiz+c):min(d2, gSiz+c);
     [cind, rind] = meshgrid(csub, rsub);

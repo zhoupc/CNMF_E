@@ -1,4 +1,4 @@
-function  [ACS,MC,newIDs,merged_ROIs] = mergeAC(Amask,ACS,merge_thr)
+function  [Afinal,MC,newIDs,merged_ROIs] = mergeAC(Amask,ACS,merge_thr)
 %% merge neurons based on simple spatial and temporal correlation
 % input:
 %   Amask: concatnated Amask from neurons from one or many files.
@@ -7,15 +7,19 @@ function  [ACS,MC,newIDs,merged_ROIs] = mergeAC(Amask,ACS,merge_thr)
 %   merge_thr: 1X2 vector, threshold for two metrics {'A', 'C'}. it merge neurons based
 %         on correlations of spatial shapes ('A'),  calcium traces ('C').
 % output:
-%   Merged-component reduced ACS. For those neurons that are merged, they all have the same A as well
-%       as STD in each file's ACS. For example, if neuron 1,3,5 are merged,
-%       neuron 1 in each file's ACS's A and STD will be the same while neuron 3,5 are
-%       deleted in all files's ACS's A and STD. Since C is not used in
-%       later steps, C in ACS is not updated.
+%   Afinal: merged As.
 %   newIDs: cell array, dim: 1*(number of neurons after merging). Each
 %       cell element has the neuron number it has merged from (the nueron number is cumsum across the second dim of A0s) or simply a single number which means that the
 %       neuron has not been merged with others.
 %   Other outputs are the same as the original quickMerge().
+
+%%%%%%%%Older version
+%(%   Merged-component reduced ACS. For those neurons that are merged, they all have the same A as well
+%       as STD in each file's ACS. For example, if neuron 1,3,5 are merged,
+%       neuron 1 in each file's ACS's A and STD will be the same while neuron 3,5 are
+%       deleted in all files's ACS's A and STD. Since C is not used in
+%       later steps, C in ACS is not updated.)
+%%%%%%%%
 
 % Author: Shijie Gu, techel@live.cn, modified from quickMerge() by Pengcheng Zhou
 %  The basic idea is proposed by Eftychios A. Pnevmatikakis: high temporal
@@ -86,8 +90,10 @@ end
 
 [nr, n2merge] = size(MC);
 merged_ROIs = cell(n2merge,1);
-newIDs = num2cell(1:nr);
-ind_del=false(nr,1);
+newIDs=cells(1,nr); %newIDs = num2cell(1:nr);
+ind_del=true(nr,1);
+Afinal=zeros(size(Amask));
+
 
 % start merging
 for m=1:n2merge
@@ -118,31 +124,31 @@ for m=1:n2merge
         ai = data*ci'/(ci*ci');
         ci = ai'*data/(ai'*ai);
     end
-    ind_del(IDs(2:end))=true;
+    ind_del(IDs(1))= false;
     newIDs{IDs(1)} = IDs;
+    Afinal(active_pixel,IDs(1))=ai;
     % making ai nicer.
 %     temp = ai>quantile(ai, 0.3, 1);
 %     ai(~temp(:)) = 0;
    
     %Amask(:,IDs(1)) = ai>0;
     %C(IDs(1), :) = ci;
-    for i=1:numel(ACS)
-        ACS(i).Ain(active_pixel,IDs(1))=ai;
-        ACS(i).STD(IDs(1))=std(ci);
-        %FileSTD=ACS(i).STD; FileSTD(IDs(1))=std(ci);   ACS(i).STD=FileSTD;
-    end    
-end
-% 
-% Amask(:,ind_del)=[];
-% C(ind_del, :) = [];
-for i=1:numel(ACS)
-    ACS(i).Ain(:,ind_del)=[];
-    ACS(i).STD(ind_del)=[];
-%     FileA=ACS(i).Ain;   FileA(:,ind_del)=[]; ACS(i).Ain=FileA;
-%     FileSTD=ACS(i).STD; FileSTD(ind_del)=[]; ACS(i).STD=FileSTD;
+%     for i=1:numel(ACS)
+%         ACS(i).Ain(active_pixel,IDs(1))=ai;
+%         ACS(i).STD(IDs(1))=std(ci);
+%         %FileSTD=ACS(i).STD; FileSTD(IDs(1))=std(ci);   ACS(i).STD=FileSTD;
+%     end    
 end
 
+% for i=1:numel(ACS)
+%     ACS(i).Ain(:,ind_del)=[];
+%     ACS(i).STD(ind_del)=[];
+% %     FileA=ACS(i).Ain;   FileA(:,ind_del)=[]; ACS(i).Ain=FileA;
+% %     FileSTD=ACS(i).STD; FileSTD(ind_del)=[]; ACS(i).STD=FileSTD;
+% end
+
 newIDs(ind_del) = [];
+Afinal(ind_del) = [];
 
 % newIDs(ind_del) = [];
 % newIDs = find(newIDs);
