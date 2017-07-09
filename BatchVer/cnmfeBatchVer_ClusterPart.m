@@ -10,7 +10,7 @@ File(length(samplelist)) = struct('options',[],'Ysignal',[]); % pre-allocate for
 A0s=cell(1,length(samplelist));
 parfor i= 1:length(samplelist)
     Mode='initiation';
-    picname=samplelist(i).name(namepattern) % For each file, save A's so you can roughly check what neuron is picked in which file. 
+    picname=samplelist(i).name %(namepattern) % For each file, save A's so you can roughly check what neuron is picked in which file. 
     name=fullfile(sampledir,samplelist(i).name);
     [A0s{i},File(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,[],File(i),convolveType,merge_thr);
     fprintf('Sampling file number %.0f done\n', i);
