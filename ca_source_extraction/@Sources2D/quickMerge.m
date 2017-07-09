@@ -43,8 +43,11 @@ if ~exist('X', 'var')|| isempty(X)
 end
 
 S = obj.S;
+display(S)
+display(obj.C)
 if isempty(S) || (size(S, 1)~=size(obj.C, 1))
-    S = diff(obj.C, 1, 2);        
+    S = diff(obj.C, 1, 2); 
+    display(S)
     S(bsxfun(@lt, S, 2*get_noise_fft(S))) = 0;
 end
 S_corr = corr(S') - eye(K);
