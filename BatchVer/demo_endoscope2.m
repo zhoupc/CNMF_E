@@ -96,7 +96,7 @@ if strcmp(mode,'initiation')
     fprintf('Time cost in initializing neurons:     %.2f seconds\n', toc);
     if isempty(neuron.A)
         A0s=neuron.A;
-        File.options=neuron.options;
+        File.options=[];
         File.Ysignal=[];
         clear global
         return
@@ -167,13 +167,7 @@ while miter <= maxIter
     end
     % merge neurons
     cnmfe_quick_merge;              % run neuron merges
-    if isempty(neuron.A)
-        A0s=neuron.A;
-        File.options=neuron.options;
-        File.Ysignal=[];
-        clear global
-        return
-    end
+    if isempty(neuron.A); A0s=neuron.A; File.options=[]; File.Ysignal=[]; clear global; return; end
     
     %% udpate background (cell 1, the following three blocks can be run iteratively)
     % estimate the background
@@ -186,17 +180,14 @@ while miter <= maxIter
     for m=1:2  
         %temporal
         neuron.updateTemporal_endoscope(Ysignal,true);
+        if isempty(neuron.A); break; end
         cnmfe_quick_merge;              % run neuron merges
-        if isempty(neuron.A)
-            A0s=neuron.A;
-            File.options=neuron.options;
-            File.Ysignal=[];
-            clear global
-            return
-        end
+        if isempty(neuron.A); break; end
         %spatial
         neuron.updateSpatial_endoscope(Ysignal, Nspatial, update_spatial_method);
+        if isempty(neuron.A); break; end
         neuron.trimSpatial(0.01, 3); % for each neuron, apply imopen first and then remove pixels that are not connected with the center
+        if isempty(neuron.A); break; end
         if isempty(merged_ROI)
             break;
         end
@@ -211,8 +202,7 @@ while miter <= maxIter
     
     %% stop the iteration 
     temp = size(neuron.C, 1); 
-    if or(nC==temp, miter==maxIter)
-        
+    if or(nC==temp, miter==maxIter)        
         break; 
     else
         miter = miter+1; 
