@@ -80,19 +80,21 @@ if isempty(sampledir)
 end
 
 if strcmp(SamplingMethod,'auto')
-    samplelistfull=dir(fullfile(sampledir,samplekind));
-    sampleInFolder=numel(samplelistfull);
-    if sampleInFolder==0
-        ME3 = MException('cnmfeBatchVer:NotEnoughSampleInput', 'There is no sample input. \n Please redefine sample input.');
-        throw(ME3)
-    end    
+    samplelistfull=filelist;
+    sampleInFolder=numel(samplelistfull);    
     % choose final A from every every_file_num as samples in the folders.
     prompt=sprintf('%.0f files in the sample folder, \n input x so that every x files to sample as input. Input x then hit "enter": ', sampleInFolder);
     every_file_num = input(prompt);
     if isempty(every_file_num)
-        every_file_num=max(2,sampleInFolder/10);
+        every_file_num=max(1,sampleInFolder/10);
     end
-    choose_ind=mod(1:numel(samplelistfull),every_file_num)==1;
+    
+    if every_file_num==1
+        choose_ind=true(numel(samplelistfull),1);
+    else
+        choose_ind=mod(1:numel(samplelistfull),every_file_num)==1;
+    end
+    
     if numel(samplelistfull)<=every_file_num
         error('Zero file for cnmf-e BatchVer sampling. Please lower your every_file_num')
     elseif numel(samplelistfull)<2*every_file_num

@@ -97,12 +97,7 @@ if strcmp(mode,'initiation')
     if isempty(neuron.A)
         A0s=neuron.A;
         File.options=neuron.options;
-            % parameters, estimate the background
-        spatial_ds_factor = 1;              % spatial downsampling factor. it's for faster estimation
-        thresh = 10;                        % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
-        bg_neuron_ratio = bg_neuron_ratio;  % spatial range / diameter of neurons
-        BackgroundSub
-        File.Ysignal=Ysignal;
+        File.Ysignal=[];
         clear global
         return
     end
@@ -172,6 +167,13 @@ while miter <= maxIter
     end
     % merge neurons
     cnmfe_quick_merge;              % run neuron merges
+    if isempty(neuron.A)
+        A0s=neuron.A;
+        File.options=neuron.options;
+        File.Ysignal=[];
+        clear global
+        return
+    end
     
     %% udpate background (cell 1, the following three blocks can be run iteratively)
     % estimate the background
@@ -185,6 +187,13 @@ while miter <= maxIter
         %temporal
         neuron.updateTemporal_endoscope(Ysignal,true);
         cnmfe_quick_merge;              % run neuron merges
+        if isempty(neuron.A)
+            A0s=neuron.A;
+            File.options=neuron.options;
+            File.Ysignal=[];
+            clear global
+            return
+        end
         %spatial
         neuron.updateSpatial_endoscope(Ysignal, Nspatial, update_spatial_method);
         neuron.trimSpatial(0.01, 3); % for each neuron, apply imopen first and then remove pixels that are not connected with the center
