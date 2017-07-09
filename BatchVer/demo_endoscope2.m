@@ -199,7 +199,7 @@ while miter <= maxIter
         neuron.options.seed_method = 'auto'; % methods for selecting seed pixels {'auto', 'manual'}
         [center_new, Cn_res, pnr_res] = neuron.pickNeurons(Ysignal - neuron.A*neuron.C, patch_par); % method can be either 'auto' or 'manual'
     end
-    
+    if isempty(neuron.A); A0s=neuron.A; File.options=[]; File.Ysignal=[]; clear global; return; end
     %% stop the iteration 
     temp = size(neuron.C, 1); 
     if or(nC==temp, miter==maxIter)        
@@ -209,6 +209,8 @@ while miter <= maxIter
         nC = temp; 
     end
 end
+
+if isempty(neuron.A); A0s=neuron.A; File.options=[]; File.Ysignal=[]; clear global; return; end
 %Ybg=Ybg+b0;
 %Ysignal_sn=Ysignal;
 %noise=neuron.P.sn_neuron;
