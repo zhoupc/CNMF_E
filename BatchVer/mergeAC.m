@@ -9,8 +9,8 @@ function  [Afinal,MC,newIDs,merged_ROIs] = mergeAC(Amask,ACS,merge_thr)
 % output:
 %   Afinal: merged As.
 %   newIDs: cell array, dim: 1*(number of neurons after merging). Each
-%       cell element has the neuron number it has merged from (the nueron number is cumsum across the second dim of A0s) or simply a single number which means that the
-%       neuron has not been merged with others.
+%       cell element has the orginal neuron number it has merged from (the
+%       nueron number is cumsum across the second dim of A0s).
 %   Other outputs are the same as the original quickMerge().
 
 %%%%%%%%Older version
@@ -72,7 +72,6 @@ allneurons=1:size(flag_merge,1);
 MC=cellfun(@(x) ismember(allneurons,x),mergegroups,'UniformOutput',false);
 MC=cat(1,MC{:});
 MC=MC';
-display(MC)
 
 %%%%
 % [l,c] = graph_connected_comp(sparse(flag_merge));     % extract connected components

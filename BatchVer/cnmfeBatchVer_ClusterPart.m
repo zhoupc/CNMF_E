@@ -129,7 +129,7 @@ parfor i= 1:length(filelist)
     end        
     fprintf('neuron_batch %.0f extraction done\n', i);
 end
-fprintf('First %.0f neurons are successfully deconvolved in each files while those after that are missing in some files\n', sum(~ind_del_final));
+fprintf('First %.0f neurons are successfully deconvolved in each file while those after that are missing in some files\n', sum(~ind_del_final));
 fprintf('ALL extractions done.\n');
 eval(sprintf('save %sCNMFE_BatchVer.mat %s -v7.3', outputdir, 'neuron_batch'));
 fprintf('ALL data saved, check them out!');
