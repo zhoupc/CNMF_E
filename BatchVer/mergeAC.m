@@ -58,7 +58,7 @@ for i=1:size(flag_merge,1)
     end
     mergegroups_intersect = cellfun(@(x) intersect(x,ind_temp),mergegroups,'UniformOutput', false);
     mergegroups_idx = find(~cellfun('isempty',mergegroups_intersect));
-    if mergegroups_idx>0;
+    if ~isempty(mergegroups_idx)
         %mergegroups{mergegroups_idx}=union(ind_temp,mergegroups{mergegroups_idx});
         mergegroups{mergegroups_idx(1)}=unique(cat(2,ind_temp,mergegroups{mergegroups_idx}));
         if length(mergegroups_idx)>1
@@ -68,7 +68,6 @@ for i=1:size(flag_merge,1)
         mergegroups{end+1}=ind_temp;
     end
 end
-display(mergegroups);
 allneurons=1:size(flag_merge,1);
 MC=cellfun(@(x) ismember(allneurons,x),mergegroups,'UniformOutput',false);
 MC=cat(1,MC{:});
@@ -97,7 +96,6 @@ Afinal=zeros(size(Amask));
 
 % start merging
 for m=1:n2merge
-    display(m)
     %oldIDs=IDs;
     IDs = find(MC(:, m));  % IDs of neurons within this cluster
 %    IDs=setdiff(IDs,oldIDs);
@@ -117,7 +115,6 @@ for m=1:n2merge
     end
     
     data=data./length(IDs);
-    display(size(data))
     [~,I] = max(std(C(IDs, :),0,2)); % choose the most confident(with biggest std) ci.
     ci=C(IDs(I),:);
     for miter=1:10
