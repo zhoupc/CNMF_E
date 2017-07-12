@@ -184,7 +184,7 @@ while miter <= maxIter
         end
     %spatial
         if strcmp(mode,'initiation')
-            neuron.updateSpatial_endoscope(Ysignal, Nspatial, update_spatial_method,true);
+            neuron.updateSpatial_endoscope(Ysignal, Nspatial, update_spatial_method,[],true);
             if isempty(neuron.A); break; end
             neuron.trimSpatial(0.01, 3, min_pixel); % for each neuron, apply imopen first and then remove pixels that are not connected with the center
             if isempty(neuron.A); break; end
@@ -192,7 +192,7 @@ while miter <= maxIter
                 break;
             end
         elseif strcmp(mode,'massive')
-            neuron.updateSpatial_endoscope(Ysignal, Nspatial, update_spatial_method,false);
+            neuron.updateSpatial_endoscope(Ysignal, Nspatial, update_spatial_method,[],false);
             neuron.trimSpatial(0.01, 3, min_pixel, false);
         end
     end

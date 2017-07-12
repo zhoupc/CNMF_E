@@ -1,4 +1,4 @@
-function updateSpatial_endoscope(obj, Y, num, method)
+function updateSpatial_endoscope(obj, Y, num, method, IND_thresh, allow_deletion)
 %% udpate spatial components
 
 %% inputs:
@@ -8,6 +8,7 @@ function updateSpatial_endoscope(obj, Y, num, method)
 %       overlapping at one pixel
 %   method: method for updating the spatial components {'hals', 'nnls'}.
 %       default: 'nnls'
+%   allow_deletion: true or false.
 
 %% Author: Pengcheng Zhou, Carnegie Mellon University.
 
@@ -22,7 +23,9 @@ if ~exist('num', 'var')||isempty(num)
         num = 10;
     end
 end
-
+if ~exist('allow_deletion', 'var')
+    allow_deletion = true; 
+end
 %% determine the search locations
 search_method = obj.options.search_method;
 params = obj.options;
@@ -56,7 +59,9 @@ else
     obj.A = nnls_spatial(Y, obj.A, obj.C, IND, num);
 end
 
+if allow_deletion
 %% thresholding the minimum number of neurons
-obj.delete(sum(obj.A, 1)<=obj.options.min_pixel);
+    obj.delete(sum(obj.A, 1)<=obj.options.min_pixel);
+end
 
 end

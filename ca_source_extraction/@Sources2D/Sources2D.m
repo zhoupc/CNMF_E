@@ -75,7 +75,7 @@ classdef Sources2D < handle
         end
         
         %% update temporal components for endoscope data
-        updateSpatial_endoscope(obj, Y, numIter, method, IND_thresh);
+        updateSpatial_endoscope(obj, Y, numIter, method, IND_thresh, allow_deletion);
         
         %% update temporal components
         function updateTemporal(obj, Y)
@@ -444,10 +444,11 @@ classdef Sources2D < handle
         end
         
         %% trim spatial components
-        function [ind_small] = trimSpatial(obj, thr, sz)
+        function [ind_small] = trimSpatial(obj, thr, sz, allow_deletion)
             % remove small nonzero pixels
-            if nargin<2;    thr = 0.01; end;
-            if nargin<3;    sz = 5; end;
+            if nargin<3;    thr = 0.01; end;
+            if nargin<4;    sz = 5; end;
+            if nargin<5;    allow_deletion = true; end;
             
             se = strel('square', sz);
             ind_small = false(size(obj.A, 2), 1);
@@ -470,7 +471,9 @@ classdef Sources2D < handle
                 obj.A(:, m) = ai(:);
             end
             ind_small = find(ind_small);
-            obj.delete(ind_small);
+            if allow_deletion
+                obj.delete(ind_small);
+            end
         end
         
         %% solve A & C with regression
