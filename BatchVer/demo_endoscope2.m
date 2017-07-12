@@ -101,6 +101,10 @@ if strcmp(mode,'initiation')
         clear global
         return
     end
+    % sort neurons
+    [~, srt] = sort(max(neuron.C, [], 2), 'descend');
+    neuron.orderROIs(srt);
+    neuron_init = neuron.copy();
         
 elseif strcmp(mode,'massive')
     % parameters, estimate the background
@@ -112,25 +116,15 @@ elseif strcmp(mode,'massive')
     neuron.A=Afinal;
     neuron.C=C;
     [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
+    cnmfe_update_BG;
+    [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
     A0s=[];
 %     File.A=neuron.A;
 %     File.C=neuron.C;
     File.ind_del=ind_del;
     File.neuron=neuron;    
-    return
-elseif strcmp(mode,'BackgroundSubOnly')
-    % parameters, estimate the background
-    spatial_ds_factor = 1;              % spatial downsampling factor. it's for faster estimation
-    thresh = 10;                        % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
-    bg_neuron_ratio = bg_neuron_ratio;  % spatial range / diameter of neurons
-    BackgroundSub
-    return
+    return 
 end
-
-% sort neurons
-[~, srt] = sort(max(neuron.C, [], 2), 'descend');
-neuron.orderROIs(srt);
-neuron_init = neuron.copy();
 
 %% iteratively update A, C and B
 % parameters, merge neurons
@@ -151,24 +145,25 @@ Nspatial = 5;       % this variable has different meanings:
                     %2) update_spatial_method== 'nnls', it is the maximum
                     %number of neurons overlapping at one pixel 
                
-% parameters for running iteratiosn 
+% parameters for running iterations 
 nC = size(neuron.C, 1);    % number of neurons 
 
 maxIter = 2;        % maximum number of iterations 
 miter = 1; 
 while miter <= maxIter
-    %% merge neurons, order neurons and delete some low quality neurons
-     if miter ==1
-        merge_thr = [1e-1, 0.8, .1];     % thresholds for merging neurons
-        % corresponding to {sptial overlaps, temporal correlation of C,
-        %temporal correlation of S}
-    else
-        merge_thr = merge_thr; 
+    if strcmp(mode,'initiation')
+        %% merge neurons, order neurons and delete some low quality neurons
+        if miter ==1
+            merge_thr = [1e-1, 0.8, .1];     % thresholds for merging neurons
+            % corresponding to {sptial overlaps, temporal correlation of C,
+            %temporal correlation of S}
+        else
+            merge_thr = merge_thr;
+        end    
+        % merge neurons
+        cnmfe_quick_merge;              % run neuron merges
+        if isempty(neuron.A); A0s=neuron.A; File.options=[]; File.Ysignal=[]; clear global; return; end
     end
-    % merge neurons
-    cnmfe_quick_merge;              % run neuron merges
-    if isempty(neuron.A); A0s=neuron.A; File.options=[]; File.Ysignal=[]; clear global; return; end
-    
     %% udpate background (cell 1, the following three blocks can be run iteratively)
     % estimate the background
     tic;
@@ -177,29 +172,40 @@ while miter <= maxIter
  
     %% update spatial & temporal components
     tic;
-    for m=1:2  
-        %temporal
-        neuron.updateTemporal_endoscope(Ysignal,true);
-        if isempty(neuron.A); break; end
-        cnmfe_quick_merge;              % run neuron merges
-        if isempty(neuron.A); break; end
-        %spatial
-        neuron.updateSpatial_endoscope(Ysignal, Nspatial, update_spatial_method);
-        if isempty(neuron.A); break; end
-        neuron.trimSpatial(0.01, 3); % for each neuron, apply imopen first and then remove pixels that are not connected with the center
-        if isempty(neuron.A); break; end
-        if isempty(merged_ROI)
-            break;
+    for m=1:2
+    %temporal
+        if strcmp(mode,'initiation')
+            neuron.updateTemporal_endoscope(Ysignal,true);
+            if isempty(neuron.A); break; end
+            cnmfe_quick_merge;              % run neuron merges
+            if isempty(neuron.A); break; end
+        elseif strcmp(mode,'massive')
+            neuron.updateTemporal_endoscope(Ysignal,false);
+        end
+    %spatial
+        if strcmp(mode,'initiation')
+            neuron.updateSpatial_endoscope(Ysignal, Nspatial, update_spatial_method,true);
+            if isempty(neuron.A); break; end
+            neuron.trimSpatial(0.01, 3, min_pixel); % for each neuron, apply imopen first and then remove pixels that are not connected with the center
+            if isempty(neuron.A); break; end
+            if isempty(merged_ROI)
+                break;
+            end
+        elseif strcmp(mode,'massive')
+            neuron.updateSpatial_endoscope(Ysignal, Nspatial, update_spatial_method,false);
+            neuron.trimSpatial(0.01, 3, min_pixel, false);
         end
     end
     fprintf('Time cost in updating spatial & temporal components:     %.2f seconds\n', toc);    
     
     %% pick neurons from the residual (cell 4).
-    if miter==1
-        neuron.options.seed_method = 'auto'; % methods for selecting seed pixels {'auto', 'manual'}
-        [center_new, Cn_res, pnr_res] = neuron.pickNeurons(Ysignal - neuron.A*neuron.C, patch_par); % method can be either 'auto' or 'manual'
+    if strcmp(mode,'initiation')
+        if miter==1
+            neuron.options.seed_method = 'auto'; % methods for selecting seed pixels {'auto', 'manual'}
+            [center_new, Cn_res, pnr_res] = neuron.pickNeurons(Ysignal - neuron.A*neuron.C, patch_par); % method can be either 'auto' or 'manual'
+        end
+        if isempty(neuron.A); A0s=neuron.A; File.options=[]; File.Ysignal=[]; clear global; return; end
     end
-    if isempty(neuron.A); A0s=neuron.A; File.options=[]; File.Ysignal=[]; clear global; return; end
     %% stop the iteration 
     temp = size(neuron.C, 1); 
     if or(nC==temp, miter==maxIter)        
@@ -210,11 +216,11 @@ while miter <= maxIter
     end
 end
 
-if isempty(neuron.A); A0s=neuron.A; File.options=[]; File.Ysignal=[]; clear global; return; end
+%if isempty(neuron.A); A0s=neuron.A; File.options=[]; File.Ysignal=[]; clear global; return; end
 %Ybg=Ybg+b0;
 %Ysignal_sn=Ysignal;
 %noise=neuron.P.sn_neuron;
-Ysignal=neuron.A*neuron.C;
+if strcmp(mode,'initiation'); Ysignal=neuron.A*neuron.C; end
 
 %% apply results to the full resolution
 if or(ssub>1, tsub>1)
@@ -224,24 +230,11 @@ if or(ssub>1, tsub>1)
     neuron_full = neuron.copy();
 end
 
-
-%% delete some neurons and run CNMF-E iteration 
-% neuron.viewNeurons([], neuron.C_raw); 
-% tic;
-% cnmfe_update_BG;
-% fprintf('Time cost in estimating the background:        %.2f seconds\n', toc);
-% %update spatial & temporal components
-% tic;
-% for m=1:2
-%     %temporal
-%     neuron.updateTemporal_endoscope(Ysignal);
-%     cnmfe_quick_merge;              % run neuron merges
-%     %spatial
-%     neuron.updateSpatial_endoscope(Ysignal, Nspatial, update_spatial_method);
-%     neuron.trimSpatial(0.01, 3); % for each neuron, apply imopen first and then remove pixels that are not connected with the center
-% end
-% fprintf('Time cost in updating spatial & temporal components:     %.2f seconds\n', toc);
-
+%% for 'massive' mode,  save results
+if strcmp(mode,'massive')
+    A0s=[];
+    File.neuron=neuron;
+end
 %% for 'initiation' mode see and save results
 resultstring=sprintf('%s_results', Picname);
 neuron.viewNeurons([], neuron.C_raw, resultstring);

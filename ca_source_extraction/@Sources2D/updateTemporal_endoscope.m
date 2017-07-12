@@ -59,11 +59,24 @@ for miter=1:maxIter
         
         % deconvolution
         if obj.options.deconv_flag
-            try
-                [ck, sk, deconv_options]= deconvolveCa(temp, deconv_options_0, 'sn', tmp_sn, 'maxIter', 2);
-                smin(k) = deconv_options.smin;
-                kernel_pars{k} = reshape(single(deconv_options.pars), 1, []);
-            catch %if not deconvolved successfully
+            if strcmp(mode,'initiation')
+                try
+                    [ck, sk, deconv_options]= deconvolveCa(temp, deconv_options_0, 'sn', tmp_sn, 'maxIter', 2);
+                    smin(k) = deconv_options.smin;
+                    kernel_pars{k} = reshape(single(deconv_options.pars), 1, []);
+                catch %if not deconvolved successfully
+                    ck = max(0, temp);
+                    sk=zeros(1,size(C,2));
+                    if or(strcmp(deconv_options_0.type,'ar1'),strcmp(deconv_options_0.type,'kernel'))
+                        kernel_pars{k}=single(0);
+                    else
+                        kernel_pars{k}=single(zeros(1,2));
+                    end
+                    ind_del(k) = true;
+                end
+            end
+            
+            if strcmp(mode,'massive')
                 ck = max(0, temp);
                 sk=zeros(1,size(C,2));
                 if or(strcmp(deconv_options_0.type,'ar1'),strcmp(deconv_options_0.type,'kernel'))
