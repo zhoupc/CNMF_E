@@ -43,7 +43,7 @@ while true
     [~, ind_cell(m)] = min(dist_xy);
     temp = Coor{ind_cell(m)};
     h_con = plot(temp(1, 4:end), temp(2, 4:end), 'r');
-    h_txt = text(ctr(ind_cell(m), 2), ctr(ind_cell(m), 1), num2str(m), 'fontsize', 10);
+    h_txt = text(ctr(ind_cell(m), 2), ctr(ind_cell(m), 1), num2str(m), 'fontsize', 10, 'fontweight', 'bold');
     disp(ctr(ind_cell(m), :)); 
     subplot(Ncell, ncol, ncol*(m-1)+[2, ncol]);cla;
     ylabel(num2str(m));
@@ -83,7 +83,8 @@ subplot(Ncell,ncol,1:ncol:(ncol*Ncell)); cla;  hold on; axis equal; axis off;
 for m=1:Ncell
     temp = Coor{ind_cell(m)};
     plot(temp(1, 4:end), temp(2, 4:end), 'r');
-    text(ctr(ind_cell(m), 2)+3, ctr(ind_cell(m), 1), num2str(m), 'fontsize', 10, 'color', 'g');
+    text(ctr(ind_cell(m), 2)+3*randn(1), ctr(ind_cell(m), 1)+3, num2str(m), 'fontsize', ...
+        15, 'fontweight', 'bold', 'color', 'g');
 end
 % play movie
 for t=1:tskip:T

@@ -20,7 +20,7 @@ if ~exist('center_ac', 'var')
 end
 range_res = [-1,1]*center_ac;
 if ~exist('range_ac', 'var')
-    range_ac = center_ac+range_res+3;
+    range_ac = center_ac*1.01+range_res;
 end
 if ~exist('range_Y', 'var')
     if ~exist('multi_factor', 'var')

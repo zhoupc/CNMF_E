@@ -1,4 +1,7 @@
 neuron_bk = neuron.copy();
+if ~exist('center_method', 'var')
+    center_method = 'max'; 
+end; 
 [merged_ROI, newIDs] = neuron.MergeNeighbors(dmin, center_method); 
 if display_merge && ~isempty(merged_ROI)
     figure('position', [1,1, 1200, 600]);

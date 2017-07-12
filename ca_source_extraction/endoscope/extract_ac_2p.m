@@ -13,7 +13,7 @@ function [ai, ci, ind_success, sn] = extract_ac_2p(HY, Y, ind_ctr, sz)
 %% parameters 
 nr = sz(1);
 nc = sz(2);
-min_corr = 0.7;
+min_corr = 0.8;
 min_pixels = 5;
 
 %% find pixels highly correlated with the center
@@ -24,7 +24,7 @@ data = HY(tmp_corr>min_corr, :);
 
 
 %% estimate ci with the mean or rank-1 NMF
-ci = mean(data, 1);
+ci = y0; %mean(data, 1);
 
 if norm(ci)==0  % avoid empty results 
     ai=[];
@@ -53,7 +53,7 @@ y_bg = median(Y(tmp_corr(:)<0.3, :), 1); % using the median of the whole field (
 
 %% estimate ai 
 T = length(ci); 
-X = [ones(T,1), y_bg', ci']; 
+X = [ones(T,1), y_bg'-mean(y_bg), ci'-mean(ci)]; 
 temp = (X'*X)\(X'*Y'); 
 ai = max(0, temp(3,:)'); 
 

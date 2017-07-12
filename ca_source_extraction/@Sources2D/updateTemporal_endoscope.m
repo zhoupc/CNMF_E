@@ -13,7 +13,7 @@ maxIter = obj.options.maxIter;
 deconv_options_0 = obj.options.deconv_options;
 
 if ~exist('allow_deletion', 'var')
-    allow_deletion = true; 
+    allow_deletion = false; 
 end
 %% initialization
 A = obj.A;
