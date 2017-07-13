@@ -1,4 +1,5 @@
 %% C Run All below on cluster!
+
 %% 0. Get cluster ready
 if running_on_cluster % some procedures making cluster use robust
     [~, ~, ~] = maybe_spawn_workers(workersnum); 
@@ -113,14 +114,14 @@ fprintf('Massive extraction done.');
 save([outputdir 'MassivecnmfeBatchVer.mat'],'-v7.3')
 
 %% 6 Partition between those neurons found in each file and those not. Save results.
-ind_del_final_cat=cat(2,neuron_batch.ind_del);
-ind_del_final=any(ind_del_final_cat,2);
+% ind_del_final_cat=cat(2,neuron_batch.ind_del);
+% ind_del_final=any(ind_del_final_cat,2);
 parfor i= 1:length(filelist)
-    neuron_batch(i).neuron.A=[neuron_batch(i).neuron.A(:,~ind_del_final) neuron_batch(i).neuron.A(:,ind_del_final)];
-    fprintf('A extraction done\n');
-    neuron_batch(i).neuron.C=[neuron_batch(i).neuron.C(~ind_del_final,:);neuron_batch(i).neuron.C(ind_del_final,:)];
-    neuron_batch(i).neuron.C_raw=[neuron_batch(i).neuron.C_raw(~ind_del_final,:);neuron_batch(i).neuron.C_raw(ind_del_final,:)];
-    fprintf('C extraction done\n');
+%     neuron_batch(i).neuron.A=[neuron_batch(i).neuron.A(:,~ind_del_final) neuron_batch(i).neuron.A(:,ind_del_final)];
+%     fprintf('A extraction done\n');
+%     neuron_batch(i).neuron.C=[neuron_batch(i).neuron.C(~ind_del_final,:);neuron_batch(i).neuron.C(ind_del_final,:)];
+%     neuron_batch(i).neuron.C_raw=[neuron_batch(i).neuron.C_raw(~ind_del_final,:);neuron_batch(i).neuron.C_raw(ind_del_final,:)];
+%     fprintf('C extraction done\n');
             %%% save each data i's signal into neuron(i).signal and
     for j=1:size(neuron_batch(i).neuron.A,2)
         jA=neuron_batch(i).neuron.A(:,j);
@@ -129,7 +130,11 @@ parfor i= 1:length(filelist)
     end        
     fprintf('neuron_batch %.0f extraction done\n', i);
 end
-fprintf('First %.0f neurons are successfully deconvolved in each file while those after that are missing in some files\n', sum(~ind_del_final));
+
+%% 5.5 deconvolve signal
+[~, ~, ~, ~,neuron_batch]=PartTraces(neuron_batch);
+
+%fprintf('First %.0f neurons are successfully deconvolved in each file while those after that are missing in some files\n', sum(~ind_del_final));
 fprintf('ALL extractions done.\n');
 eval(sprintf('save %sCNMFE_BatchVer.mat %s -v7.3', outputdir, 'neuron_batch'));
 fprintf('ALL data saved, check them out!');
