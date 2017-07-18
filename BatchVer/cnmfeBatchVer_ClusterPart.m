@@ -100,7 +100,8 @@ nz_ind=any(Afinal);
 Afinal=Afinal(:,nz_ind);
 newIDs=newIDs(nz_ind);
 
-save([outputdir 'AfinalcnmfeBatchVer.mat'],'-v7.3')
+AfinalMask=Afinal>0;
+eval(sprintf('save %sDay%.0fAfinalcnmfeBatchVer %s', Aoutputdir,daynum, 'AfinalMask'));
 %% 5 "massive" procedure: Extract A from each file
 neuron_batch(length(filelist)) = struct('ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
 
