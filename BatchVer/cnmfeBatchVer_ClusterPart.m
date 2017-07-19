@@ -100,8 +100,10 @@ nz_ind=any(Afinal);
 Afinal=Afinal(:,nz_ind);
 newIDs=newIDs(nz_ind);
 
-AfinalMask=Afinal>0;
-eval(sprintf('save %sDay%.0fAfinalcnmfeBatchVer %s', Aoutputdir,daynum, 'AfinalMask'));
+
+Apicname=sprintf('Day%.0fAfinal',daynum);
+ColorAllNeurons(Afinal,File(1).options.d1,File(2).options.d2,Apicname,Aoutputdir);
+eval(sprintf('save %sDay%.0fAfinalcnmfeBatchVer %s', Aoutputdir,daynum, 'Afinal'));
 %% 5 "massive" procedure: Extract A from each file
 neuron_batch(length(filelist)) = struct('ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
 
