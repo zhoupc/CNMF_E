@@ -252,10 +252,14 @@ classdef Sources2D < handle
         function delete(obj, ind)
             obj.A(:, ind) = [];
             obj.C(ind, :) = [];
-            if ~isempty(obj.S); obj.S(ind, :) = []; end
-            if ~isempty(obj.C_raw); obj.C_raw(ind, :) = []; end
+            if ~isempty(obj.S); 
+                try obj.S(ind, :) = []; catch; end
+            end
+            if ~isempty(obj.C_raw)
+                try obj.C_raw(ind, :) = []; catch;  end
+            end 
             if isfield(obj.P, 'kernel_pars')&&(  ~isempty(obj.P.kernel_pars))
-                obj.P.kernel_pars(ind, :) = [];
+                try obj.P.kernel_pars(ind, :) = []; catch; end 
             end
         end
         
@@ -292,12 +296,18 @@ classdef Sources2D < handle
             C_ = zeros(size(C_raw_));
             S_ = C_;
             kernel_pars = cell(K, 1);
+            for m=1:K 
+                fprintf('|'); 
+            end 
+            fprintf('\n'); 
             for m=1:size(C_raw_,1)
                 [b_, sn] = estimate_baseline_noise(C_raw_(m, :));
-                [C_(m, :), S_(m,:), temp_options] = deconvolveCa(C_raw_(m, :)-b_, obj.options.deconv_options, 'sn', sn);
+                [C_(m, :), S_(m,:), temp_options] = deconvolveCa(C_raw_(m, :)-b_, obj.options.deconv_options);
                 kernel_pars{m} = temp_options.pars;
                 obj.C_raw(m, :) = obj.C_raw(m, :)-b_;
+                fprintf('.'); 
             end
+            fprintf('\n'); 
             obj.C = C_;
             obj.S = S_;
             obj.P.kernel_pars = kernel_pars;
