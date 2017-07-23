@@ -1,6 +1,12 @@
 function  ColorAllNeurons(A,d1,d2,Picname,outputdir)
-    
-    figure; 
+    if nargin <5
+        outputdir = {};
+    end
+    if nargin<4
+        Picname = {};
+    end
+
+%     figure; 
     hold all
     color_palet = 1-[[1 0 0]; [1 .6 0]; [.7 .6 .4]; [.6 .8 .3]; [0 .6 .3]; [0 0 1]; [0 .6 1]; [0 .7 .7]; [.7 0 .7];  [.7 .4 1]]; 
     color_palet = color_palet([1:2:end 2:2:end],:); % scramble slightly
@@ -31,8 +37,12 @@ function  ColorAllNeurons(A,d1,d2,Picname,outputdir)
         Position(1,i)=mean(col_ind);
     end    
     text(Position(1,:),Position(2,:),cellstr(num2str((1:k)'))','Color','white')
-    title(Picname,'interpreter','none')
+    
+    if numel(Picname)>0
+        title(Picname,'interpreter','none')
 
-    fignam=[outputdir Picname,'.png'];
-    saveas(gcf,fignam);
+        fignam=[outputdir Picname,'.png'];
+
+        saveas(gcf,fignam);
+    end
     
