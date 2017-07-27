@@ -3,6 +3,7 @@ display('MoBatchVer.')
 if ~exist(outputdirDetails,'dir')
     mkdir(outputdirDetails)
 end
+cd(outputdirDetails)
 
 %% 0. Get cluster ready
 if running_on_cluster % some procedures making cluster use robust
