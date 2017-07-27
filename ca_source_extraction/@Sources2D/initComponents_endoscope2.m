@@ -1,4 +1,4 @@
-function [center, Cn, PNR] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi)
+function [center, Cn, PNR] = initComponents_endoscope2(obj, Y, K, patch_sz, debug_on, save_avi)
 %% initializing spatial/temporal components for miceoendoscopic data
 %% input:
 %   Y:  d1 X d2 X T matrix or (d1*d2)X T matrix, video data
