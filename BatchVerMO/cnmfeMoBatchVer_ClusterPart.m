@@ -72,10 +72,11 @@ newIDs=newIDs(nz_ind);
 
 
 Apicname=sprintf('%.0fAfinal',daynum);
-ColorAllNeurons(Afinal,File(1).options.d1,File(2).options.d2,Apicname,outputdirDetails);
+ColorAllNeurons(Afinal,File(1).options.d1,File(1).options.d2,Apicname,outputdirDetails);
 
 Vars = {'Afinal';'samplelist';'File'}; Vars=Vars';
 eval(sprintf('save %s%0.f_cnmfe_BatchVer_ClusterPartI.mat %s -v7.3', outputdir, daynum, strjoin(Vars)));
+fprintf('Part1 data saved, check them out!');
 %% 5 "massive" procedure: Extract A from each file
 % neuron_batch(length(filelist)) = struct('ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
 % 
