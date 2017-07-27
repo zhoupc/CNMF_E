@@ -1,4 +1,8 @@
 %% C Run All below on cluster!
+display('MoBatchVer.')
+if ~exist(outputdirDetails,'dir')
+    mkdir(outputdirDetails)
+end
 
 %% 0. Get cluster ready
 if running_on_cluster % some procedures making cluster use robust

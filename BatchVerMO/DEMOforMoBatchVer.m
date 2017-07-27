@@ -63,6 +63,7 @@ totaldays=[20170712,20170713,20170714,20170715,20170716,20170717,20170718,201707
 for i=1:length(totaldays)    
     daynum=totaldays(i);    
     outputdirDetails = [outputdir, num2str(totaldays(i)), '/'];
+    
     [datadir,sampledir,~,filelist,samplelist]=...
            InputOutput('datadir','/Volumes/shared/EmilyShijieShared/ProcessedCalciumData/6991FirstFewDaysForBatch/',...
                        'datakind',['*' num2str(totaldays(i)) '*']);
