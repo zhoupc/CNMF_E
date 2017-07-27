@@ -1,5 +1,5 @@
 function drawPNRCn(obj,min_pnr,min_corr)
-global Picname outputdir
+global Picname outputdirDetails
 
 THRESH=obj.P.THRESH;
 numberOfNeuron=length(THRESH.Corr);
@@ -21,6 +21,6 @@ xlabel('Corr');
 ylabel(strcat('PNR=',num2str(min_pnr)));
 legend('Those outside neurons','Neuron seeds','Corr*PnrThresh','CorrThresh','PnrThresh')
 
-fignam=[outputdir,Picname,strcat('PNR=',num2str(min_pnr)),'.png'];
+fignam=[outputdirDetails,Picname,strcat('PNR=',num2str(min_pnr)),'.png'];
 saveas(gcf,fignam);
 close(gcf);

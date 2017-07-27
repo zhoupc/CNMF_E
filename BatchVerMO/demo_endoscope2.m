@@ -20,7 +20,7 @@ function [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,S
 % modified by Shijie Gu from demo_endoscope script by Pengcheng Zhou.
 %% set global variables
 global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
-    neuron_full Ybg_weights mode Picname nam outputdir; %#ok<NUSED> % global variables, don't change them manually
+    neuron_full Ybg_weights mode Picname nam outputdirDetails; %#ok<NUSED> % global variables, don't change them manually
 Picname=picname;
 %% select data and map it to the RAM
 nam=name;
@@ -237,13 +237,13 @@ if strcmp(mode,'massive')
 end
 %% for 'initiation' mode see and save results
 resultstring=sprintf('%s_results', Picname);
-neuron.viewNeurons([], neuron.C_raw, resultstring);
+neuron.viewNeurons([], neuron.C_raw, [outputdirDetails resultstring]);
 close(gcf);
 
 neuron.drawPNRCn(min_pnr,min_corr)
 close(gcf);
 
-ColorAllNeurons(neuron.A,d1,d2,Picname,outputdir);
+ColorAllNeurons(neuron.A,d1,d2,Picname,outputdirDetails);
 if strcmp(mode,'initiation')
     A0s=neuron.A;
     File.options=neuron.options;
