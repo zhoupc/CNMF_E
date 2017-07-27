@@ -1,7 +1,13 @@
 %% C-2 Run All below on cluster!
-% 'load logistics'
+% load logistics one of the logistics and overwrite some folders
+cnmfefolder='X:\EmilyShijieShared_old\6922_moBatchVer\';
 
-load('/net/feevault/data0/shared/EmilyShijieShared/ProcessedCalciumData/6991FirstFewDaysForBatch/12131416171819/M_moBatchVer.mat')
+outputdir=cnmfefolder;
+
+%one of the logistics
+load(fullfile(cnmfefolder,LogisticscnmfeBatchVer20170712.mat));
+%Motion output
+load(fullfile(cnmfefolder,
 inputdir='/net/feevault/data0/shared/EmilyShijieShared/ProcessedCalciumData/6991FirstFewDaysForBatch/12131416171819';
 outputdir='/net/feevault/data0/shared/EmilyShijieShared/ProcessedCalciumData/6991FirstFewDaysForBatch/12131416171819/moBatchVerResult/';
 %% 0. Get cluster ready
@@ -10,7 +16,7 @@ if running_on_cluster % some procedures making cluster use robust
     init_par_rng(2016);
 end
 %% 1. load samplelist and sample's File from ClusterI into cell for each day.
-%resultlist=dir(fullfile(outputdir,'*CNMFE_BatchVer_Cluster*'));
+resultlist=dir(fullfile(outputdir,'*cnmfe_BatchVer_ClusterPartI*'));
 %resultlist=dir(fullfile(inputdir,'*Afinal*'));
 %sampleFilelist=dir(fullfile(outputdir,'*SampleFile_Cluster*')); for later
 %formal version
