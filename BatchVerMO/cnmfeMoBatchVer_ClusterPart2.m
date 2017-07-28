@@ -54,21 +54,20 @@ parfor i= 1:filenumsum % file
     k=find((eachfilenum_cumsum>=i),1);
     for j=1:S_L % parfor needs this
         Aj=M1{k}{j};
-        ACS_temp=A2C2A(File_full(i), Aj, File_full(i).options);
+        ACS_temp=A2C2A(File_fulllist(i), Aj, File_fulllist(i).options);
         Ain = [Ain ACS_temp.Ain]; Cin = [Cin; ACS_temp.Cin]; STD=[STD ACS_temp.STD];
     end
     ACS(i).Ain=Ain; ACS(i).Cin=Cin; ACS(i).STD=STD;
 end
-
 save([outputdir 'PartTwoOFcnmfeBatchVerMOTION.mat'],'-v7.3')
 %% 3 Merge similar neurons
 %%% Merge similar neurons based on spatial AND temporal correlation
 %%%%%%%%%% use the highest correlation one!!!!
 %m=cellfun(@(x) cat(2,x{:}), M, 'UniformOutput',false);
 %%%%%%%%%%
-Amask_temp=cat(2,M1{3}{:});
+Amask_temp=cat(2,M1{1}{:})>0;
 %Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
-[Afinal,MC,newIDs,merged_ROIs] = mergeAC(Amask_temp,ACS,merge_thr_2);
+[Afinal,MC,newIDs,merged_ROIs] = mergeACforMo(Amask_temp,ACS,merge_thr_2);
 % [size1,~]=cellfun(@size,newIDs);
 % ACS(size1~=1)
 save([outputdir 'commonAcnmfeBatchVerMOTION.mat'],'-v7.3')

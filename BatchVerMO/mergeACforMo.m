@@ -1,4 +1,4 @@
-function  [Afinal,MC,newIDs,merged_ROIs] = mergeAC(Amask,ACS,merge_thr)
+function  [Afinal,MC,newIDs,merged_ROIs] = mergeACforMo(Amask,ACS,merge_thr)
 %% merge neurons based on simple spatial and temporal correlation
 % input:
 %   Amask: concatnated Amask from neurons from one or many files.
@@ -33,7 +33,7 @@ end
 A_thr = merge_thr(1);
 C_thr = merge_thr(2);
 
-A=cat(2,ACS.Ain);
+
 C=cat(2,ACS.Cin);
 
 K = size(C,1);   % number of neurons
@@ -99,14 +99,9 @@ for m=1:n2merge
     IDs = find(MC(:, m));  % IDs of neurons within this cluster
 %    IDs=setdiff(IDs,oldIDs);
     merged_ROIs{m} = IDs;
-    
-    % determine searching area
-    active_pixel = sum(Amask(:,IDs), 2)>0;
 
+    weightedA=ReducingA(Aunique,STDunique)
     
-    % update spatial/temporal components of the merged neuron   
-    % data = A(active_pixel, IDs)*C(IDs, :);
-    data=[];
     for i=1:numel(ACS)
         FileA=ACS(i).Ain;
         FileC=ACS(i).Cin;
