@@ -1,34 +1,28 @@
 %% C-2 Run All below on cluster!
-% load logistics one of the logistics and overwrite some folders
-cnmfefolder='X:\EmilyShijieShared_old\6922_moBatchVer\';
 
-outputdir=cnmfefolder;
-
-%one of the logistics
+% load one of the logistics and overwrite some folders
+cnmfefolder='X:\EmilyShijieShared_old\6922_moBatchVer\LogisticscnmfeBatchVer20170712.mat';
 load(fullfile(cnmfefolder,LogisticscnmfeBatchVer20170712.mat));
-%Motion output
-load(fullfile(cnmfefolder,
-inputdir='/net/feevault/data0/shared/EmilyShijieShared/ProcessedCalciumData/6991FirstFewDaysForBatch/12131416171819';
-outputdir='/net/feevault/data0/shared/EmilyShijieShared/ProcessedCalciumData/6991FirstFewDaysForBatch/12131416171819/moBatchVerResult/';
+
+% load motion corrected A's
+load(fullfile(cnmfefolder,cnmfe_BatchVer_PartII_MotionCorrection.mat))
+
 %% 0. Get cluster ready
 if running_on_cluster % some procedures making cluster use robust
     [~, ~, ~] = maybe_spawn_workers(workersnum); 
     init_par_rng(2016);
 end
-%% 1. load samplelist and sample's File from ClusterI into cell for each day.
-resultlist=dir(fullfile(outputdir,'*cnmfe_BatchVer_ClusterPartI*'));
-%resultlist=dir(fullfile(inputdir,'*Afinal*'));
-%sampleFilelist=dir(fullfile(outputdir,'*SampleFile_Cluster*')); for later
-%formal version
-% currently, use below:
-sampleFilelist=dir(fullfile(inputdir,'*Normals*'));
-%eval(sprintf('save %s%0.f_SampleFile_Cluster1.mat %s -v7.3', outputdir, 16171819, File));
+%% 1. load samplelist,A and sample's File from ClusterI into cell for each day.
+AandSample_list=dir(fullfile(cnmfefolder,'*PartI_Afinalsam*'));
+Filesignal_list=dir(fullfile(cnmfefolder,'*PartI_File*'));
+
 
 samplist_full_temp=cell(1,numel(sampleFilelist));
 File_full_temp=cell(1,numel(sampleFilelist));
 eachfilenum=[];
-for i=1:numel(resultlist)
-    SAM=matfile(fullfile(inputdir,sampleFilelist(i).name));       %%%%% temp use in development
+
+for i=1:numel(AandSample_list) %go through days
+    =matfile(fullfile(cnmfefolder,sampleFilelist(i).name));       %%%%% temp use in development
     samplist_full_temp{i}=SAM.samplelist;
     File_full_temp{i}=SAM.File;
     eachfilenum=[eachfilenum length(samplist_full_temp{i}.samplelist)];
