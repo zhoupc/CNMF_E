@@ -16,40 +16,40 @@ end
 AandSample_list=dir(fullfile(cnmfefolder,'*PartI_Afinalsam*'));
 Filesignal_list=dir(fullfile(cnmfefolder,'*PartI_File*'));
 
-
 samplist_full_temp=cell(1,numel(sampleFilelist));
 File_full_temp=cell(1,numel(sampleFilelist));
-eachfilenum=[];
+eachdayfilenum=[];
 
 for i=1:numel(AandSample_list) %go through days
-    =matfile(fullfile(cnmfefolder,sampleFilelist(i).name));       %%%%% temp use in development
-    samplist_full_temp{i}=SAM.samplelist;
-    File_full_temp{i}=SAM.File;
-    eachfilenum=[eachfilenum length(samplist_full_temp{i}.samplelist)];
-    if i==1;
-        samplist_full=samplist_full_temp{i}.samplelist;
-        File_full=File_full_temp{i}.File;
+    File_temponeday=load(fullfile(cnmfefolder,Filesignal_list(i).name)); 
+    AandSample_temponeday=load(fullfile(cnmfefolder,AandSample_list(i).name));     
+    eachdayfilenum=[eachdayfilenum length(File_temponeday.File)];
+    if i==1
+        filelist_fulllist=AandSample_temponeday.samplelist;
+        File_fulllist=File_temponeday.File;
     else
-        samplist_full=[samplist_full samplist_full_temp{i}.samplelist];
-        File_full=[File_full File_full_temp{i}.File];
+        filelist_fulllist=[filelist_fulllist AandSample_temponeday.samplelist];
+        File_fulllist=[File_fulllist File_temponeday.File];
     end   
 end
-filelist_full=samplist_full;
-
+            daylength=length(eachdayfilenum); avefilenum=mean(eachdayfilenum);
+every_file_num=floor(daylength^2/avefilenum);
+choose_ind=mod(1:numel(filelist_fulllist),every_file_num)==1;
+filelist_samplelist=filelist_fulllist(choose_ind);
+File_samplelist=File_fulllist(choose_ind);
 
 %%% Order similar neurons in the same sequence in each file, not necessary,
 %%% but nice to do. It is fast.
-M1=cellfun(@(M) Over_Days_ResequenceA(M,correlation_thresh,max2max2nd,skewnessthresh),M,'UniformOutput',false);
-M1=Over_Days_ResequenceA(M1,correlation_thresh,max2max2nd,skewnessthresh);
+M1=Over_Days_ResequenceAForMo(M,correlation_thresh,max2max2nd,skewnessthresh);
 
 %% 2. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
-eachfilenum_cumsum=cumsum(eachfilenum);
-S_R = length(File_full);
-ACS(S_R) = struct('Ain',[],'Cin',[],'STD',[]);  
+eachfilenum_cumsum=cumsum(eachdayfilenum);
+filenumsum = eachfilenum_cumsum(end);
+ACS(filenumsum) = struct('Ain',[],'Cin',[],'STD',[]);  
 
 S_L=length(eachfilenum_cumsum);
 
-parfor i= 1:S_R % file
+parfor i= 1:filenumsum % file
     Ain=[]; Cin=[]; STD=[];
     k=find((eachfilenum_cumsum>=i),1);
     for j=1:S_L % parfor needs this
@@ -94,20 +94,20 @@ Apicname=sprintf('Day%.0fAfinal','16171819');
 ColorAllNeurons(Afinal,File_full(1).options.d1,File_full(2).options.d2,Apicname,Aoutputdir);
 eval(sprintf('save %sDay%.0fAfinalcnmfeBatchVerMotion %s', Aoutputdir,'16171819', 'Afinal'));
 %% 5 "massive" procedure: Extract A from each file
-neuron_batch(length(filelist_full)) = struct('ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
+neuron_batch(length(filelist_fulllist)) = struct('ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
 
-parfor i= 1:length(filelist_full)  
+parfor i= 1:length(filelist_fulllist)  
     mode='massive';
     nam=fullfile(datadir,filelist(i).name);    
     [~,neuron_batch(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],Afinal,neuron_batch(i),convolveType,merge_thr);
-    neuron_batch(i).FileOrigin=filelist_full(i); % save origin(filelist)
+    neuron_batch(i).FileOrigin=filelist_fulllist(i); % save origin(filelist)
 end
 fprintf('Massive extraction done.');
 save([outputdir 'MassivecnmfeBatchVerMotion.mat'],'-v7.3')
 
 %% 6 Partition between those neurons found in each file and those not. Save results.
 
-parfor i= 1:length(filelist_full)
+parfor i= 1:length(filelist_fulllist)
 
     for j=1:size(neuron_batch(i).neuron.A,2)
         jA=neuron_batch(i).neuron.A(:,j);

@@ -101,7 +101,7 @@ for m=1:n2merge
     merged_ROIs{m} = IDs;
     
     % determine searching area
-    active_pixel = sum(A(:,IDs), 2)>0;
+    active_pixel = sum(Amask(:,IDs), 2)>0;
 
     
     % update spatial/temporal components of the merged neuron   
