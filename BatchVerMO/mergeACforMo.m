@@ -1,4 +1,4 @@
-function  [Afinal,MC,newIDs,merged_ROIs] = mergeACforMo(Amask,ACS,merge_thr)
+function  [Afinal_alldays,MC,newIDs_alldays,merged_ROIs_alldays] = mergeACforMo(Amask,ACS,merge_thr,M)
 %% merge neurons based on simple spatial and temporal correlation
 % input:
 %   Amask: concatnated Amask from neurons from one or many files.
@@ -33,8 +33,8 @@ end
 A_thr = merge_thr(1);
 C_thr = merge_thr(2);
 
-
 C=cat(2,ACS.Cin);
+STD=std(C,1,2);
 
 K = size(C,1);   % number of neurons
 %% find neuron pairs to merge
@@ -72,6 +72,9 @@ allneurons=1:size(flag_merge,1);
 MC=cellfun(@(x) ismember(allneurons,x),mergegroups,'UniformOutput',false);
 MC=cat(1,MC{:});
 MC=MC';
+numofcells=max(sum(MC,1));
+merge_Bool=sum(MC,2)>0;
+Aunique_Bool=~merge_Bool;
 
 %%%%
 % [l,c] = graph_connected_comp(sparse(flag_merge));     % extract connected components
@@ -87,60 +90,41 @@ else
 end
 
 [nr, n2merge] = size(MC);
-merged_ROIs = cell(n2merge,1);
-newIDs=cell(1,nr); %newIDs = num2cell(1:nr);
-ind_del=true(nr,1);
-Afinal=zeros(size(Amask));
+merged_ROIs_alldays=cell(1,numel(M));
+newIDs_alldays=cell(1,numel(M));
+Afinal_alldays=cell(1,numel(M));
 
+for i=1:numel(M)
+    merged_ROIs = cell(n2merge,1);
+    newIDs=cell(1,nr);
+    ind_del=false(nr,1);
+    Afinal=zeros(Amask);
 
-% start merging
-for m=1:n2merge
-    %oldIDs=IDs;
-    IDs = find(MC(:, m));  % IDs of neurons within this cluster
-%    IDs=setdiff(IDs,oldIDs);
-    merged_ROIs{m} = IDs;
-
-    weightedA=ReducingA(Aunique,STDunique)
-    
-    for i=1:numel(ACS)
-        FileA=ACS(i).Ain;
-        FileC=ACS(i).Cin;
-        data = [data FileA(active_pixel, IDs)*FileC(IDs, :)];
+    A=cat(2,M{i}{:}); %This day's As.
+    Afinal(Aunique_Bool)=A(Aunique_Bool);
+    Aunique_ind=find(Aunique_Bool);
+    for ii=1:length(Aunique_ind); newIDs{Aunique_ind(ii)} = Aunique_ind(ii); end
+    for m=1:n2merge   %merge A's by their STD deviation.
+        IDs = find(MC(:, m));
+        merged_ROIs{m} = IDs;
+        
+        A_temp=A(:,MC(:,m));
+        STD_temp=STD(MC(:,m));
+        catSTD=diag(TD_temp./sum(STD_temp));
+        weightedA=A_temp*catSTD; weightedA=reshape(weightedA,size(A,1),1,[]);
+        weightedA=sum(weightedA,3);
+        ind_del(IDs(2:end))= true;
+        newIDs{IDs(1)} = IDs;
+        Afinal(:,IDs(1))=weightedA;
     end
+    Afinal(ind_del)=[];
+    newIDs(ind_del) = [];
     
-    data=data./length(IDs);
-    [~,I] = max(std(C(IDs, :),0,2)); % choose the most confident(with biggest std) ci.
-    ci=C(IDs(I),:);
-    for miter=1:10
-        ai = data*ci'/(ci*ci');
-        ci = ai'*data/(ai'*ai);
-    end
-    ind_del(IDs(1))= false;
-    newIDs{IDs(1)} = IDs;
-    Afinal(active_pixel,IDs(1))=ai;
-    % making ai nicer.
-%     temp = ai>quantile(ai, 0.3, 1);
-%     ai(~temp(:)) = 0;
-   
-    %Amask(:,IDs(1)) = ai>0;
-    %C(IDs(1), :) = ci;
-%     for i=1:numel(ACS)
-%         ACS(i).Ain(active_pixel,IDs(1))=ai;
-%         ACS(i).STD(IDs(1))=std(ci);
-%         %FileSTD=ACS(i).STD; FileSTD(IDs(1))=std(ci);   ACS(i).STD=FileSTD;
-%     end    
+    merged_ROIs_alldays{i}=merged_ROIs;
+    newIDs_alldays{i}=newIDs;
+    Afinal_alldays{i}=Afinal;
+
 end
 
-% for i=1:numel(ACS)
-%     ACS(i).Ain(:,ind_del)=[];
-%     ACS(i).STD(ind_del)=[];
-% %     FileA=ACS(i).Ain;   FileA(:,ind_del)=[]; ACS(i).Ain=FileA;
-% %     FileSTD=ACS(i).STD; FileSTD(ind_del)=[]; ACS(i).STD=FileSTD;
-% end
-
-newIDs(ind_del) = [];
-Afinal(:,ind_del) = [];
-
-% newIDs(ind_del) = [];
-% newIDs = find(newIDs);
 end
+
