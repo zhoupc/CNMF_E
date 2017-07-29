@@ -1,7 +1,7 @@
 %% C-2 Run All below on cluster!
 
 % load one of the logistics and overwrite some folders
-cnmfefolder='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVer/LogisticscnmfeBatchVer20170712.mat';
+cnmfefolder='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVer/';
 load(fullfile(cnmfefolder,'LogisticscnmfeBatchVer20170712.mat'));
 
 % load motion corrected A's
