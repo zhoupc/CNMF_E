@@ -1,4 +1,4 @@
-function [M_final,shifts_g,template,xxsfyysf] = normcorre_BatchVer(Y,options,template,sizes,As,gridstartend)
+function [M_final,shifts_g,template,xxsfyysf,ind_del_full] = normcorre_BatchVer(Y,options,template,sizes,As,gridstartend,update_num)
 
 % online motion correction through DFT subpixel registration
 % Based on the dftregistration.m function from Manuel Guizar and Jim Fienup
@@ -185,10 +185,10 @@ else
     fftTemp = cellfun(@fftn,template,'un',0);
     fftTempMat = fftn(temp_mat);
 end
-%%%%%%%%%%%%%%%%%%%%%change later%%%%%%%%%%%%%%%%%%%%%%%%
+
 if nd == 2; buffer = mat2cell_ov(zeros(d1,d2,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,2); end
 if nd == 3; buffer = mat2cell_ov(zeros(d1,d2,d3,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,3); end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 if ~strcmpi(options.output_type,'mat')
     options.mem_batch_size = max(min(round(options.mem_batch_size/bin_width)*bin_width,T),1);
     if nd == 2; mem_buffer = zeros(d1,d2,options.mem_batch_size,'single'); end
@@ -232,6 +232,7 @@ end
 cnt_buf = 0;
 fprintf('Template initialization complete. \n')
 %%
+ind_del_full = cell(1,T);
 for it = 1:iter
     for t = 1:bin_width:T
         tpointer=t;
@@ -267,6 +268,7 @@ for it = 1:iter
         
         Mf = cell(size(Ytc));
         lY = length(Ytc);
+        ind_del = cell(1,lY);
         %buffer = cell(length(xx_us),length(yy_us),length(zz_us),size(Ytm,ndims(Ytm)));
         shifts = struct('shifts',cell(lY,1),'shifts_up',cell(lY,1),'diff',cell(lY,1));
         %buf = struct('Mf',cell(lY,1));
@@ -316,7 +318,7 @@ for it = 1:iter
                         shifts_temp(i,j,k,1) = output(3);
                         shifts_temp(i,j,k,2) = output(4); 
                         diff_temp(i,j,k) = output(2);
-                        if all([length(xx_s),length(yy_s),length(zz_s)] == 1) && strcmpi(options.shifts_method,'fft');
+                        if all([length(xx_s),length(yy_s),length(zz_s)] == 1) && strcmpi(options.shifts_method,'fft')
                             for ni=1:sizes(ii+tpointer-1)
                                 Y_one_neuron=reshape(As{ii+tpointer-1}(:,ni),d1,d2);
                                 Y_one_neuron_c = mat2cell_ov(Y_one_neuron,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,2);
@@ -368,6 +370,7 @@ for it = 1:iter
                     
                     %Mf_each=cell(1,sizes(ii));
                     Mf_temp=[];
+                    ind_del{ii} = false(1,sizes(ii+tpointer-1));
                     for ni=1:sizes(ii+tpointer-1)
                         M_fin_tmp=M_fin{ni};
                         if flag_interp
@@ -379,6 +382,9 @@ for it = 1:iter
                         Mf_each(Mf_each>maxY)=maxY;
                         Y_one_neuron=reshape(As{ii+tpointer-1}(:,ni),d1,d2);
                         Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6))=Mf_each;
+                        if any(Y_one_neuron)==0
+                            ind_del{ii}(ni)=true;
+                        end
                         Mf_temp=[Mf_temp reshape(Y_one_neuron,[],1)];
                     end
                     Mf{ii}=Mf_temp;
@@ -394,11 +400,13 @@ for it = 1:iter
                         shifts_up = imresize(shifts_temp,[gridstartend(2)-gridstartend(1)+1,gridstartend(4)-gridstartend(3)+1]);
                         shifts_up(2:2:end,:,2) = shifts_up(2:2:end,:,2) + col_shift;
                         Mf_temp=[];
+                        ind_del{ii} = false(1,sizes(ii+tpointer-1));
                         for ni=1:sizes(ii+tpointer-1)
                             Y_one_neuron=reshape(As{ii+tpointer-1}(:,ni),d1,d2);
                             Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)) = imwarp(Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)),-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method);
-                            %display(size(imwarp(Y_one_neuron(extended_grid(1):extended_grid(2),extended_grid(3):extended_grid(4),extended_grid(5):extended_grid(6)),-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method)))
-                            %display(size(Y_one_neuron(extended_grid(1):extended_grid(2),extended_grid(3):extended_grid(4),extended_grid(5):extended_grid(6))))
+                            if any(Y_one_neuron)==0
+                                ind_del{ii}(ni)=true;
+                            end
                             Mf_temp=[Mf_temp reshape(Y_one_neuron,[],1)];
                         end
                         Mf{ii}=Mf_temp;
@@ -427,7 +435,8 @@ for it = 1:iter
         if it == iter
         switch lower(options.output_type)
             case 'mat'
-                if nd == 2; M_final(t:min(t+bin_width-1,T)) = Mf;  end %cast(Mf,data_type); end
+                if nd == 2; M_final(t:min(t+bin_width-1,T)) = Mf;  
+                            ind_del_full(t:min(t+bin_width-1,T)) = ind_del; end %cast(Mf,data_type); end
                 if nd == 3; M_final(:,:,:,t:min(t+bin_width-1,T)) = cast(Mf,data_type); end
             case 'memmap'
                 if rem_mem == options.mem_batch_size || t+lY-1 == T
@@ -449,13 +458,10 @@ for it = 1:iter
         
         % update template
         fprintf('%i out of %i frames registered, iteration %i out of %i \n',t+lY-1,T,it,iter)
-        if upd_template                                
+        if and(upd_template,t<=update_num)                                
             cnt_buf = cnt_buf + 1;
             [~,~,~,~,zz_s_temp,zz_f_temp,~,~,~,~,~,~] = construct_grid([grid_size(1) grid_size(2) size(MfMAT,3)],mot_uf,d1,d2,size(MfMAT,3), min_patch_size,[gridstartend(1:5), size(MfMAT,3)]);
-            display(zz_s_temp)
-            display(zz_f_temp)
             buffer = mat2cell_ov(MfMAT,xx_s,xx_f,yy_s,yy_f,zz_s_temp,zz_f_temp,overlap_pre,3);
-            display(buffer)
             if strcmpi(method{2},'mean')
                 new_temp = cellfun(@(x) nanmean(x,nd+1), buffer, 'UniformOutput',false);
             elseif strcmpi(method{2},'median');
@@ -481,8 +487,6 @@ for it = 1:iter
                 template = mat2cell_ov(nanmedian(buffer_med,nd+1),xx_s-gridstartend(1)+1,xx_f-gridstartend(1)+1,yy_s-gridstartend(3)+1,yy_f-gridstartend(3)+1,zz_s-gridstartend(5)+1,zz_f-gridstartend(5)+1,overlap_pre,2);
             end
             temp_mat = cell2mat_ov(template,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,gridstartend);
-            display('line 473')
-            display(size(temp_mat))
             
             if use_windowing
                 fftTemp = cellfun(@fftn, cellfun(@han,template, 'un',0),'un',0);            
