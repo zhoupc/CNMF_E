@@ -1,11 +1,11 @@
 %% C-2 Run All below on cluster!
 
 % load one of the logistics and overwrite some folders
-cnmfefolder='X:\EmilyShijieShared_old\6922_moBatchVer\LogisticscnmfeBatchVer20170712.mat';
-load(fullfile(cnmfefolder,LogisticscnmfeBatchVer20170712.mat));
+cnmfefolder='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVer/LogisticscnmfeBatchVer20170712.mat';
+load(fullfile(cnmfefolder,'LogisticscnmfeBatchVer20170712.mat'));
 
 % load motion corrected A's
-load(fullfile(cnmfefolder,cnmfe_BatchVer_PartII_MotionCorrection.mat))
+load(fullfile(cnmfefolder,'cnmfe_BatchVer_PartII_MotionCorrection.mat'))
 
 %% 0. Get cluster ready
 if running_on_cluster % some procedures making cluster use robust
