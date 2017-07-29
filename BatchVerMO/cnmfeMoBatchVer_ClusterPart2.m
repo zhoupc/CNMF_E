@@ -16,8 +16,8 @@ end
 AandSample_list=dir(fullfile(cnmfefolder,'*PartI_Afinalsam*'));
 Filesignal_list=dir(fullfile(cnmfefolder,'*PartI_File*'));
 
-samplist_full_temp=cell(1,numel(sampleFilelist));
-File_full_temp=cell(1,numel(sampleFilelist));
+samplist_full_temp=cell(1,numel(Filesignal_list));
+File_full_temp=cell(1,numel(Filesignal_list));
 eachdayfilenum=[];
 
 for i=1:numel(AandSample_list) %go through days
