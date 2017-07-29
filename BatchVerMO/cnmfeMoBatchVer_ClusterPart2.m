@@ -29,7 +29,7 @@ for i=1:numel(AandSample_list) %go through days
         File_fulllist=File_temponeday.File;
     else
         filelist_fulllist=[filelist_fulllist; AandSample_temponeday.samplelist];
-        File_fulllist=[File_fulllist; File_temponeday.File];
+        File_fulllist=[File_fulllist File_temponeday.File];
     end   
 end
             daylength=length(eachdayfilenum); avefilenum=mean(eachdayfilenum);
