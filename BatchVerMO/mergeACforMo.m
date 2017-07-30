@@ -98,7 +98,7 @@ for i=1:numel(M)
     merged_ROIs = cell(n2merge,1);
     newIDs=cell(1,nr);
     ind_del=false(nr,1);
-    Afinal=zeros(Amask);
+    Afinal=zeros(size(Amask));
 
     A=cat(2,M{i}{:}); %This day's As.
     Afinal(Aunique_Bool)=A(Aunique_Bool);
