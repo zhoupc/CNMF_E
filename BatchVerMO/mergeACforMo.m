@@ -110,7 +110,7 @@ for i=1:numel(M)
         
         A_temp=A(:,MC(:,m));
         STD_temp=STD(MC(:,m));
-        catSTD=diag(TD_temp./sum(STD_temp));
+        catSTD=diag(STD_temp./sum(STD_temp));
         weightedA=A_temp*catSTD; weightedA=reshape(weightedA,size(A,1),1,[]);
         weightedA=sum(weightedA,3);
         ind_del(IDs(2:end))= true;
