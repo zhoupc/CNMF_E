@@ -101,7 +101,7 @@ for i=1:numel(M)
     Afinal=zeros(size(Amask));
 
     A=cat(2,M{i}{:}); %This day's As.
-    Afinal(Aunique_Bool)=A(Aunique_Bool);
+    Afinal(:,Aunique_Bool)=A(:,Aunique_Bool);
     Aunique_ind=find(Aunique_Bool);
     for ii=1:length(Aunique_ind); newIDs{Aunique_ind(ii)} = Aunique_ind(ii); end
     for m=1:n2merge   %merge A's by their STD deviation.
