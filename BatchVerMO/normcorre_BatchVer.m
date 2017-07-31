@@ -1,4 +1,4 @@
-function [M_final,shifts_g,template,xxsfyysf,ind_del_full] = normcorre_BatchVer(Y,options,template,sizes,As,gridstartend,update_num)
+function [M_final,shifts_g,shifts_g_up_1,shifts_g_up_2,template,xxsfyysf,ind_del_full] = normcorre_BatchVer(Y,options,template,sizes,As,gridstartend,update_num)
 
 % online motion correction through DFT subpixel registration
 % Based on the dftregistration.m function from Manuel Guizar and Jim Fienup
@@ -418,6 +418,8 @@ for it = 1:iter
         end
 
         shifts_g(t:min(t+bin_width-1,T)) = shifts;
+        shifts_g_up_1(t:min(t+bin_width-1,T)) = shifts_up(:,:,1);
+        shifts_g_up_2(t:min(t+bin_width-1,T)) = shifts_up(:,:,2);
         %Mf = cell2mat(Mf);
         %%%%%%%%%%% Updating datasets%%%%%%%%%%%%
         MfMAT=[];
