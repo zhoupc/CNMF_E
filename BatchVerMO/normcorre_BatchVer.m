@@ -333,6 +333,7 @@ for it = 1:iter
             shifts(ii).diff = diff_temp;
             switch lower(options.shifts_method)
                 case 'fft'
+                    display('Using fft.')
                     if any([length(xx_s),length(yy_s),length(zz_s)] > 1)
                         if mot_uf(3) > 1
                             tform = affine3d(diag([mot_uf(:);1]));
@@ -389,7 +390,8 @@ for it = 1:iter
                     end
                     Mf{ii}=Mf_temp;
                 otherwise
-                    shifts(ii).shifts_up = shifts(ii).shifts;
+                    display('Shift using other methods.')
+                    %shifts(ii).shifts_up = shifts(ii).shifts;
                     if nd == 3
                         tform = affine3d(diag([mot_uf(:);1]));
                         shifts_up = zeros([options.d1,options.d2,options.d3,3]);
@@ -398,6 +400,7 @@ for it = 1:iter
                         Mf{ii} = imwarp(Yt,-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method);
                     else
                         shifts_up = imresize(shifts_temp,[gridstartend(2)-gridstartend(1)+1,gridstartend(4)-gridstartend(3)+1]);
+                        shifts(ii).shifts_up = shifts_up;
                         shifts_up(2:2:end,:,2) = shifts_up(2:2:end,:,2) + col_shift;
                         Mf_temp=[];
                         ind_del{ii} = false(1,sizes(ii+tpointer-1));
@@ -458,7 +461,10 @@ for it = 1:iter
         
         % update template
         fprintf('%i out of %i frames registered, iteration %i out of %i \n',t+lY-1,T,it,iter)
-        if and(upd_template,t<=update_num)                                
+        if and(upd_template,t<=update_num)
+            display('Here')
+            display(t)
+            display('Updating Template Here')
             cnt_buf = cnt_buf + 1;
             [~,~,~,~,zz_s_temp,zz_f_temp,~,~,~,~,~,~] = construct_grid([grid_size(1) grid_size(2) size(MfMAT,3)],mot_uf,d1,d2,size(MfMAT,3), min_patch_size,[gridstartend(1:5), size(MfMAT,3)]);
             buffer = mat2cell_ov(MfMAT,xx_s,xx_f,yy_s,yy_f,zz_s_temp,zz_f_temp,overlap_pre,3);

@@ -117,7 +117,7 @@ for i=1:numel(M)
         newIDs{IDs(1)} = IDs;
         Afinal(:,IDs(1))=weightedA;
     end
-    Afinal(ind_del)=[];
+    Afinal(:,ind_del)=[];
     newIDs(ind_del) = [];
     
     merged_ROIs_alldays{i}=merged_ROIs;
