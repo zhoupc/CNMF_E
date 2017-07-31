@@ -1,4 +1,4 @@
-function  [Afinal_alldays,MC,newIDs_alldays,merged_ROIs_alldays] = mergeACforMo(Amask,ACS,merge_thr,M)
+function  [Afinal_alldays,MC,newIDs_alldays,merged_ROIs_alldays] = mergeACforMo(Amask,C,merge_thr,M)
 %% merge neurons based on simple spatial and temporal correlation
 % input:
 %   Amask: concatnated Amask from neurons from one or many files.
@@ -33,7 +33,6 @@ end
 A_thr = merge_thr(1);
 C_thr = merge_thr(2);
 
-C=cat(2,ACS.Cin);
 STD=std(C,1,2);
 
 K = size(C,1);   % number of neurons
@@ -72,6 +71,10 @@ allneurons=1:size(flag_merge,1);
 MC=cellfun(@(x) ismember(allneurons,x),mergegroups,'UniformOutput',false);
 MC=cat(1,MC{:});
 MC=MC';
+
+clear A_overlap C_corr C flag_merge;
+display('Deleted some big variables.')
+
 numofcells=max(sum(MC,1));
 merge_Bool=sum(MC,2)>0;
 Aunique_Bool=~merge_Bool;
@@ -110,9 +113,10 @@ for i=1:numel(M)
         
         A_temp=A(:,MC(:,m));
         STD_temp=STD(MC(:,m));
-        catSTD=diag(STD_temp./sum(STD_temp));
-        weightedA=A_temp*catSTD; weightedA=reshape(weightedA,size(A,1),1,[]);
-        weightedA=sum(weightedA,3);
+        catSTD=STD_temp./sum(STD_temp);
+        %catSTD=diag(STD_temp./sum(STD_temp));
+        weightedA=A_temp*catSTD; %weightedA=reshape(weightedA,size(A,1),1,[]);
+        %weightedA=sum(weightedA,3);
         ind_del(IDs(2:end))= true;
         newIDs{IDs(1)} = IDs;
         Afinal(:,IDs(1))=weightedA;

@@ -19,7 +19,9 @@ end
 load(fullfile(outputdir,'PartTwoOFcnmfeBatchVerMOTION.mat'))
 Amask_temp=cat(2,M1{1}{:})>0;
 %Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
-[M2,MC,newIDs,merged_ROIs] = mergeACforMo(Amask_temp,ACS,merge_thr_2,M1);
+C=cat(2,ACS.Cin);
+clear ACS File_fulllist File_samplelist;
+[M2,MC,newIDs,merged_ROIs] = mergeACforMo(Amask_temp,C,merge_thr_2,M1);
 
 save([outputdir 'RoughAfinalcnmfeBatchVerMOTION.mat'],'-v7.3')
 
