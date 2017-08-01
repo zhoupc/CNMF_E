@@ -20,6 +20,8 @@ load(fullfile(outputdir,'PartTwoOFcnmfeBatchVerMOTION.mat'))
 Amask_temp=cat(2,M1{1}{:})>0;
 %Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
 C=cat(2,ACS.Cin);
+d1=File_fulllist(1).options.d1;
+d2=File_fulllist(1).options.d2;
 clear ACS File_fulllist File_samplelist;
 [M2,MC,newIDs,merged_ROIs] = mergeACforMo(Amask_temp,C,merge_thr_2,M1);
 
@@ -43,7 +45,7 @@ for c=1:numel(M2)
     Afinal=Afinal(:,nz_ind);
     newIDs{c}=newIDs{c}(nz_ind);
     Apicname=sprintf('Day%.0fAfinal',num2str(totaldays(c)));
-    ColorAllNeurons(Afinal,File_fulllist(1).options.d1,File_fulllist(2).options.d2,Apicname,[outputdir, num2str(totaldays(c)), '/']);
+    ColorAllNeurons(Afinal,d1,d2,Apicname,[outputdir, num2str(totaldays(c)), '/']);
     M3{c}=Afinal;
 end
 

@@ -100,13 +100,13 @@ Afinal_alldays=cell(1,numel(M));
 for i=1:numel(M)
     merged_ROIs = cell(n2merge,1);
     newIDs=cell(1,nr);
-    ind_del=false(nr,1);
+    ind_del=true(nr,1);
     Afinal=zeros(size(Amask));
 
     A=cat(2,M{i}{:}); %This day's As.
-    Afinal(:,Aunique_Bool)=A(:,Aunique_Bool);
-    Aunique_ind=find(Aunique_Bool);
-    for ii=1:length(Aunique_ind); newIDs{Aunique_ind(ii)} = Aunique_ind(ii); end
+    %Afinal(:,Aunique_Bool)=A(:,Aunique_Bool);
+%     Aunique_ind=find(Aunique_Bool);
+%     for ii=1:length(Aunique_ind); newIDs{Aunique_ind(ii)} = Aunique_ind(ii); end
     for m=1:n2merge   %merge A's by their STD deviation.
         IDs = find(MC(:, m));
         merged_ROIs{m} = IDs;
@@ -117,7 +117,7 @@ for i=1:numel(M)
         %catSTD=diag(STD_temp./sum(STD_temp));
         weightedA=A_temp*catSTD; %weightedA=reshape(weightedA,size(A,1),1,[]);
         %weightedA=sum(weightedA,3);
-        ind_del(IDs(2:end))= true;
+        ind_del(IDs(1))= false;
         newIDs{IDs(1)} = IDs;
         Afinal(:,IDs(1))=weightedA;
     end

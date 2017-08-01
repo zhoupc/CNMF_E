@@ -63,7 +63,11 @@ else % array loaded in memory
 end
 
 nd = length(sizY)-1;                          % determine whether imaging is 2d or 3d
-sizY = sizY(1:nd);
+if or(nd==2,nd==3)
+    sizY = sizY(1:nd);
+elseif nd==1
+    T=1;
+end
 %% set default parameters if not present
 
 if ~exist('options','var') || isempty(options);
@@ -128,7 +132,8 @@ switch filetype
     case 'mem'
         if nd == 2; Y_temp = Y.Y(:,:,1:init_batch); elseif nd == 3; Y_temp = Y.Y(:,:,:,1:init_batch); end
     case 'mat'
-        if nd == 2; Y_temp = Y(:,:,perm); elseif nd == 3; Y_temp = Y(:,:,:,perm); end
+        if nd == 2; Y_temp = Y(:,:,perm); elseif nd == 3; Y_temp = Y(:,:,:,perm);
+        elseif nd==1; Y_temp = Y(:,:); end
     case 'raw'
          Y_temp = read_raw_file(Y,1,init_batch,FOV,bitsize);
 end
@@ -142,7 +147,7 @@ else
 end
 
 [d1,d2,d3,~] = size(Y_temp);
-if nd == 2; d3 = 1; end
+if or(nd==1,nd == 2); d3 = 1; end
 %% setup grids for patches
 
 [xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,xx_us,xx_uf,yy_us,yy_uf,zz_us,zz_uf] = construct_grid(grid_size,mot_uf,d1,d2,d3,min_patch_size,gridstartend);
@@ -167,7 +172,7 @@ for i = 1:length(xx_us)
         end
     end
 end
-if nd == 2; Np = cellfun(@(x) 0,Nr,'un',0); end
+if or(nd == 2,nd==1); Np = cellfun(@(x) 0,Nr,'un',0); end
 
 %%
 maxNumCompThreads(1);
@@ -186,7 +191,7 @@ else
     fftTempMat = fftn(temp_mat);
 end
 
-if nd == 2; buffer = mat2cell_ov(zeros(d1,d2,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,2); end
+if nd==1||nd == 2; buffer = mat2cell_ov(zeros(d1,d2,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,2); end
 if nd == 3; buffer = mat2cell_ov(zeros(d1,d2,d3,bin_width),xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,3); end
 
 if ~strcmpi(options.output_type,'mat')
@@ -248,13 +253,15 @@ for it = 1:iter
                 if nd == 2; Ytm = single(Y.Y(:,:,t:min(t+bin_width-1,T))); end
                 if nd == 3; Ytm = single(Y.Y(:,:,:,t:min(t+bin_width-1,T))); end
             case 'mat'
+                if nd == 1; Ytm = single(Y(:,:)); end
                 if nd == 2; Ytm = single(Y(:,:,t:min(t+bin_width-1,T))); end
                 if nd == 3; Ytm = single(Y(:,:,:,t:min(t+bin_width-1,T))); end
             case 'raw'
                 Ytm = single(read_raw_file(Y,t,min(t+bin_width-1,T)-t+1,FOV,bitsize));                
         end
         
-        if nd == 2; 
+        if nd == 2||nd == 1; 
+            nd=2;
             if size(Ytm,3)==1
                 Ytc = mat2cell(Ytm,d1,d2);
             else
@@ -273,6 +280,7 @@ for it = 1:iter
         shifts = struct('shifts',cell(lY,1),'shifts_up',cell(lY,1),'diff',cell(lY,1));
         %buf = struct('Mf',cell(lY,1));
         parfor ii = 1:lY
+            display('line 281')
             Yt = Ytc{ii}; 
             Yt_trunked = Yt(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6));
             minY = min(Yt(:));
@@ -290,6 +298,7 @@ for it = 1:iter
             M_fin = cell(1,neuronnumber);%struct('M_fin',cell(length(xx_us),length(yy_us),length(zz_us)));
             shifts_temp = zeros(length(xx_s),length(yy_s),length(zz_s),nd); 
             diff_temp = zeros(length(xx_s),length(yy_s),length(zz_s));
+            display('line299')
             if numel(shifts_temp) > 1      
                 if use_windowing
                     if nd == 2; out_rig = dftregistration_min_max(fftTempMat,fftn(han(Yt_trunked)),us_fac,-max_shift,max_shift,phase_flag); lb = out_rig(3:4); ub = out_rig(3:4); end
@@ -320,7 +329,7 @@ for it = 1:iter
                         diff_temp(i,j,k) = output(2);
                         if all([length(xx_s),length(yy_s),length(zz_s)] == 1) && strcmpi(options.shifts_method,'fft')
                             for ni=1:sizes(ii+tpointer-1)
-                                Y_one_neuron=reshape(As{ii+tpointer-1}(:,ni),d1,d2);
+                                Y_one_neuron=reshape(As(:,ni),d1,d2);
                                 Y_one_neuron_c = mat2cell_ov(Y_one_neuron,xx_s,xx_f,yy_s,yy_f,zz_s,zz_f,overlap_pre,2);
                                 M_fin{ni}{i,j,k} = shift_reconstruct(Y_one_neuron_c{i,j,k},shifts_temp(i,j,k,:),diff_temp(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);
                             end
@@ -331,6 +340,7 @@ for it = 1:iter
             
             shifts(ii).shifts = shifts_temp;
             shifts(ii).diff = diff_temp;
+            display('line340')
             switch lower(options.shifts_method)
                 case 'fft'
                     display('Using fft.')
@@ -350,7 +360,7 @@ for it = 1:iter
                             for i = 1:length(xx_uf)
                                 for j = 1:length(yy_uf)
                                     for k = 1:length(zz_uf)
-                                        Y_one_neuron=reshape(As{ii+tpointer-1}(:,ni),d1,d2);
+                                        Y_one_neuron=reshape(As(:,ni),d1,d2);
                                         extended_grid_2 = [max(xx_us(i)-overlap_post(1),gridstartend(1)),min(xx_uf(i)+overlap_post(1),gridstartend(2)),max(yy_us(j)-overlap_post(2),gridstartend(3)),min(yy_uf(j)+overlap_post(2),gridstartend(4)),max(zz_us(k)-overlap_post(3),gridstartend(5)),min(zz_uf(k)+overlap_post(3),gridstartend(6))];
                                         I_temp = Y_one_neuron(extended_grid_2(1):extended_grid_2(2),extended_grid_2(3):extended_grid_2(4),extended_grid_2(5):extended_grid_2(6));
                                         %I_temp = Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6));
@@ -381,7 +391,7 @@ for it = 1:iter
                         end
                         Mf_each(Mf_each<minY)=minY;
                         Mf_each(Mf_each>maxY)=maxY;
-                        Y_one_neuron=reshape(As{ii+tpointer-1}(:,ni),d1,d2);
+                        Y_one_neuron=reshape(As(:,ni),d1,d2);
                         Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6))=Mf_each;
                         if any(Y_one_neuron)==0
                             ind_del{ii}(ni)=true;
@@ -399,27 +409,32 @@ for it = 1:iter
                         shifts_up(2:2:end,:,:,2) = shifts_up(2:2:end,:,:,2) + col_shift;
                         Mf{ii} = imwarp(Yt,-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method);
                     else
+                        display('line410')
                         shifts_up = imresize(shifts_temp,[gridstartend(2)-gridstartend(1)+1,gridstartend(4)-gridstartend(3)+1]);
-                        shifts(ii).shifts_up = shifts_up;
+                        %shifts(ii).shifts_up = shifts_up;
                         shifts_up(2:2:end,:,2) = shifts_up(2:2:end,:,2) + col_shift;
+                        shifts(ii).shifts_up = shifts_up;
                         Mf_temp=[];
+                        display('line416')
                         ind_del{ii} = false(1,sizes(ii+tpointer-1));
                         for ni=1:sizes(ii+tpointer-1)
-                            Y_one_neuron=reshape(As{ii+tpointer-1}(:,ni),d1,d2);
+                            Y_one_neuron=reshape(As(:,ni),d1,d2);
                             Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)) = imwarp(Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)),-cat(3,shifts_up(:,:,2),shifts_up(:,:,1)),options.shifts_method);
                             if any(Y_one_neuron)==0
                                 ind_del{ii}(ni)=true;
                             end
                             Mf_temp=[Mf_temp reshape(Y_one_neuron,[],1)];
                         end
+                        display('line424')
                         Mf{ii}=Mf_temp;
                     end
             end
         end
 
         shifts_g(t:min(t+bin_width-1,T)) = shifts;
-        shifts_g_up_1(t:min(t+bin_width-1,T)) = shifts_up(:,:,1);
-        shifts_g_up_2(t:min(t+bin_width-1,T)) = shifts_up(:,:,2);
+        shifts_g_up_1=zeros(size(shifts(1).shifts_up,1),size(shifts(1).shifts_up,2),T); shifts_g_up_2=zeros(size(shifts(1).shifts_up,1),size(shifts(1).shifts_up,2),T);
+        shifts_g_up_1(:,:) = shifts(1).shifts_up(:,:,1);
+        shifts_g_up_2(:,:) = shifts(1).shifts_up(:,:,2);
         %Mf = cell2mat(Mf);
         %%%%%%%%%%% Updating datasets%%%%%%%%%%%%
         MfMAT=[];

@@ -67,8 +67,9 @@ for ia=2:AnumInFolder
     
     gridstartend=[1,300,61,400,1,1];
     %tic; [M{ia},shifts{ia},~,xxsfyysf,ind_del{ia}] = normcorre_BatchVer(Y_ex_oneday,options_nonrigid,Y_oneday,siz_ex_oneday,As_ex_oneday,startendgrid,update_num); toc
-    tic; [M{ia-1}{ia},shifts{ia},shifts_up_1{ia},shifts_up_2{ia},~,xxsfyysf,ind_del{ia-1}{ia}] = normcorre_BatchVer(Y_oneday,options_nonrigid,Y_previousday,siz_oneday,As_oneday,gridstartend,update_num); toc
-    
+    tic; [M_consecutive_temp,shifts{ia},shifts_up_1{ia},shifts_up_2{ia},~,xxsfyysf,ind_del_temp] = normcorre_BatchVer(Y_oneday,options_nonrigid,Y_previousday,siz_oneday,As_oneday,gridstartend,update_num); toc
+    M{ia-1}{ia}=M_consecutive_temp{1};
+    ind_del{ia-1}{ia}=ind_del_temp{1};
     % Based on consecutive days' shift matrix, fill in all motions
     % The day's own data
     M{ia}{ia}=As_oneday;
@@ -78,7 +79,7 @@ for ia=2:AnumInFolder
     ind_del{ia}{ia-1}=false(1,sizes(ia-1));
     for ni=1:sizes(ia-1)
         Y_one_neuron=reshape(AsfromDaysCell{ia-1}(:,ni),size(Y,1),size(Y,2));
-        Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)) = imwarp(Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)),-cat(3,shifts_up_2{ia}.*(-1),shifts_up_1{ia}.*(-1)),options.shifts_method);
+        Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)) = imwarp(Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)),-cat(3,shifts_up_2{ia}.*(-1),shifts_up_1{ia}.*(-1)),options_nonrigid.shifts_method);
         if any(Y_one_neuron)==0
             ind_del{ia}{ia-1}(ni)=true;
         end
@@ -87,8 +88,8 @@ for ia=2:AnumInFolder
     M{ia}{ia-1}=Mf_temp;
          
     if ia>=3
-        shifts_1=cumsum(flip(cat(3,shifts_up_1{2:ia}),3));
-        shifts_2=cumsum(flip(cat(3,shifts_up_2{2:ia}),3));
+        shifts_1=cumsum(flip(cat(3,shifts_up_1{2:ia}),3),3);
+        shifts_2=cumsum(flip(cat(3,shifts_up_2{2:ia}),3),3);
         % for previous days, adding a new day means adding a new day to register 
         % and for current new day, previous days need to be registered.
         for io=1:ia-2
@@ -99,7 +100,7 @@ for ia=2:AnumInFolder
             shifts_2_temp=shifts_2(:,:,ia-io);
             for ni=1:siz_oneday
                 Y_one_neuron=reshape(As_oneday(:,ni),size(Y,1),size(Y,2));
-                Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)) = imwarp(Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)),-cat(3,shifts_2_temp,shifts_1_temp),options.shifts_method);
+                Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)) = imwarp(Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)),-cat(3,shifts_2_temp,shifts_1_temp),options_nonrigid.shifts_method);
                 if any(Y_one_neuron)==0
                     ind_del{io}{ia}(ni)=true;
                 end
@@ -112,7 +113,7 @@ for ia=2:AnumInFolder
             ind_del{ia}{io} = false(1,sizes(io));
             for ni=1:sizes(io)
                 Y_one_neuron=reshape(AsfromDaysCell{io}(:,ni),size(Y,1),size(Y,2));
-                Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)) = imwarp(Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)),-cat(3,shifts_2_temp.*(-1),shifts_1_temp.*(-1)),options.shifts_method);
+                Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)) = imwarp(Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)),-cat(3,shifts_2_temp.*(-1),shifts_1_temp.*(-1)),options_nonrigid.shifts_method);
                 if any(Y_one_neuron)==0
                     ind_del{ia}{io}(ni)=true;
                 end
@@ -125,10 +126,12 @@ end
 % the only left out one;
 M{1}{1}=AsfromDaysCell{1};  ind_del{1}{1}=false(1,sizes(1));  
 %%
-ind_del_full=sum(reshape(cell2mat(ind_del),1,sum(sizes),[]),3)>0;    %sum(cat(3,ind_del{:}))>0;
+ind_del_full_cell=cellfun(@(x) cell2mat(x), ind_del, 'UniformOutput',0);
+ind_del_full=sum(reshape(cell2mat(ind_del_full_cell),1,sum(sizes),[]),3)>0;    %sum(cat(3,ind_del{:}))>0;
 ind_del_full_cell=mat2cell(~ind_del_full,1,sizes);
 N_eachday=cellfun(@(x) sum(x), ind_del_full_cell);
-M_del = cellfun(@(x) x(:,~ind_del_full), M, 'UniformOutput',0);
+M_concat=cellfun(@(x) cat(2,x{:}), M, 'UniformOutput',0);
+M_del = cellfun(@(x) x(:,~ind_del_full), M_concat, 'UniformOutput',0);
 M_final = cellfun(@(x) mat2cell(x, [size(x,1)], N_eachday), M_del, 'UniformOutput',0);
 
 %%
