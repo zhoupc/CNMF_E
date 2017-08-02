@@ -1,4 +1,4 @@
-function  ColorAllNeurons(A,d1,d2,Picname,outputdir)
+function  Brainbow=ColorAllNeurons(A,d1,d2,Picname,outputdir)
     if nargin <5
         outputdir = {};
     end
@@ -38,6 +38,7 @@ function  ColorAllNeurons(A,d1,d2,Picname,outputdir)
     end    
     text(Position(1,:),Position(2,:),cellstr(num2str((1:k)'))','Color','white')
     
+    fig=gcf;
     if numel(Picname)>0
         title(Picname,'interpreter','none')
 
