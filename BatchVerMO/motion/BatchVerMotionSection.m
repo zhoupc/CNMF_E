@@ -12,14 +12,18 @@ Alist=dir(DatadirForA);
 AnumInFolder=numel(Alist);
 
 AsfromDaysPic=[];
-AsfromDaysCell={};
+AsfromDaysCell=cell(1,AnumInFolder);
+AsfromDaysCell_central=cell(1,AnumInFolder);
 sizes=[];
 for ia=1:AnumInFolder
     Anext=load(fullfile(cnmfedir,Alist(ia).name));
     %ColorAllNeurons(Anext.Afinal,300,400,num2str(ia),outputdirForA)
     Atemp=Anext.Afinal;
     AsfromDaysCell{ia}=Atemp;   % individual column is each A, for actual motion correction
-    
+
+    Atemp=centralA(Atemp);
+    AsfromDaysCell_central{ia}=Atemp;
+
     k = size(Atemp,2);
     sizes=[sizes k];
     AsfromDaysPic=cat(3,AsfromDaysPic,A2image(Atemp,300,400)); % whole picture, for registering, getting shifts        
@@ -44,149 +48,58 @@ options_nonrigid = NoRMCorreSetParms('upd_template',false,'iter',1,...
                                            %   images will be registered within 1/20 of a pixel. (default = 1)
 % Additional parameters
 update_num=2;
-
+gridstartend=[1,300,61,400,1,1];
 %%
-M=cell(1,AnumInFolder);  M1=cell(1,AnumInFolder); 
-shifts_consec=cell(1,AnumInFolder); shifts_consec_up_1=cell(1,AnumInFolder); shifts_consec_up_2=cell(1,AnumInFolder);
-shifts_inter=cell(1,AnumInFolder);  shifts_inter_up_1=cell(1,AnumInFolder);  shifts_inter_up_2=cell(1,AnumInFolder);
+M=cell(1,AnumInFolder);  M_central=cell(1,AnumInFolder); 
 ind_del=cell(1,AnumInFolder);
+% the only left out one;
+M{1}{1}=AsfromDaysCell{1};  ind_del{1}{1}=false(1,sizes(1));
+M_central{1}{1}=centralA(AsfromDaysCell{1});
 
 for ia=2:AnumInFolder
-   
-    Y_previousday=Y(:,:,ia-1);%Y_ex_oneday=Y(:,:,reseq_ind(2:end));
-    Y_oneday=Y(:,:,ia);
-    As_oneday=AsfromDaysCell{ia}; %As_ex_oneday=AsfromDaysCell(reseq_ind(2:end));
-    siz_oneday=sizes(ia);         %siz_ex_oneday=sizes(reseq_ind(2:end));
-    
-    gridstartend=[1,300,61,400,1,1];
-    %tic; [M{ia},shifts{ia},~,xxsfyysf,ind_del{ia}] = normcorre_BatchVer(Y_ex_oneday,options_nonrigid,Y_oneday,siz_ex_oneday,As_ex_oneday,startendgrid,update_num); toc
-    tic; [M_consec_temp,shifts_consec{ia},shifts_consec_up_1{ia},shifts_consec_up_2{ia},~,xxsfyysf,ind_del_temp] = ...
-        normcorre_BatchVer(Y_oneday,options_nonrigid,Y_previousday,siz_oneday,As_oneday,gridstartend,update_num); toc
-    M{ia-1}{ia}=M_consec_temp{1};
-    ind_del{ia-1}{ia}=ind_del_temp{1};
-
-    % Based on consecutive days' shift matrix, fill in all motions
+    siz_oneday=sizes(ia);
     % The day's own data
-    M{ia}{ia}=As_oneday;
+    M{ia}{ia}=AsfromDaysCell{ia};
+    M_central{ia}{ia}=centralA(AsfromDaysCell{ia});
     ind_del{ia}{ia}=false(1,siz_oneday);
-    
-    % inverse consec
-    Mf_temp=[];
-    ind_del{ia}{ia-1}=false(1,sizes(ia-1));
-    for ni=1:sizes(ia-1)
-        Y_one_neuron=reshape(AsfromDaysCell{ia-1}(:,ni),size(Y,1),size(Y,2));
-        Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)) = ...
-            imwarp(Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)),-cat(3,shifts_consec_up_2{ia}.*(-1),shifts_consec_up_1{ia}.*(-1)),options_nonrigid.shifts_method);
-        if any(Y_one_neuron)==0
-            ind_del{ia}{ia-1}(ni)=true;
+    % Previous days
+    M_buffer=[];
+    for io=ia-1:-1:1
+        if io==ia-1
+            Y_template=Y(:,:,io);
+        else
+            Y_template=A2image(cat(2,M{io}{io:ia-1}),size(Y,1),size(Y,2));
         end
-        Mf_temp=[Mf_temp reshape(Y_one_neuron,[],1)];
-    end
-    M{ia}{ia-1}=Mf_temp;
-    
-         
-    if ia>=3
-        % Update data, fill the registration to the previous 2nd day
-        Y_previous2day=Y(:,:,ia-2);
-        %currentday=A2image(M{ia-1}{ia},size(Y,1),size(Y,2));
-        Y_
+        if io==ia-1
+            Y_toregister=Y(:,:,ia);
+        else
+            Y_toregister=A2image(cat(2,M{io+1}{io+1:ia}),size(Y,1),size(Y,2));
+        end
+ 
+        %tic; [M{ia},shifts{ia},~,xxsfyysf,ind_del{ia}] = normcorre_BatchVer(Y_ex_oneday,options_nonrigid,Y_oneday,siz_ex_oneday,As_ex_oneday,startendgrid,update_num); toc
+        tic; [M_temp,shifts,shifts_up_1,shifts_up_2,~,xxsfyysf,ind_del_temp] = ...
+            normcorre_BatchVer(Y_toregister,options_nonrigid,Y_template,siz_oneday,M{io+1}{ia},gridstartend,update_num); toc
+        M{io}{ia}=M_temp{1};
+        M_central{io}{ia}=centralA(M_temp{1});
+        ind_del{io}{ia}=ind_del_temp{1};
 
-
-fee2day=A2image([M{ia-1}{ia} AsfromDaysCell{ia-2}],size(Y,1),size(Y,2));
-        
-        tic; [M_inter_temp,shifts_inter{ia},shifts_inter_up_1{ia},shifts_inter_up_2{ia},~,xxsfyysf,ind_del_temp] = ...
-            normcorre_BatchVer(Y_2day,options_nonrigid,Y_previous2day,size(M{ia-1}{ia},2),M{ia-1}{ia},gridstartend,update_num); toc
-        M{ia-2}{ia}=M_inter_temp{1};
-        ind_del{ia-2}{ia}=ind_del_temp{1};
-        
-        % inverse inter
+        % inverse consec
         Mf_temp=[];
-        ind_del{ia}{ia-2}=false(1,sizes(ia-2));
-        display('out 108')
-        for ni=1:sizes(ia-2)
-            Y_one_neuron=reshape(AsfromDaysCell{ia-2}(:,ni),size(Y,1),size(Y,2));
+        ind_del{ia}{io}=false(1,sizes(io));
+        for ni=1:sizes(io)
+            Y_one_neuron=reshape(AsfromDaysCell{io}(:,ni),size(Y,1),size(Y,2));
             Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)) = ...
-                imwarp(Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)),-cat(3,shifts_inter_up_2{ia}.*(-1),shifts_inter_up_1{ia}.*(-1)),options_nonrigid.shifts_method);
+                imwarp(Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)),-cat(3,shifts_up_2.*(-1),shifts_up_1.*(-1)),options_nonrigid.shifts_method);
             if any(Y_one_neuron)==0
-                ind_del{ia}{ia-2}(ni)=true;
+                ind_del{ia}{io}(ni)=true;
             end
             Mf_temp=[Mf_temp reshape(Y_one_neuron,[],1)];
         end
-        M{ia}{ia-2}=Mf_temp;
-    end
-       display('out 119')
-    if ia>=4
-        % slow train
-        shifts_consec_1=flip(cat(3,shifts_consec_up_1{2:ia}),3);
-        shifts_consec_2=flip(cat(3,shifts_consec_up_2{2:ia}),3);
-        
-        % fast train
-        shifts_inter_1=flip(cat(3,zeros(size(shifts_inter_up_1{3})),shifts_inter_up_1{3:ia}),3);
-        shifts_inter_2=flip(cat(3,zeros(size(shifts_inter_up_2{3})),shifts_inter_up_2{3:ia}),3);
-        
-        shifts_mixed_1=shifts_consec_1+shifts_inter_1;
-        shifts_mixed_2=shifts_consec_2+shifts_inter_2;
-        
-        fasttrain_ind=mod(ia:-1:2,2)==0;
-        if mod(ia,2)==0            
-            fasttrain_1=cumsum(shifts_mixed_1(:,:,fasttrain_ind),3); 
-            fasttrain_2=cumsum(shifts_mixed_2(:,:,fasttrain_ind),3);
-        elseif mod(ia,2)==1
-            fasttrain_1=cumsum(shifts_mixed_1(:,:,~fasttrain_ind),3); 
-            fasttrain_2=cumsum(shifts_mixed_2(:,:,~fasttrain_ind),3);
-        end
-        
-        % for previous days, adding a new day means adding a new day to register 
-        % and for current new day, previous days need to be registered.
-        for io=1:ia-3
-            display('out 144')
-            if io==1
-                shifts_1_temp=fasttrain_1(:,:,end); 
-                shifts_2_temp=fasttrain_2(:,:,end);
-            else
-                fasttain_num=floor((ia-io)/2);
-                slowtrain_num=mod(ia-io,2);
-                if slowtrain_num==0
-                    shifts_1_temp=fasttrain_1(:,:,fasttain_num);
-                    shifts_2_temp=fasttrain_2(:,:,fasttain_num);
-                else
-                   slowtrain_num=ia-fasttain_num*2;
-                   shifts_1_temp=fasttrain_1(:,:,fasttain_num)+shifts_consec_1(:,:,slowtrain_num);
-                   shifts_2_temp=fasttrain_2(:,:,fasttain_num)+shifts_consec_2(:,:,slowtrain_num);
-                end
-            end
-            display('out 160')
-            
-            % for previous days
-            Mf_temp=[];
-            ind_del{io}{ia} = false(1,siz_oneday);
-            for ni=1:siz_oneday
-                Y_one_neuron=reshape(As_oneday(:,ni),size(Y,1),size(Y,2));
-                Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)) = imwarp(Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)),-cat(3,shifts_2_temp,shifts_1_temp),options_nonrigid.shifts_method);
-                if any(Y_one_neuron)==0
-                    ind_del{io}{ia}(ni)=true;
-                end
-                Mf_temp=[Mf_temp reshape(Y_one_neuron,[],1)];
-            end
-            M{io}{ia}=Mf_temp;
-            
-            % for current day
-            Mf_temp=[];
-            ind_del{ia}{io} = false(1,sizes(io));
-            for ni=1:sizes(io)
-                Y_one_neuron=reshape(AsfromDaysCell{io}(:,ni),size(Y,1),size(Y,2));
-                Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)) = imwarp(Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)),-cat(3,shifts_2_temp.*(-1),shifts_1_temp.*(-1)),options_nonrigid.shifts_method);
-                if any(Y_one_neuron)==0
-                    ind_del{ia}{io}(ni)=true;
-                end
-                Mf_temp=[Mf_temp reshape(Y_one_neuron,[],1)];
-            end
-            M{ia}{io}=Mf_temp;
-        end
+        M{ia}{io}=Mf_temp;
+        M_central{ia}{io}=centralA(M{ia}{io});
     end
 end
-% the only left out one;
-M{1}{1}=AsfromDaysCell{1};  ind_del{1}{1}=false(1,sizes(1));  
+
 %%
 ind_del_full_cell=cellfun(@(x) cell2mat(x), ind_del, 'UniformOutput',0);
 ind_del_full=sum(reshape(cell2mat(ind_del_full_cell),1,sum(sizes),[]),3)>0;    %sum(cat(3,ind_del{:}))>0;
