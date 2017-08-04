@@ -57,11 +57,22 @@ function ManualShift_OpeningFcn(hObject, eventdata, handles, varargin)
 p = inputParser;
 addParameter(p,'M',[]);
 parse(p, varargin{:});
-handles.M=p.Results.M; M=p.Results.M;
+handles.M=p.Results.M; 
+
+% All pairs of alignment
+M=p.Results.M;
+diagr=tril(ones(numel(M),numel(M)),-1);
+[row,col]=find(diagr);
+handles.allpairs=[col,row];
+handles.currentpair=[1,2];
+
+template_num=handles.currentpair(1);
+ToAlign_num=handles.currentpair(2);
 
 % Creat the overlay picture
-A=A2image(M{2}{2},300,400);
-B=A2image(M{2}{3},300,400);
+A=A2image(M{template_num}{template_num},300,400);
+B=A2image(M{template_num}{ToAlign_num},300,400);
+B = imhistmatch(B,A);
 imshowpair(A,B,'falsecolor','Scaling','independent');
 
 axes(handles.axes2)
@@ -69,6 +80,8 @@ imshow(A)
 
 axes(handles.axes3)
 imshow(B)
+linkaxes([axes1 axes2 axes3])
+
 
 % Choose default command line output for ManualShift
 handles.output = hObject;
@@ -113,6 +126,7 @@ function TemplateChoice_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
 
 
 function neuron_list_tmpl_Callback(hObject, eventdata, handles)
@@ -168,7 +182,21 @@ function slider1_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+currentpair_ind=get(hObject,'Value');
+handles.currentpair=handles.allpairs(currentpair_ind,:);
+template_num=handles.currentpair(1);
+ToAlign_num=handles.currentpair(2);
 
+axes(handles.axes1)
+A=A2image(M{template_num}{template_num},300,400);
+B=A2image(M{template_num}{ToAlign_num},300,400);
+imshowpair(A,B,'falsecolor','Scaling','independent');
+
+axes(handles.axes2)
+imshow(A)
+
+axes(handles.axes3)
+imshow(B)
 
 % --- Executes during object creation, after setting all properties.
 function slider1_CreateFcn(hObject, eventdata, handles)
@@ -180,7 +208,9 @@ function slider1_CreateFcn(hObject, eventdata, handles)
 if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor',[.9 .9 .9]);
 end
-
+set(hObject,'Min',1);
+set(hObject,'Max',size(handles.allpairs,1));
+handles.currentpair=[1,2];
 
 
 function ToAlign_Callback(hObject, eventdata, handles)
@@ -204,12 +234,31 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+%------------suppose there is handles.neuron_templ_ind and
+%handles.neuron_ToAlign_ind
 
 % --- Executes on button press in pushbutton1.
 function pushbutton1_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+d1=handles.d1;
+d2=handles.d2;
+template_num=handles.currentpair(1);
+ToAlign_num=handles.currentpair(2);
+template_neuron_A=handles.M{template_num}{template_num}(:,handles.neuron_templ_ind);
+ToAlign_neuron_A=handles.M{template_num}{ToAlign_num}(:,handles.neuron_ToAlign_ind);
+% template_neuron_center = round(com(template_neuron_A, d1, d2));
+% ToAlign_neuron_center = round(com(ToAlign_neuron_A, d1, d2));
+% displacement_vector=[ToAlign_neuron_center template_neuron_center];
+[D,~] = imregdemons(A2image(ToAlign_neuron_A),A2image(template_neuron_A));
+
+handles.M{template_num}{ToAlign_num}(:,handles.neuron_ToAlign_ind)=...
+    reshape(imwarp(reshape(ToAlign_neuron_A,d1,d2),D,'cubic'),[],1);
+
+template_neuron_A_reverse=handles.M{ToAlign_num}{template_num}(:,handles.neuron_templ_ind);
+handles.M{ToAlign_num}{template_num}(:,handles.neuron_templ_ind)=...
+    reshape(imwarp(reshape(template_neuron_A_reverse,d1,d2),D.*(-1),'cubic'),[],1);
 
 
 % --- Executes on button press in pushbutton2.
