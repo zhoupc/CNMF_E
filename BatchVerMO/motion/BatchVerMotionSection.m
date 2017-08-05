@@ -73,7 +73,7 @@ for ia=2:AnumInFolder
         if io==ia-1
             Y_toregister=Y(:,:,ia);
         else
-            Y_toregister=A2image(cat(2,M{io+1}{io+1:ia}),size(Y,1),size(Y,2));
+            Y_toregister=A2image(cat(2,M{io+1}{io+1},M{io+1}{ia}),size(Y,1),size(Y,2));
         end
  
         %tic; [M{ia},shifts{ia},~,xxsfyysf,ind_del{ia}] = normcorre_BatchVer(Y_ex_oneday,options_nonrigid,Y_oneday,siz_ex_oneday,As_ex_oneday,startendgrid,update_num); toc
