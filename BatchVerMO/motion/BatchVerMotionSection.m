@@ -57,6 +57,8 @@ M{1}{1}=AsfromDaysCell{1};  ind_del{1}{1}=false(1,sizes(1));
 M_central{1}{1}=centralA(AsfromDaysCell{1});
 
 for ia=2:AnumInFolder
+    shifts_up_1=cell(1,ia-1); shifts_up_2=cell(1,ia-1);
+
     siz_oneday=sizes(ia);
     % The day's own data
     M{ia}{ia}=AsfromDaysCell{ia};
@@ -77,19 +79,20 @@ for ia=2:AnumInFolder
         end
  
         %tic; [M{ia},shifts{ia},~,xxsfyysf,ind_del{ia}] = normcorre_BatchVer(Y_ex_oneday,options_nonrigid,Y_oneday,siz_ex_oneday,As_ex_oneday,startendgrid,update_num); toc
-        tic; [M_temp,shifts,shifts_up_1,shifts_up_2,~,xxsfyysf,ind_del_temp] = ...
+        tic; [M_temp,shifts,shifts_up_1{io},shifts_up_2{io},~,xxsfyysf,ind_del_temp] = ...
             normcorre_BatchVer(Y_toregister,options_nonrigid,Y_template,siz_oneday,M{io+1}{ia},gridstartend,update_num); toc
         M{io}{ia}=M_temp{1};
         M_central{io}{ia}=centralA(M_temp{1});
         ind_del{io}{ia}=ind_del_temp{1};
 
         % inverse consec
+        shifts_up_1_tmp=sum(cat(3,shifts_up_1{io:ia-1}),3); shifts_up_2_tmp=sum(cat(3,shifts_up_2{io:ia-1}),3);
         Mf_temp=[];
         ind_del{ia}{io}=false(1,sizes(io));
         for ni=1:sizes(io)
             Y_one_neuron=reshape(AsfromDaysCell{io}(:,ni),size(Y,1),size(Y,2));
             Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)) = ...
-                imwarp(Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)),-cat(3,shifts_up_2.*(-1),shifts_up_1.*(-1)),options_nonrigid.shifts_method);
+                imwarp(Y_one_neuron(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),gridstartend(5):gridstartend(6)),-cat(3,shifts_up_2_tmp.*(-1),shifts_up_1_tmp.*(-1)),options_nonrigid.shifts_method);
             if any(Y_one_neuron)==0
                 ind_del{ia}{io}(ni)=true;
             end

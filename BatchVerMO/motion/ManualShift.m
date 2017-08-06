@@ -22,7 +22,7 @@ function varargout = ManualShift(varargin)
 
 % Edit the above text to modify the response to help ManualShift
 
-% Last Modified by GUIDE v2.5 06-Aug-2017 12:22:03
+% Last Modified by GUIDE v2.5 06-Aug-2017 17:57:40
 
 
 % Begin initialization code - DO NOT EDIT
@@ -66,6 +66,7 @@ handles.M=p.Results.M;
 handles.M_intact=p.Results.M; % for some cancel buttons.
 handles.d1=p.Results.d1;
 handles.d2=p.Results.d2;
+handles.pickOrnot=false;
 
 % All pairs of alignment
 M=p.Results.M;
@@ -214,8 +215,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 set(hObject,'String','1-2')
 
-%------------suppose there is handles.neuron_templ_ind and
-%handles.neuron_ToAlign_ind
 
 % --- Executes on button press in pushbutton1.
 function pushbutton1_Callback(hObject, eventdata, handles)
@@ -240,7 +239,7 @@ for i = 1:length(neuron_templ_ind)
     handles.M{ToAlign_num}{template_num}(:,neuron_templ_ind(i))=...
         reshape(imwarp(reshape(template_neuron_A_reverse,d1,d2),D.*(-1),'cubic'),[],1);
 end
-display('Updated As')
+display('A Updated')
 % Update handles structure
 guidata(hObject, handles);
 
@@ -353,6 +352,7 @@ switch KeyPressed
         current_axes=gca;
         if strcmp(current_axes.Tag,'axes1')
             imshow(handles.B)
+            handles.mode='toAlign';
             set(gca,'tag','axes1')
             set(handles.text6,'String','Registered To Template');
         elseif strcmp(current_axes.Tag,'axes2')
@@ -361,6 +361,7 @@ switch KeyPressed
             set(handles.text7,'String','Original A to Align');
         end
     case 'leftarrow'
+        handles.mode='template';
         axes(gca)
         current_axes=gca;
         if strcmp(current_axes.Tag,'axes1'); imshow(handles.A); set(gca,'tag','axes1'); set(handles.text6,'String','Template');
@@ -368,6 +369,7 @@ switch KeyPressed
         end
 
     case 'downarrow'
+        handles.mode='overlapping';
         axes(gca)
         current_axes=gca;
         if strcmp(current_axes.Tag,'axes1')
@@ -381,34 +383,39 @@ switch KeyPressed
         end        
     case 'uparrow'
         set(hObject,'CurrentObject',handles.slider1)
-
 end
+guidata(hObject, handles);
 
 function handles=Update_Plot(currentpair_ind,handles)
+handles.mode='overlapping';
+d1=handles.d1;  d2=handles.d2;
 if ~isempty(currentpair_ind)
     handles.currentpair=handles.allpairs(currentpair_ind,:);
 end
 template_num=handles.currentpair(1);
 ToAlign_num=handles.currentpair(2);
 set(handles.ToAlign,'String',[num2str(template_num) '-' num2str(ToAlign_num)])
+set(handles.text10,'String',[])
 
 M=handles.M;
-A=A2image(M{template_num}{template_num},300,400,true,'magenta');  handles.A=A;
-A_b=A2image(M{template_num}{template_num},300,400,true);  handles.A_b=A_b;
+A=A2image(M{template_num}{template_num},d1,d2,true,'magenta');  handles.A=A;
+A_b=A2image(M{template_num}{template_num},d1,d2,true);  handles.A_b=A_b;
 
-B=A2image(M{template_num}{ToAlign_num},300,400,true,'green');  handles.B=B;
-B_b=A2image(M{template_num}{ToAlign_num},300,400,true);  B_b = imhistmatch(B_b,A); handles.B_b=B_b;
+B=A2image(M{template_num}{ToAlign_num},d1,d2,true,'green');  handles.B=B;
+B_b=A2image(M{template_num}{ToAlign_num},d1,d2,true);  B_b = imhistmatch(B_b,A); handles.B_b=B_b;
 
-D=A2image(M{ToAlign_num}{ToAlign_num},300,400,true,'green');   handles.D=D;
-D_b=A2image(M{ToAlign_num}{ToAlign_num},300,400,true);   D_b = imhistmatch(D_b,A); handles.D_b=D_b;
+D=A2image(M{ToAlign_num}{ToAlign_num},d1,d2,true,'green');   handles.D=D;
+D_b=A2image(M{ToAlign_num}{ToAlign_num},d1,d2,true);   D_b = imhistmatch(D_b,A); handles.D_b=D_b;
 
 axes(handles.axes1)
 imshowpair(A_b,B_b,'falsecolor','Scaling','independent')
 set(gca,'tag','axes1')
+axis tight
 
 axes(handles.axes2)
 imshowpair(A_b,D_b,'falsecolor','Scaling','independent')
 set(gca,'tag','axes2')
+axis tight
 
 
 % --- Executes on mouse press over figure background.
@@ -425,7 +432,26 @@ function axes1_ButtonDownFcn(hObject, eventdata, handles)
 % hObject    handle to axes1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+display('axes1')
 uicontrol(handles.axes1)
+if handles.pickOrnot
+    [x,y] = ginput(1);
+    d1=handles.d1;                      d2=handles.d2;              M=handles.M;
+    mouse_location = sub2ind([d1 d2], x, y);
+    template_num=handles.currentpair(1);ToAlign_num=handles.currentpair(2);
+    if strcmp(handles.mode,'template')
+        A_=M{template_num}{template_num};
+    elseif strcmp(handles.mode,'toAlign')
+        A_=M{template_num}{ToAlign_num};
+    else
+        warning('Neuron picking is not supported in overlapping mode.')
+    end
+    
+    neuron_ind=find(A_(mouse_location,:)>0);
+    set(handles.text10,'String',['neuron #' num2str(neuron_ind)])
+    handles.pickOrnot=false;
+end
+
 
 % --- Executes on mouse press over axes background.
 function axes2_ButtonDownFcn(hObject, eventdata, handles)
@@ -433,7 +459,22 @@ function axes2_ButtonDownFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 uicontrol(handles.axes2)
-
+if handles.pickOrnot
+    [x,y] = ginput(1);
+    d1=handles.d1;                      d2=handles.d2;              M=handles.M;
+    mouse_location = sub2ind([d1 d2], x, y);
+    template_num=handles.currentpair(1);ToAlign_num=handles.currentpair(2);
+    if strcmp(handles.mode,'template')
+        A_=M{template_num}{template_num};
+    elseif strcmp(handles.mode,'toAlign')
+        A_=M{ToAlign_num}{ToAlign_num};   
+    else
+        warning('Neuron picking is not supported in overlapping mode.')
+    end    
+    neuron_ind=find(A_(mouse_location,:)>0);
+    set(handles.text10,'String',['neuron #' num2str(neuron_ind)])
+    handles.pickOrnot=false;
+end
 
 
 % --- Executes on key press with focus on neuron_list_tmpl and none of its controls.
@@ -445,10 +486,8 @@ function neuron_list_tmpl_KeyPressFcn(hObject, eventdata, handles)
 %	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
 % handles    structure with handles and user data (see GUIDATA)
 KeyPressed = eventdata.Key;
-display(KeyPressed)
 switch KeyPressed
     case 'return'
-        display('here')
         neuron_list_str=get(hObject,'String');
         if ~strcmp(neuron_list_str(end),';')
             neuron_list_str(end+1)=';';
@@ -458,3 +497,48 @@ switch KeyPressed
 end
 % Update handles structure
 guidata(hObject, handles);
+
+
+% --- Executes on button press in pushbutton6.
+function pushbutton6_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton6 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.pickOrnot=true;
+guidata(hObject, handles);
+
+
+% --- Executes on mouse press over figure background, over a disabled or
+% --- inactive control, or over an axes background.
+function figure1_WindowButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+display('axes1INfigure')
+uicontrol(handles.figure1)
+if handles.pickOrnot
+    %cp = get(gca, 'CurrentPoint');
+    %[x,y] = ginput(1);
+    current_axes=gca;
+    cursorPoint = get(gca, 'CurrentPoint');
+    pixelx = axes2pix(400, [1 400], cursorPoint(1))
+    x=round(x); y=round(y);
+    d1=handles.d1;                      d2=handles.d2;              M=handles.M;
+    mouse_location = sub2ind([d1 d2], y, x);
+    template_num=handles.currentpair(1);ToAlign_num=handles.currentpair(2);
+    if strcmp(handles.mode,'template')
+        A_=M{template_num}{template_num};
+    elseif strcmp(handles.mode,'toAlign')
+        if strcmp(current_axes.Tag,'axes1')
+            A_=M{template_num}{ToAlign_num};
+        else
+            A_=M{ToAlign_num}{ToAlign_num};
+        end
+    else
+        warning('Neuron picking is not supported in overlapping mode.')
+    end
+    
+    neuron_ind=find(A_(mouse_location,:)>0);
+    set(handles.text10,'String',['neuron #' num2str(neuron_ind)])
+    handles.pickOrnot=false;
+end
