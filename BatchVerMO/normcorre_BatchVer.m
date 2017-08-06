@@ -275,6 +275,8 @@ for it = 1:iter
         
         Mf = cell(size(Ytc));
         lY = length(Ytc);
+        display('lY=')
+        display(lY)
         ind_del = cell(1,lY);
         %buffer = cell(length(xx_us),length(yy_us),length(zz_us),size(Ytm,ndims(Ytm)));
         shifts = struct('shifts',cell(lY,1),'shifts_up',cell(lY,1),'diff',cell(lY,1));
@@ -432,7 +434,7 @@ for it = 1:iter
         end
 
         shifts_g(t:min(t+bin_width-1,T)) = shifts;
-        shifts_g_up_1=zeros(size(shifts(1).shifts_up,1),size(shifts(1).shifts_up,2),T); shifts_g_up_2=zeros(size(shifts(1).shifts_up,1),size(shifts(1).shifts_up,2),T);
+        %shifts_g_up_1=zeros(size(shifts(1).shifts_up,1),size(shifts(1).shifts_up,2),T); shifts_g_up_2=zeros(size(shifts(1).shifts_up,1),size(shifts(1).shifts_up,2),T);
         shifts_g_up_1(:,:) = shifts(1).shifts_up(:,:,1);
         shifts_g_up_2(:,:) = shifts(1).shifts_up(:,:,2);
         %Mf = cell2mat(Mf);

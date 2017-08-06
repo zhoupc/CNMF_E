@@ -22,7 +22,7 @@ function varargout = ManualShift(varargin)
 
 % Edit the above text to modify the response to help ManualShift
 
-% Last Modified by GUIDE v2.5 05-Aug-2017 16:59:32
+% Last Modified by GUIDE v2.5 06-Aug-2017 12:22:03
 
 
 % Begin initialization code - DO NOT EDIT
@@ -63,6 +63,7 @@ addParameter(p,'d2',400);
 
 parse(p, varargin{:});
 handles.M=p.Results.M;
+handles.M_intact=p.Results.M; % for some cancel buttons.
 handles.d1=p.Results.d1;
 handles.d2=p.Results.d2;
 
@@ -143,32 +144,11 @@ function neuron_list_tmpl_Callback(hObject, eventdata, handles)
 %        str2double(get(hObject,'String')) returns contents of neuron_list_tmpl as a double
 
 
+
+
 % --- Executes during object creation, after setting all properties.
 function neuron_list_tmpl_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to neuron_list_tmpl (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function neuron_list_2align_Callback(hObject, eventdata, handles)
-% hObject    handle to neuron_list_2align (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of neuron_list_2align as text
-%        str2double(get(hObject,'String')) returns contents of neuron_list_2align as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function neuron_list_2align_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to neuron_list_2align (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -214,7 +194,12 @@ function ToAlign_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of ToAlign as text
 %        str2double(get(hObject,'String')) returns contents of ToAlign as a double
-
+ToAlign_text=get(hObject,'String');
+ToAlign_num=sscanf(ToAlign_text,'%d-%d');
+handles.currentpair(1)=ToAlign_num(1);
+handles.currentpair(2)=ToAlign_num(2);
+handles=Update_Plot([],handles);
+guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
 function ToAlign_CreateFcn(hObject, eventdata, handles)
@@ -237,24 +222,25 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-d1=handles.d1;
-d2=handles.d2;
-template_num=handles.currentpair(1);
-ToAlign_num=handles.currentpair(2);
-template_neuron_A=handles.M{template_num}{template_num}(:,handles.neuron_templ_ind);
-ToAlign_neuron_A=handles.M{template_num}{ToAlign_num}(:,handles.neuron_ToAlign_ind);
-% template_neuron_center = round(com(template_neuron_A, d1, d2));
-% ToAlign_neuron_center = round(com(ToAlign_neuron_A, d1, d2));
-% displacement_vector=[ToAlign_neuron_center template_neuron_center];
-[D,~] = imregdemons(A2image(ToAlign_neuron_A),A2image(template_neuron_A));
+d1=handles.d1;                             d2=handles.d2;
+template_num=handles.currentpair(1);       ToAlign_num=handles.currentpair(2);
+neuron_templ_ind=handles.neuron_list(1,:); neuron_ToAlign_ind=handles.neuron_list(2,:);
 
-handles.M{template_num}{ToAlign_num}(:,handles.neuron_ToAlign_ind)=...
-    reshape(imwarp(reshape(ToAlign_neuron_A,d1,d2),D,'cubic'),[],1);
+for i = 1:length(neuron_templ_ind)
+    template_neuron_A=handles.M{template_num}{template_num}(:,neuron_templ_ind(i));
+    ToAlign_neuron_A=handles.M{template_num}{ToAlign_num}(:,neuron_ToAlign_ind(i));
+            % template_neuron_center = round(com(template_neuron_A, d1, d2));
+            % ToAlign_neuron_center = round(com(ToAlign_neuron_A, d1, d2));
+            % displacement_vector=[ToAlign_neuron_center template_neuron_center];
+    [D,~] = imregdemons(A2image(ToAlign_neuron_A,d1,d2),A2image(template_neuron_A,d1,d2));
+    handles.M{template_num}{ToAlign_num}(:,neuron_ToAlign_ind(i))=...
+        reshape(imwarp(reshape(ToAlign_neuron_A,d1,d2),D,'cubic'),[],1);
 
-template_neuron_A_reverse=handles.M{ToAlign_num}{template_num}(:,handles.neuron_templ_ind);
-handles.M{ToAlign_num}{template_num}(:,handles.neuron_templ_ind)=...
-    reshape(imwarp(reshape(template_neuron_A_reverse,d1,d2),D.*(-1),'cubic'),[],1);
-
+    template_neuron_A_reverse=handles.M{ToAlign_num}{template_num}(:,neuron_templ_ind(i));
+    handles.M{ToAlign_num}{template_num}(:,neuron_templ_ind(i))=...
+        reshape(imwarp(reshape(template_neuron_A_reverse,d1,d2),D.*(-1),'cubic'),[],1);
+end
+display('Updated As')
 % Update handles structure
 guidata(hObject, handles);
 
@@ -271,6 +257,24 @@ function pushbutton3_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% --- Executes on button press in pushbutton4.
+function pushbutton4_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton4 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+template_num=handles.currentpair(1);       ToAlign_num=handles.currentpair(2);
+neuron_templ_ind=handles.neuron_list(1,:); neuron_ToAlign_ind=handles.neuron_list(2,:);
+
+for i = 1:length(neuron_templ_ind)
+
+    handles.M{template_num}{ToAlign_num}(:,neuron_ToAlign_ind(i))=...
+            handles.M_intact{template_num}{ToAlign_num}(:,neuron_ToAlign_ind(i));
+    handles.M{ToAlign_num}{template_num}(:,neuron_templ_ind(i))=...
+            handles.M_intact{ToAlign_num}{template_num}(:,neuron_templ_ind(i));
+end
+
+% Update handles structure
+guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
 function axes1_CreateFcn(hObject, eventdata, handles)
@@ -381,7 +385,9 @@ switch KeyPressed
 end
 
 function handles=Update_Plot(currentpair_ind,handles)
-handles.currentpair=handles.allpairs(currentpair_ind,:);
+if ~isempty(currentpair_ind)
+    handles.currentpair=handles.allpairs(currentpair_ind,:);
+end
 template_num=handles.currentpair(1);
 ToAlign_num=handles.currentpair(2);
 set(handles.ToAlign,'String',[num2str(template_num) '-' num2str(ToAlign_num)])
@@ -427,3 +433,28 @@ function axes2_ButtonDownFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 uicontrol(handles.axes2)
+
+
+
+% --- Executes on key press with focus on neuron_list_tmpl and none of its controls.
+function neuron_list_tmpl_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to neuron_list_tmpl (see GCBO)
+% eventdata  structure with the following fields (see MATLAB.UI.CONTROL.UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+KeyPressed = eventdata.Key;
+display(KeyPressed)
+switch KeyPressed
+    case 'return'
+        display('here')
+        neuron_list_str=get(hObject,'String');
+        if ~strcmp(neuron_list_str(end),';')
+            neuron_list_str(end+1)=';';
+        end
+        neuron_list=sscanf(neuron_list_str,'%d-%d;');
+        handles.neuron_list=reshape(neuron_list,2,[]);  %two rows, first row-template, second row-the toAlign.
+end
+% Update handles structure
+guidata(hObject, handles);

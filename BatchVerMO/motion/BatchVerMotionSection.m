@@ -68,7 +68,7 @@ for ia=2:AnumInFolder
         if io==ia-1
             Y_template=Y(:,:,io);
         else
-            Y_template=A2image(cat(2,M{io}{io:ia-1}),size(Y,1),size(Y,2));
+            Y_template=A2image(cat(2,M{io}{1:ia-1}),size(Y,1),size(Y,2));
         end
         if io==ia-1
             Y_toregister=Y(:,:,ia);

@@ -31,8 +31,9 @@ else
     Brainbow = 1-A*C;
     Brainbow(Brainbow<0)=0;
     Brainbow = reshape(Brainbow,d1,d2);
-    image=imshow(Brainbow);
+    image=imshow(Brainbow); 
 end
+image=image.CData;
 
 if textOrNot==true
     Atemp=reshape(A,d1,d2,k);
