@@ -1,4 +1,4 @@
-function image=A2image(A,d1,d2,textOrNot,color)
+function image=A2image(A,d1,d2,textOrNot,color,PoporNOt,handle)
 
 if nargin<4
     textOrNot=false;
@@ -8,6 +8,10 @@ if nargin<5
     color=[];
 end
 
+if nargin<6
+    PoporNOt=false;
+end
+
 A=A(:,any(A,1));
 k = size(A,2);
 sA = sum(A,1);
@@ -15,7 +19,7 @@ A = bsxfun(@rdivide, A, sA)*prctile(sA, 5);
 C=ones(k,1);
 
 if isempty(color)==false
-    if strcmp(color,'magenta')
+    if or(strcmp(color,'magenta'),strcmp(color,'red'))
         color_palet = 1-[1 0 1];
     elseif strcmp(color,'green')
         color_palet = 1-[0 1 0];
@@ -26,14 +30,22 @@ if isempty(color)==false
         Ib = diag(nColors(:,3));
     
     Brainbow = 1-cat(3, A*Ir*C, A*Ig*C, A*Ib*C);
-    image = imshow(reshape(Brainbow,d1,d2,3));
+    Brainbow = reshape(Brainbow,d1,d2,3);
 else
     Brainbow = 1-A*C;
     Brainbow(Brainbow<0)=0;
     Brainbow = reshape(Brainbow,d1,d2);
-    image=imshow(Brainbow); 
+    %image=imshow(Brainbow); 
 end
-image=image.CData;
+image=Brainbow;
+if PoporNOt==true
+    if nargin<7
+        figure
+    else
+        axes(handle)
+    end
+    imshow(Brainbow)
+end
 
 if textOrNot==true
     Atemp=reshape(A,d1,d2,k);
