@@ -6,7 +6,7 @@ load(fullfile(cnmfefolder,'LogisticscnmfeBatchVer20170712.mat'));
 
 % load motion corrected A's
 load(fullfile(cnmfefolder,'cnmfe_BatchVer_PartII_MotionCorrection.mat'))
-M=M_final;
+M=M_GUI;
 %% 0. Get cluster ready
 if running_on_cluster % some procedures making cluster use robust
     [~, ~, ~] = maybe_spawn_workers(workersnum); 
@@ -63,8 +63,8 @@ save([outputdir 'PartTwoOFcnmfeBatchVerMOTION.mat'],'-v7.3')
 %% 3 Merge similar neurons
 %%% Merge similar neurons based on spatial AND temporal correlation
 %%%%%%%%%% use the highest correlation one!
-
-Amask_temp=cat(2,M1{1}{:})>0;
+midone=round(S_L/2);
+Amask_temp=cat(2,M1{midone}{:})>0;
 %Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
 [M2,MC,newIDs,merged_ROIs] = mergeACforMo(Amask_temp,ACS,merge_thr_2,M1);
 
