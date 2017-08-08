@@ -23,7 +23,25 @@ for i=1:K
 end
 %%
 %A=cat(2,A0s{:});
-neuronums=[20,25,61,63];
+[AllC, ~]=AllTracesfromACS(Day4_ACS);
+
+newIDs=Day4_newIDs;
+newIDs_nums=[7,26];
+neuronums=[];
+for i=1:length(newIDs_nums)
+    neuronums=[neuronums; newIDs{newIDs_nums(i)}];
+end
+K=length(neuronums);
+for i=1:K
+    I=neuronums(i);
+    subplot(K,1,i)
+    hold on
+    plot(AllC(I,:))
+    title(['original neuron ' num2str(I)])
+end
+
+
+%%
 K=length(neuronums);
 for i=1:K
     I=neuronums(i);
@@ -33,3 +51,36 @@ for i=1:K
     imagesc(Areshaped)
     title(['original neuron ' num2str(I)])
 end
+%%
+newIDs_nums=[20,42];
+newIDs=DayAll_newIDs;
+cum_sum=cumsum(cellfun(@(x) size(x,2),M1{1}));
+file_num=[];
+actual_num=[];
+neuronums=[];
+for i=1:length(newIDs_nums)
+    neuronums=[neuronums; newIDs{newIDs_nums(i)}];
+    for j=1:length(newIDs{newIDs_nums(i)})
+        x_=newIDs{newIDs_nums(i)};
+        x=x_(j);
+        k=find((cum_sum>=x),1);
+        file_num=[file_num k];
+        if k>1        
+            x_actual=x-cum_sum(k-1);
+        else
+            x_actual=x;
+        end
+        actual_num=[actual_num x_actual];
+    end
+end
+%%
+
+K=length(neuronums);
+for i=1:K
+    I=neuronums(i);
+    subplot(K,1,i)
+    hold on
+    plot(AllC(I,:))
+    title(['original neuron ' num2str(I)])
+end
+
