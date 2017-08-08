@@ -4,9 +4,6 @@
 cnmfefolder='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVer/';
 load(fullfile(cnmfefolder,'LogisticscnmfeBatchVer20170712.mat'));
 
-% % load motion corrected A's
-load(fullfile(cnmfefolder,'cnmfe_BatchVer_PartII_MotionCorrection.mat'))
-M=M_final;
 %% 0. Get cluster ready
 if running_on_cluster % some procedures making cluster use robust
     [~, ~, ~] = maybe_spawn_workers(workersnum); 
