@@ -30,6 +30,7 @@ addParameter(p,'outputdir',[]);
 kinddefault='*'; %read in everything in the folder.
 addParameter(p,'datakind',kinddefault);    
 addParameter(p,'samplekind',kinddefault);
+addParameter(p,'every_file_num',1);
 expectedmethod = {'auto','manual'};
 addParameter(p,'SamplingMethod','auto', @(x) any(validatestring(x,expectedmethod)));
 addParameter(p,'DataMethod','auto', @(x) any(validatestring(x,expectedmethod)));
@@ -41,6 +42,7 @@ sampledir=p.Results.sampledir;
 outputdir=p.Results.outputdir;
 datakind=p.Results.datakind;
 samplekind=p.Results.samplekind;
+every_file_num=p.Results.every_file_num;
 SamplingMethod=p.Results.SamplingMethod;
 DataMethod=p.Results.DataMethod;
 if strcmp(samplekind,'*')
@@ -84,19 +86,19 @@ end
 
 if strcmp(SamplingMethod,'auto')
     samplelistfull=filelist;
-    sampleInFolder=numel(samplelistfull);    
-%     % choose final A from every every_file_num as samples in the folders.
-%     prompt=sprintf('%.0f files in the sample folder, \n input x so that every x files to sample as input. Input x then hit "enter": ', sampleInFolder);
-%     every_file_num = input(prompt);
-    every_file_num=1;
+    sampleInFolder=numel(samplelistfull);
     if isempty(every_file_num)
-        every_file_num=max(1,sampleInFolder/10);
+        % choose final A from every every_file_num as samples in the folders.
+        prompt=sprintf('%.0f files in the sample folder, \n input x so that every x files to sample as input. Input x then hit "enter": ', sampleInFolder);
+        every_file_num = input(prompt);
     end
+%     if isempty(every_file_num)
+%         every_file_num=max(1,sampleInFolder/10);
+%     end
     
     if every_file_num==1
         choose_ind=true(numel(samplelistfull),1);
     else
-        %choose_ind=mod(1:numel(samplelistfull),every_file_num)==1;
         choose_ind=mod(1:numel(samplelistfull),every_file_num)==1;
     end
     

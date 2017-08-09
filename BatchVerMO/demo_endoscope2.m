@@ -1,4 +1,5 @@
-function [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,Afinal,File,convolveType,merge_thr)
+function [A0s,File]=demo_endoscope2(bg_neuron_ratio,merge_thr,with_dendrites,K,start_frame,num_2read,name,neuron_full_partial,Mode,picname,File,Afinal,thresh_detecting_frames)
+%function [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,Afinal,File,convolveType,merge_thr)
 % [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,FS,SSub,TSub,bg_neuron_ratio,name,Mode,picname,Afinal,File)
 % It is converted to function to cater to parfor loop.
 %   Meanwhile, some part of cnmf-e demo is applied to this sampling process while some simplied methods are
@@ -20,28 +21,20 @@ function [A0s,File]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,S
 % modified by Shijie Gu from demo_endoscope script by Pengcheng Zhou.
 %% set global variables
 global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
-    neuron_full Ybg_weights mode Picname nam outputdirDetails; %#ok<NUSED> % global variables, don't change them manually
+    neuron_full Ybg_weights mode Picname nam outputdir; %#ok<NUSED> % global variables, don't change them manually
 Picname=picname;
 %% select data and map it to the RAM
 nam=name;
 cnmfe_choose_data;
-
+neuron_full=neuron_full_partial;
 %% create Source2D class object for storing results and parameters
 
-mode=Mode;          % 'initiation' mode or 'massive' mode
-Fs = FS;             % frame rate
-ssub = SSub;           % spatial downsampling factor
-tsub = TSub;           % temporal downsampling factor
-gSig = gSig;           % width of the gaussian kernel, which can approximates the average neuron shape
-gSiz = gSiz;          % maximum diameter of neurons in the image plane. larger values are preferred.
-neuron_full = Sources2D('d1',d1,'d2',d2, ... % dimensions of datasets
-    'ssub', ssub, 'tsub', tsub, ...  % downsampleing
-    'gSig', gSig,...    % sigma of the 2D gaussian that approximates cell bodies
-    'gSiz', gSiz);      % average neuron size (diameter)
-neuron_full.Fs = Fs;         % frame rate
+mode=Mode;                                 % 'initiation' mode or 'massive' mode
+Fs = neuron_full.Fs;                       % frame rate
+ssub = neuron_full.options.ssub;           % spatial downsampling factor
+tsub = neuron_full.options.tsub;           % temporal downsampling factor
 
 % with dendrites or not 
-with_dendrites = false;
 if with_dendrites
     % determine the search locations by dilating the current neuron shapes
     neuron_full.options.search_method = 'dilate'; 
@@ -52,16 +45,14 @@ else
     neuron_full.options.dist = 5;
 end
 
-%% options for running deconvolution 
-neuron_full.options.deconv_options = struct('type', convolveType, ... % model of the calcium traces. {'ar1', 'ar2'}
-    'method', 'thresholded', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
-    'optimize_pars', true, ...  % optimize AR coefficients
-    'optimize_b', false, ... % optimize the baseline
-    'optimize_smin', true);  % optimize the threshold 
 
 %% downsample data for fast and better initialization
-sframe=1;						% user input: first frame to read (optional, default:1)
-num2read= numFrame;             % user input: how many frames to read   (optional, default: until the end)
+sframe=start_frame;					% user input: first frame to read (optional, default:1)
+if isempty(num_2read)
+    num2read= numFrame;             % user input: how many frames to read   (optional, default: until the end)
+else
+    num2read=num_2read;
+end
 
 tic;
 cnmfe_load_data;
@@ -78,14 +69,7 @@ Y = neuron.reshape(Y, 1);       % convert a 3D video into a 2D matrix
 debug_on = false;   % visualize the initialization procedue. 
 save_avi = false;   %save the initialization procedure as an avi movie. 
 patch_par = [1,1]*1; %1;  % divide the optical field into m X n patches and do initialization patch by patch. It can be used when the data is too large 
-K = []; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
 
-min_corr = min_corr;     % minimum local correlation for a seeding pixel
-min_pnr = min_pnr;       % minimum peak-to-noise ratio for a seeding pixel
-min_pixel = min_pixel;      % minimum number of nonzero pixels for each neuron
-bd = bd;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
-neuron.updateParams('min_corr', min_corr, 'min_pnr', min_pnr, ...
-    'min_pixel', min_pixel, 'bd', bd);
 neuron.options.nk = 1;  % number of knots for detrending 
 
 % greedy method for initialization
@@ -110,7 +94,6 @@ elseif strcmp(mode,'massive')
     % parameters, estimate the background
     spatial_ds_factor = 1;              % spatial downsampling factor. it's for faster estimation
     thresh = 10;                        % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
-    bg_neuron_ratio = bg_neuron_ratio;  % spatial range / diameter of neurons
     BackgroundSub
     [C,~]=extract_c(Ysignal,[],Afinal);
     neuron.A=Afinal;
@@ -119,8 +102,6 @@ elseif strcmp(mode,'massive')
     cnmfe_update_BG;
     [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
     A0s=[];
-%     File.A=neuron.A;
-%     File.C=neuron.C;
     File.ind_del=ind_del;
     File.neuron=neuron;    
     return 
@@ -132,10 +113,9 @@ display_merge = false;          % visually check the merged neurons
 view_neurons = false;           % view all neurons
 
 % parameters, estimate the background
-spatial_ds_factor = 1;      % spatial downsampling factor. it's for faster estimation
-thresh = 10;     % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
-
-bg_neuron_ratio = bg_neuron_ratio;  % spatial range / diameter of neurons
+spatial_ds_factor = 1;          % spatial downsampling factor. it's for faster estimation
+thresh=thresh_detecting_frames; % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
+%bg_neuron_ratio = bg_neuron_ratio;  % spatial range / diameter of neurons
 
 % parameters, estimate the spatial components
 update_spatial_method = 'hals';  % the method for updating spatial components {'hals', 'hals_thresh', 'nnls', 'lars'}
@@ -237,13 +217,13 @@ if strcmp(mode,'massive')
 end
 %% for 'initiation' mode see and save results
 resultstring=sprintf('%s_results', Picname);
-neuron.viewNeurons([], neuron.C_raw, [outputdirDetails resultstring]);
+neuron.viewNeurons([], neuron.C_raw, resultstring);
 close(gcf);
 
 neuron.drawPNRCn(min_pnr,min_corr)
 close(gcf);
 
-ColorAllNeurons(neuron.A,d1,d2,Picname,outputdirDetails);
+ColorAllNeurons(neuron.A,d1,d2,Picname,outputdir);
 if strcmp(mode,'initiation')
     A0s=neuron.A;
     File.options=neuron.options;

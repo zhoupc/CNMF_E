@@ -1,7 +1,9 @@
 %% C-2 Run All below on cluster!
 
-% load one of the logistics and overwrite some folders
+% cnmfefolder is where 1)logistics,2)PartI's results,3)Motion-corrected A's are saved
 cnmfefolder='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVer/';
+
+% load one of the logistics
 load(fullfile(cnmfefolder,'LogisticscnmfeBatchVer20170712.mat'));
 
 % load motion corrected A's
@@ -12,7 +14,7 @@ if running_on_cluster % some procedures making cluster use robust
     [~, ~, ~] = maybe_spawn_workers(workersnum); 
     init_par_rng(2016);
 end
-%% 1. load samplelist,A and sample's File from ClusterI into cell for each day.
+%% 1. load samplelist,A and sample's File from ClusterI into big structures
 AandSample_list=dir(fullfile(cnmfefolder,'*PartI_Afinalsam*'));
 Filesignal_list=dir(fullfile(cnmfefolder,'*PartI_File*'));
 
@@ -32,6 +34,8 @@ for i=1:numel(AandSample_list) %go through days
         File_fulllist=[File_fulllist File_temponeday.File];
     end   
 end
+%%%%% File_samplelist can be used to substitute for File_fulllist if there
+%%%%% are too many files.
             daylength=length(eachdayfilenum); avefilenum=mean(eachdayfilenum);
 every_file_num=floor(daylength^2/avefilenum);
 choose_ind=mod(1:numel(filelist_fulllist),every_file_num)==1;
@@ -42,7 +46,7 @@ File_samplelist=File_fulllist(choose_ind);
 %%% but nice to do. It is fast.
 M1=Over_Days_ResequenceAForMo(M,correlation_thresh,max2max2nd,skewnessthresh);
 
-%% 2. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
+%% 2. Next, Use M1, in each file i, find C's corresponding to each A's found in file j.
 eachfilenum_cumsum=cumsum(eachdayfilenum);
 filenumsum = eachfilenum_cumsum(end);
 ACS(filenumsum) = struct('Ain',[],'Cin',[],'STD',[]);  
@@ -62,9 +66,11 @@ end
 save([outputdir 'PartTwoOFcnmfeBatchVerMOTION.mat'],'-v7.3')
 %% 3 Merge similar neurons
 %%% Merge similar neurons based on spatial AND temporal correlation
-%%%%%%%%%% use the highest correlation one!
-load(fullfile(outputdir,'PartTwoOFcnmfeBatchVerMOTION.mat'))
-Amask_temp=cat(2,M1{1}{:})>0;
+% use the highest correlation one, here we use the middle day one to approximate.
+
+midone=round(S_L/2);
+Amask_temp=cat(2,M1{midone}{:})>0;
+
 %Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
 C=cat(2,ACS.Cin);
 d1=File_fulllist(1).options.d1;
@@ -91,12 +97,12 @@ for c=1:numel(M2)
     nz_ind=any(Afinal);
     Afinal=Afinal(:,nz_ind);
     newIDs{c}=newIDs{c}(nz_ind);
-    Apicname=sprintf('Day%.0fAfinal',num2str(totaldays(c)));
+    Apicname=sprintf('Day%.0fAFinal',num2str(totaldays(c)));
     ColorAllNeurons(Afinal,d1,d2,Apicname,[outputdir, num2str(totaldays(c)), '/']);
     M3{c}=Afinal;
 end
 
-eval(sprintf('save %sAfinalcnmfeBatchVerMotion %s', outputdir, 'M3'));
+eval(sprintf('save %sAfinalcnmfeBatchVerMotion %s', outputdir, 'newIDs'));
 %% 5 "massive" procedure: Extract A from each file
 neuron_batchMO(length(filelist_fulllist)) = struct('ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
 
@@ -104,7 +110,10 @@ parfor i= 1:length(filelist_fulllist)
     mode='massive';
     nam=fullfile(datadir,filelist_fulllist(i).name);
     k=find((eachfilenum_cumsum>=i),1);      
-    [~,neuron_batchMO(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],M3{k},neuron_batchMO(i),convolveType,merge_thr);
+    %[~,neuron_batchMO(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],M3{k},neuron_batchMO(i),convolveType,merge_thr);
+    [~,neuron_batch(i)]=demo_endoscope2(bg_neuron_ratio,merge_thr,with_dendrites,K,sframe,num2read,...
+                                   nam,neuron_full,mode,[],neuron_batchMO(i),M3{k},...
+                                   thresh_detecting_frames);
     neuron_batchMO(i).FileOrigin=filelist_fulllist(i); % save origin(filelist)
 end
 fprintf('Massive extraction done.');
