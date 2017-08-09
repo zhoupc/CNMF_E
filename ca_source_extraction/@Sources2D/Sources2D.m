@@ -255,10 +255,14 @@ classdef Sources2D < handle
             THRESH=obj.P.THRESH;
             THRESH.Corr(ind)=[];
             THRESH.PNR(ind)=[];
-            if ~isempty(obj.S); obj.S(ind, :) = []; end
-            if ~isempty(obj.C_raw); obj.C_raw(ind, :) = []; end
+            if ~isempty(obj.S);
+                try obj.S(ind, :) = []; catch; end
+            end
+            if ~isempty(obj.C_raw)
+                try obj.C_raw(ind, :) = []; catch;  end
+            end
             if isfield(obj.P, 'kernel_pars')&&(  ~isempty(obj.P.kernel_pars))
-                obj.P.kernel_pars(ind, :) = [];
+                try obj.P.kernel_pars(ind, :) = []; catch; end
             end
         end
         
@@ -295,12 +299,18 @@ classdef Sources2D < handle
             C_ = zeros(size(C_raw_));
             S_ = C_;
             kernel_pars = cell(K, 1);
+            for m=1:K
+                fprintf('|');
+            end
+            fprintf('\n');
             for m=1:size(C_raw_,1)
                 [b_, sn] = estimate_baseline_noise(C_raw_(m, :));
-                [C_(m, :), S_(m,:), temp_options] = deconvolveCa(C_raw_(m, :)-b_, obj.options.deconv_options, 'sn', sn);
+                [C_(m, :), S_(m,:), temp_options] = deconvolveCa(C_raw_(m, :)-b_, obj.options.deconv_options);
                 kernel_pars{m} = temp_options.pars;
                 obj.C_raw(m, :) = obj.C_raw(m, :)-b_;
+                fprintf('.');
             end
+            fprintf('\n');
             obj.C = C_;
             obj.S = S_;
             obj.P.kernel_pars = kernel_pars;
@@ -888,59 +898,97 @@ classdef Sources2D < handle
                 
             end
         end
-            %         function Coor = get_contours(obj, thr, ind)
-            %             A_ = obj.A;
-            %             if exist('ind', 'var')
-            %                 A_ = A_(:, ind);
-            %             end
-            %             if ~exist('thr', 'var') || isempty(thr)
-            %                 thr = 0.995;
-            %             end
-            %             num_neuron = size(A_,2);
-            %             if num_neuron==0
-            %                 Coor ={};
-            %                 return;
-            %             else
-            %                 Coor = cell(num_neuron,1);
-            %             end
-            %             for m=1:num_neuron
-            %                 % smooth the image with median filter
-            %                 img = medfilt2(obj.reshape(full(A_(:, m)),2), [3, 3]);
-            %                 % find the threshold for detecting nonzero pixels
-            %                 temp = sort(img(img>1e-9));
-            %                 if ~any(temp)
-            %                     Coor{m} = [];
-            %                     continue;
-            %                 end
-            %                 temp_sum = cumsum(temp);
-            %                 ind = find(temp_sum>=temp_sum(end)*(1-thr),1);
-            %                 v_thr = temp(ind);
-            %
-            %                 % find the connected components
-            %                 [~, ind_max] = max(img(:));
-            %                 temp = bwlabel(img>v_thr);
-            %                 img = double(temp==temp(ind_max));
-            %                 v_nonzero = imfilter(img, [0,-1/4,0;-1/4,1,-1/4; 0,-1/4,0]);
-            %                 vv = v_nonzero(v_nonzero>1e-9)';
-            %                 [y, x] = find(v_nonzero>1e-9);
-            %                 xmx = bsxfun(@minus, x, x');
-            %                 ymy = bsxfun(@minus, y, y');
-            %                 dist_pair = xmx.^2 + ymy.^2;
-            %                 dist_pair(diag(true(length(x),1))) = inf;
-            %                 seq = ones(length(x)+1,1);
-            %                 for mm=1:length(x)-1
-            %                     [v_min, seq(mm+1)] = min(dist_pair(seq(mm), :)+vv);
-            %                     dist_pair(:,seq(mm)) = inf;
-            %                     if v_min>3
-            %                         seq(mm+1) = 1;
-            %                         break;
-            %                     end
-            %                 end
-            %                 Coor{m} = [smooth(x(seq), 2)'; smooth(y(seq),2)'];
-            %             end
-            %
-            %         end
+
        %% New method added by Shijie Gu, since Jun,2017
        drawPNRCn(obj,min_pnr,min_corr)
-    end     
-end    
+
+       %% manually draw ROI and show the mean fluorescence traces within the ROI
+        function y = drawROI(obj, Y, img, type)
+            Y = obj.reshape(Y,1);
+            if ~exist('img', 'var') || isempty(img)
+                img = mean(Y, 2);
+            end
+            if ~exist('type', 'var') || isempty(img)
+                type = 'ROI';
+            end
+            d1 = obj.options.d1;
+            d2 = obj.options.d2;
+            figure;
+            while true
+                if d1>d2
+                    subplot(131);
+                else
+                    subplot(311);
+                end
+                obj.image(img);
+                if strcmpi(type, 'roi')
+                    temp = imfreehand();
+                    ind = temp.createMask();
+                else
+                    [c, r] = ginput(1);
+                    ind = sub2ind([d1,d2], round(r), round(c));
+                end
+                y = mean(Y(ind(:), :), 1);
+                if d1>d2
+                    subplot(1,3,2:3);
+                else
+                    subplot(3,1,2:3);
+                end
+                plot(y);
+            end
+        end
+        %         function Coor = get_contours(obj, thr, ind)
+        %             A_ = obj.A;
+        %             if exist('ind', 'var')
+        %                 A_ = A_(:, ind);
+        %             end
+        %             if ~exist('thr', 'var') || isempty(thr)
+        %                 thr = 0.995;
+        %             end
+        %             num_neuron = size(A_,2);
+        %             if num_neuron==0
+        %                 Coor ={};
+        %                 return;
+        %             else
+        %                 Coor = cell(num_neuron,1);
+        %             end
+        %             for m=1:num_neuron
+        %                 % smooth the image with median filter
+        %                 img = medfilt2(obj.reshape(full(A_(:, m)),2), [3, 3]);
+        %                 % find the threshold for detecting nonzero pixels
+        %                 temp = sort(img(img>1e-9));
+        %                 if ~any(temp)
+        %                     Coor{m} = [];
+        %                     continue;
+        %                 end
+        %                 temp_sum = cumsum(temp);
+        %                 ind = find(temp_sum>=temp_sum(end)*(1-thr),1);
+        %                 v_thr = temp(ind);
+        %
+        %                 % find the connected components
+        %                 [~, ind_max] = max(img(:));
+        %                 temp = bwlabel(img>v_thr);
+        %                 img = double(temp==temp(ind_max));
+        %                 v_nonzero = imfilter(img, [0,-1/4,0;-1/4,1,-1/4; 0,-1/4,0]);
+        %                 vv = v_nonzero(v_nonzero>1e-9)';
+        %                 [y, x] = find(v_nonzero>1e-9);
+        %                 xmx = bsxfun(@minus, x, x');
+        %                 ymy = bsxfun(@minus, y, y');
+        %                 dist_pair = xmx.^2 + ymy.^2;
+        %                 dist_pair(diag(true(length(x),1))) = inf;
+        %                 seq = ones(length(x)+1,1);
+        %                 for mm=1:length(x)-1
+        %                     [v_min, seq(mm+1)] = min(dist_pair(seq(mm), :)+vv);
+        %                     dist_pair(:,seq(mm)) = inf;
+        %                     if v_min>3
+        %                         seq(mm+1) = 1;
+        %                         break;
+        %                     end
+        %                 end
+        %                 Coor{m} = [smooth(x(seq), 2)'; smooth(y(seq),2)'];
+        %             end
+        %
+        %         end
+    end
+    
+end

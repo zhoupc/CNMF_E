@@ -17,6 +17,15 @@ Run cnmfe_setup.m to add CNMF-E package to the search path of MATLAB
 
 CNMF-E requires [CVX](http://cvxr.com/cvx/) to denoise the extracted calcium traces. CNMF-E will automatically downloaded it and add it to the searching path. 
 
+Other required MATLAB toolboxes are listed below. 
+
+1. /images/images
+2. /shared/optimlib/
+3. /signal/signal/
+4. /stats/stats/
+5. /curvefit/curvefit
+
+
 Example
 =======
 The best way to get started is running a demo script for analyzing an example data. 
