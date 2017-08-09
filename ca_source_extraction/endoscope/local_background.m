@@ -1,4 +1,4 @@
-function [Yest, results] = local_background(Y, ssub, rr, ACTIVE_PX, sn, thresh)
+function [Yest, results] = local_background(Y, ssub, rr, ACTIVE_PX, sn, thresh, p_cutoff)
 %% approximate the background with locally-linear embedding
 %% inputs:
 %   Y: d1*d2*T 3D matrix, video data
@@ -7,7 +7,8 @@ function [Yest, results] = local_background(Y, ssub, rr, ACTIVE_PX, sn, thresh)
 %   ACTIVE_PX:  indicators of pixels to be approximated
 %   sn:  noise level for each pixel 
 %   thresh: threshold for selecting frames with resting states 
-
+%   p_cutoff: pick neighbors whose corr. coefficients with the center pixel 
+%   are smaller than quantiles of p_cutoff. 
 %% outputs:
 %   Yest: d1*d2*T 3D matrix, reconstructed video data
 %   results: struct variable {weights, ssub}
@@ -56,6 +57,10 @@ end
 if ~exist('thresh', 'var') || isempty(thresh) 
     thresh = 3; 
 end
+
+if ~exist('p_cutoff', 'var') || isempty(p_cutoff)
+    p_cutoff = 1; 
+end 
 
 %% threshold the data
 rsub = (-rr):(rr);      % row subscript
@@ -111,7 +116,15 @@ for m=1:length(ind_px)
     X = Y(ind_nhood, tmp_ind);
     y = Y(px, tmp_ind);
     tmpXX = X*X'; 
-    w = (tmpXX+eye(size(tmpXX))*sum(diag(tmpXX))*(1e-5)) \ (X*y');
+    tmpXy = X*y'; 
+    if p_cutoff<1
+        temp = tmpXy./diag(tmpXX); 
+        idx = (temp < quantile(temp, p_cutoff)); 
+        tmpXX = tmpXX(idx, idx); 
+        tmpXy = tmpXy(idx); 
+        ind_nhood = ind_nhood(idx); 
+    end 
+    w = (tmpXX+eye(size(tmpXX))*sum(diag(tmpXX))*(1e-5)) \ tmpXy;
     Yest(px, :) = w'*Y(ind_nhood, :);
     weights{px} = [ind_nhood; w'];
 end
@@ -136,3 +149,4 @@ end
 % clear Y;
 Ybaseline = Ymean-mean(Yest,3); % medfilt2(Ymean, [3,3]); % - median(Yest, 3);
 Yest = bsxfun(@plus, Yest, Ybaseline);
+results.b0 = Ybaseline; 

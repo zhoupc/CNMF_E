@@ -58,7 +58,7 @@ try
 catch
     bd = round(gSiz/2);
 end
-sig = 5;    % thresholding noise by sig*std()
+sig = 3;    % thresholding noise by sig*std()
 
 % exporting initialization procedures as a video
 if ~exist('save_avi', 'var')||isempty(save_avi)
@@ -298,7 +298,7 @@ while searching_flag
         %         if max(ci_raw)<min_pnr;
         %             ind_success=false;
         %         end
-        if sum(ai(:))<min_pixel; ind_success=false; end
+        if sum(ai(:)>0)<min_pixel; ind_success=false; end
         if ind_success
             k = k+1;
             

@@ -20,7 +20,7 @@ end
 if ~exist('C2', 'var'); C2=[]; end
 
 if exist('folder_nm', 'var')&&(~isempty(folder_nm))
-    % create a folder to save resulted images
+    % create a folder to save images
     save_img = true;
     cur_cd = cd();
     if ~exist(folder_nm, 'dir'); mkdir(folder_nm);

@@ -252,14 +252,14 @@ classdef Sources2D < handle
         function delete(obj, ind)
             obj.A(:, ind) = [];
             obj.C(ind, :) = [];
-            if ~isempty(obj.S); 
+            if ~isempty(obj.S);
                 try obj.S(ind, :) = []; catch; end
             end
             if ~isempty(obj.C_raw)
                 try obj.C_raw(ind, :) = []; catch;  end
-            end 
+            end
             if isfield(obj.P, 'kernel_pars')&&(  ~isempty(obj.P.kernel_pars))
-                try obj.P.kernel_pars(ind, :) = []; catch; end 
+                try obj.P.kernel_pars(ind, :) = []; catch; end
             end
         end
         
@@ -296,18 +296,18 @@ classdef Sources2D < handle
             C_ = zeros(size(C_raw_));
             S_ = C_;
             kernel_pars = cell(K, 1);
-            for m=1:K 
-                fprintf('|'); 
-            end 
-            fprintf('\n'); 
+            for m=1:K
+                fprintf('|');
+            end
+            fprintf('\n');
             for m=1:size(C_raw_,1)
                 [b_, sn] = estimate_baseline_noise(C_raw_(m, :));
                 [C_(m, :), S_(m,:), temp_options] = deconvolveCa(C_raw_(m, :)-b_, obj.options.deconv_options);
                 kernel_pars{m} = temp_options.pars;
                 obj.C_raw(m, :) = obj.C_raw(m, :)-b_;
-                fprintf('.'); 
+                fprintf('.');
             end
-            fprintf('\n'); 
+            fprintf('\n');
             obj.C = C_;
             obj.S = S_;
             obj.P.kernel_pars = kernel_pars;
@@ -886,6 +886,42 @@ classdef Sources2D < handle
                     Coor{m} = temp(:, 3:end);
                 end
                 
+            end
+        end
+        
+        %% manually draw ROI and show the mean fluorescence traces within the ROI
+        function y = drawROI(obj, Y, img, type)
+            Y = obj.reshape(Y,1);
+            if ~exist('img', 'var') || isempty(img)
+                img = mean(Y, 2);
+            end
+            if ~exist('type', 'var') || isempty(img)
+                type = 'ROI';
+            end
+            d1 = obj.options.d1;
+            d2 = obj.options.d2;
+            figure;
+            while true
+                if d1>d2
+                    subplot(131);
+                else
+                    subplot(311);
+                end
+                obj.image(img);
+                if strcmpi(type, 'roi')
+                    temp = imfreehand();
+                    ind = temp.createMask();
+                else
+                    [c, r] = ginput(1);
+                    ind = sub2ind([d1,d2], round(r), round(c));
+                end
+                y = mean(Y(ind(:), :), 1);
+                if d1>d2
+                    subplot(1,3,2:3);
+                else
+                    subplot(3,1,2:3);
+                end
+                plot(y);
             end
         end
         %         function Coor = get_contours(obj, thr, ind)
