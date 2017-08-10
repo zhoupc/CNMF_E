@@ -480,7 +480,7 @@ for it = 1:iter
         
         % update template
         fprintf('%i out of %i frames registered, iteration %i out of %i \n',t+lY-1,T,it,iter)
-        if and(upd_template,t<=update_num)
+        if upd_template %and(upd_template,t<=update_num)
             display('Here')
             display(t)
             display('Updating Template Here')

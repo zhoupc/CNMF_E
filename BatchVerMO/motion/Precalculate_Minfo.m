@@ -4,11 +4,6 @@ diagr=tril(ones(numel(M),numel(M)),-1);
 handles.allpairs=[col,row];
 
 % Opening look
-% axes-creat the overlay picture
-handles=Update_Plot(1,handles);
-linkaxes([handles.axes1 handles.axes2])
-
-% Opening look
 
 % % slider1
 set(handles.slider1,'Enable','off')

@@ -1,4 +1,4 @@
-function plot_grid(xxsfyysf,overlap)
+function [h1,h2]=plot_grid(xxsfyysf,overlap,d1,d2)
     xx_s=xxsfyysf{1};
     xx_f=xxsfyysf{2};
     yy_s=xxsfyysf{3};
@@ -13,5 +13,5 @@ function plot_grid(xxsfyysf,overlap)
         end
     end
     
-    plot([0 d2], [xx_s_e'; xx_f_e']*[1 1], ':', 'color', .7*[1 1 1]);
-    plot([yy_s_e'; yy_f_e']*[1 1],[0 d1], ':', 'color', .7*[1 1 1]);
+    h1=plot([0 d2], [xx_s_e'; xx_f_e']*[1 1], ':', 'color', .7*[1 1 1]);
+    h2=plot([yy_s_e'; yy_f_e']*[1 1],[0 d1], ':', 'color', .7*[1 1 1]);

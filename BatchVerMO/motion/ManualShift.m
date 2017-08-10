@@ -22,7 +22,7 @@ function varargout = ManualShift(varargin)
 
 % Edit the above text to modify the response to help ManualShift
 
-% Last Modified by GUIDE v2.5 07-Aug-2017 14:11:47
+% Last Modified by GUIDE v2.5 10-Aug-2017 18:39:08
 
 
 % Begin initialization code - DO NOT EDIT
@@ -76,19 +76,26 @@ if ischar(handles.normco.cnmfedir)
     loadAs
     handles.normco.AsfromDaysPic=AsfromDaysPic;
     handles.normco.AsfromDaysCell=AsfromDaysCell;
-    handles=Update_Plot(1,handles);
+    handles=Update_Plot_Raw(1,handles);
     
     % Opening look if M does not exist
-    set(handles.slider1,'Min',1);
-    set(handles.slider1,'Max',numel(AsfromDaysCell));
-    set(handles.slider1,'Value',1);
-    set(handles.slider1,'SliderStep', [1/(numel(AsfromDaysCell)-1), 1/(numel(AsfromDaysCell)-1)]);
+    set(findall(handles.manualpanel, '-property', 'enable'), 'enable', 'off')
+    set(handles.slider_auto,'Min',1);
+    set(handles.slider_auto,'Max',numel(AsfromDaysCell));
+    set(handles.slider_auto,'Value',1);
+    set(handles.slider_auto,'SliderStep', [1/(numel(AsfromDaysCell)-1), 1/(numel(AsfromDaysCell)-1)]);
 else
     % All pairs of alignment
     M=p.Results.M;
     
     % Opening look if M exists
     handles=Precalculate_Minfo(M,handles); 
+    
+    % Opening look
+    % axes-creat the overlay picture
+    handles=Update_Plot(1,handles);
+    linkaxes([handles.axes1 handles.axes2])
+
 end
     
 
@@ -328,76 +335,121 @@ switch KeyPressed
         slider_enable=get(handles.slider1,'Enable');
         if strcmp(slider_enable,'on')
             set(handles.slider1, 'Enable', 'off');
+            uicontrol(handles.figure1)
         elseif strcmp(slider_enable,'off')
             set(handles.slider1, 'Enable', 'on');
             uicontrol(handles.slider1)
         end        
     case 'rightarrow'
-        handles.mode='toAlign';
-        axes(gca)
-        current_axes=gca;
-        if strcmp(current_axes.Tag,'axes1')
-            imshow(handles.B)
-            CalText_AddText(handles.B_text);
-            if strcmp(handles.mode,'plotgrid')
-                try plot_grid(handles.xxsfyysf,handles.overlap);
-                catch; disp('No grid information loaded.'); end
-            end
+        curr_focus=gco(handles.figure1);
+        try
+            tag=curr_focus.Tag;
+        catch
+            tag=[];
+        end
+        if ~strcmp(tag,'slider1')    
             handles.mode='toAlign';
-            set(gca,'tag','axes1')
-            set(handles.text6,'String','Registered New A To Template');
-        elseif strcmp(current_axes.Tag,'axes2')
-            imshow(handles.D)
-            CalText_AddText(handles.D_text);
-            handles.mode='toAlign';
-            if strcmp(handles.mode,'plotgrid')
-                try plot_grid(handles.xxsfyysf,handles.overlap);
-                catch; disp('No grid information loaded.'); end
+            axes(gca)
+            current_axes=gca;
+            if strcmp(current_axes.Tag,'axes1')
+                imshow(handles.B)
+                CalText_AddText(handles.B_text);
+                handles.mode='toAlign';
+                set(gca,'tag','axes1')
+                set(handles.text6,'String','Registered New A To Template');
+                if handles.plotgrid==true
+                    try [handles.normco.h1,handles.normco.h2]=plot_grid(handles.normco.xxsfyysf,handles.normco.overlap,d1,d2);
+                    catch; disp('No grid information loaded.'); end
+                end
+            elseif strcmp(current_axes.Tag,'axes2')
+                imshow(handles.D)
+                CalText_AddText(handles.D_text);
+                handles.mode='toAlign';
+                set(gca,'tag','axes2');
+                set(handles.text7,'String','Original A to Align');
+                if handles.plotgrid==true
+                    try [handles.normco.h3,handles.normco.h4]=plot_grid(handles.normco.xxsfyysf,handles.normco.overlap,d1,d2);
+                    catch; disp('No grid information loaded.'); end
+                end
             end
-            set(gca,'tag','axes2');
-            set(handles.text7,'String','Original A to Align');
+            
         end
     case 'leftarrow'
-        handles.mode='template';
-        axes(gca)
-        current_axes=gca;
-        if strcmp(current_axes.Tag,'axes1')
-            imshow(handles.A); CalText_AddText(handles.A_text); 
-            set(gca,'tag','axes1'); set(handles.text6,'String','Template');
-        elseif strcmp(current_axes.Tag,'axes2')
-            imshow(handles.A); CalText_AddText(handles.A_text);
-            set(gca,'tag','axes2'); set(handles.text7,'String','Template'); 
-            handles.figure1.CurrentAxes=handles.axes2;
+        curr_focus=gco(handles.figure1);
+        try
+            tag=curr_focus.Tag;
+        catch
+            tag=[];
         end
-        if strcmp(handles.mode,'plotgrid')
-                try plot_grid(handles.xxsfyysf,handles.overlap);
-                catch; disp('No grid information loaded.'); end
+        if ~strcmp(tag,'slider1')
+            handles.mode='template';
+            axes(gca)
+            current_axes=gca;
+            if strcmp(current_axes.Tag,'axes1')
+                imshow(handles.A); CalText_AddText(handles.A_text);
+                set(gca,'tag','axes1'); set(handles.text6,'String','Template');
+                if handles.plotgrid==true
+                    try [handles.normco.h1,handles.normco.h2]=plot_grid(handles.normco.xxsfyysf,handles.normco.overlap,d1,d2);
+                    catch; disp('No grid information loaded.'); end
+                end
+            elseif strcmp(current_axes.Tag,'axes2')
+                imshow(handles.A); CalText_AddText(handles.A_text);
+                set(gca,'tag','axes2'); set(handles.text7,'String','Template');
+                handles.figure1.CurrentAxes=handles.axes2;
+                if handles.plotgrid==true
+                    try [handles.normco.h3,handles.normco.h4]=plot_grid(handles.normco.xxsfyysf,handles.normco.overlap,d1,d2);
+                    catch; disp('No grid information loaded.'); end
+                end
+            end
         end
 
     case 'downarrow'
-        handles.mode='overlapping';
-        axes(gca)
-        current_axes=gca;
-        if strcmp(current_axes.Tag,'axes1')
-            imshow(handles.C);
-            CalText_AddText(handles.A_text); CalText_AddText(handles.B_text);
-            %imshowpair(handles.A_b,handles.B_b,'falsecolor','Scaling','independent');
-            set(gca,'tag','axes1')
-            set(handles.text6,'String','Registered(Green) and Template(Red)'); 
-        elseif strcmp(current_axes.Tag,'axes2')
-            imshow(handles.E);
-            CalText_AddText(handles.A_text); CalText_AddText(handles.D_text);
-            %imshowpair(handles.A_b,handles.D_b,'falsecolor','Scaling','independent');
-            set(gca,'tag','axes2');
-            set(handles.text7,'String','Un-Registered(Green) and Template(Red)');
-            handles.figure1.CurrentAxes=handles.axes2;
+        curr_focus=gco(handles.figure1);
+        try
+            tag=curr_focus.Tag;
+        catch
+            tag=[];
         end
-        if strcmp(handles.mode,'plotgrid')
-            try plot_grid(handles.xxsfyysf,handles.overlap);
-            catch; disp('No grid information loaded.'); end
+        if ~strcmp(tag,'slider1')   
+            handles.mode='overlapping';
+            axes(gca)
+            current_axes=gca;
+            if strcmp(current_axes.Tag,'axes1')
+                imshow(handles.C);
+                CalText_AddText(handles.A_text); CalText_AddText(handles.B_text);
+                %imshowpair(handles.A_b,handles.B_b,'falsecolor','Scaling','independent');
+                set(gca,'tag','axes1')
+                set(handles.text6,'String','Registered(Green) and Template(Red)');
+                if handles.plotgrid==true
+                    try [handles.normco.h1,handles.normco.h2]=plot_grid(handles.normco.xxsfyysf,handles.normco.overlap,d1,d2);
+                    catch; disp('No grid information loaded.'); end
+                end
+            elseif strcmp(current_axes.Tag,'axes2')
+                imshow(handles.E);
+                CalText_AddText(handles.A_text); CalText_AddText(handles.D_text);
+                %imshowpair(handles.A_b,handles.D_b,'falsecolor','Scaling','independent');
+                set(gca,'tag','axes2');
+                set(handles.text7,'String','Un-Registered(Green) and Template(Red)');
+                handles.figure1.CurrentAxes=handles.axes2;
+                if handles.plotgrid==true
+                    try [handles.normco.h3,handles.normco.h4]=plot_grid(handles.normco.xxsfyysf,handles.normco.overlap,d1,d2);
+                    catch; disp('No grid information loaded.'); end
+                end
+            end
         end
-    case 'uparrow'
-        set(hObject,'CurrentObject',handles.slider1)
+
+    case 'a'
+        set(findall(handles.autopanel, '-property', 'enable'), 'enable', 'on')
+        set(findall(handles.manualpanel, '-property', 'enable'), 'enable', 'off')
+    case 'm'
+        set(findall(handles.autopanel, '-property', 'enable'), 'enable', 'off')
+        set(findall(handles.manualpanel, '-property', 'enable'), 'enable', 'on')
+        set(handles.text6,'String','Registered and Template')
+        set(handles.slider1, 'Enable', 'off');
+    case 'b'
+        set(findall(handles.autopanel, '-property', 'enable'), 'enable', 'on')
+        set(findall(handles.manualpanel, '-property', 'enable'), 'enable', 'on')
+        set(handles.slider1, 'Enable', 'off');
 end
 guidata(hObject, handles);
 uiwait(hObject);
@@ -441,8 +493,8 @@ if ~isempty(handles.M)
     imshow(C);
     CalText_AddText(A_text);
     CalText_AddText(B_text);
-    if strcmp(handles.mode,'plotgrid')
-        try plot_grid(handles.xxsfyysf,handles.overlap);
+    if handles.plotgrid==true
+        try [handles.normco.h1,handles.normco.h2]=plot_grid(handles.normco.xxsfyysf,handles.normco.overlap,d1,d2);
         catch; disp('No grid information loaded.'); end
     end
     set(gca,'tag','axes1')
@@ -454,8 +506,8 @@ if ~isempty(handles.M)
     imshow(E);
     CalText_AddText(A_text);
     CalText_AddText(D_text);
-    if strcmp(handles.mode,'plotgrid')
-        try plot_grid(handles.xxsfyysf,handles.overlap);
+    if handles.plotgrid==true
+        try [handles.normco.h3,handles.normco.h4]=plot_grid(handles.normco.xxsfyysf,handles.normco.overlap,d1,d2);
         catch; disp('No grid information loaded.'); end
     end
     set(gca,'tag','axes2')
@@ -469,12 +521,26 @@ else
     handles.normco.currentA_Pic=handles.normco.AsfromDaysPic(:,:,handles.normco.currentA_ind);
     axes(handles.axes1)
     imshow(handles.normco.currentA_Pic); 
-    if strcmp(handles.mode,'plotgrid')
-        try plot_grid(handles.xxsfyysf,handles.overlap);
+    if handles.plotgrid==true
+        try [handles.normco.h1,handles.normco.h2]=plot_grid(handles.normco.xxsfyysf,handles.normco.overlap,d1,d2);
         catch; disp('No grid information loaded.'); end
     end
 end
 
+function handles=Update_Plot_Raw(currentpair_ind,handles)
+d1=handles.d1;  d2=handles.d2;
+    if ~isempty(currentpair_ind)
+        handles.normco.currentA_ind=currentpair_ind;
+        set(handles.slider1,'Value',currentpair_ind)
+    end
+        
+    handles.normco.currentA_Pic=handles.normco.AsfromDaysPic(:,:,handles.normco.currentA_ind);
+    axes(handles.axes1)
+    imshow(handles.normco.currentA_Pic); 
+    if handles.plotgrid==true
+        [handles.normco.h1,handles.normco.h2]=plot_grid(handles.normco.xxsfyysf,handles.normco.overlap,d1,d2);
+        %catch; disp('No grid information loaded.'); end
+    end
 
 % --- Executes on mouse press over figure background.
 function figure1_ButtonDownFcn(hObject, eventdata, handles)
@@ -542,3 +608,334 @@ delete(hObject);
 end
 
 function neuron_list_tmpl_KeyPressFcn(hObject, eventdata, handles)
+
+
+
+function edit_grid_size_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_grid_size (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_grid_size as text
+%        str2double(get(hObject,'String')) returns contents of edit_grid_size as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_grid_size_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_grid_size (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_min_patch_size_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_min_patch_size (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_min_patch_size as text
+%        str2double(get(hObject,'String')) returns contents of edit_min_patch_size as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_min_patch_size_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_min_patch_size (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_overlap_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_overlap (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_overlap as text
+%        str2double(get(hObject,'String')) returns contents of edit_overlap as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_overlap_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_overlap (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_mot_uf_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_mot_uf (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_mot_uf as text
+%        str2double(get(hObject,'String')) returns contents of edit_mot_uf as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_mot_uf_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_mot_uf (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_max_shift_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_max_shift (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_max_shift as text
+%        str2double(get(hObject,'String')) returns contents of edit_max_shift as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_max_shift_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_max_shift (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_max_dev_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_max_dev (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_max_dev as text
+%        str2double(get(hObject,'String')) returns contents of edit_max_dev as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_max_dev_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_max_dev (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_us_fac_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_us_fac (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_us_fac as text
+%        str2double(get(hObject,'String')) returns contents of edit_us_fac as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_us_fac_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_us_fac (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in SetParms.
+function SetParms_Callback(hObject, eventdata, handles)
+% hObject    handle to SetParms (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+d1=handles.d1; d2=handles.d2;
+Names={'mot_uf','max_shift','max_dev','us_fac'};
+for j = 1:length(Names)
+    eval(sprintf('%s_str=get(handles.edit_%s,''String'')',Names{j},Names{j}));
+end
+overlap_post=handles.normco.overlap;
+overlap_pre=handles.normco.overlap;
+
+mot_uf=str2double(mot_uf_str);
+max_shift=str2double(max_shift_str);
+max_dev=str2double(max_dev_str);
+us_fac=str2double(us_fac_str);
+
+Names={'grid_size','min_patch_size','overlap','gridstartend'};
+for j = 1:length(Names)
+    eval(sprintf('%s_str=get(handles.edit_%s,''String'');',Names{j},Names{j}));
+end
+grid_size=reshape(sscanf(grid_size_str,'%d,%d'),1,[]);
+min_patch_size=[reshape(sscanf(min_patch_size_str,'%d,%d'),1,[]),1];
+
+handles.normco.options_nonrigid = NoRMCorreSetParms('upd_template',false,'iter',1,...
+                                     'd1',d1,'d2',d2,'grid_size',grid_size,'min_patch_size',min_patch_size,'overlap_pre',overlap_pre,'overlap_post',overlap_post,...
+                                     'mot_uf',mot_uf,'bin_width',1,...
+                                     'shifts_method','cubic',...
+                                     'max_shift',max_shift,'max_dev',max_dev,'us_fac',us_fac,...
+                                     'boundary','zero','iter',1);
+% Update handles structure
+guidata(hObject, handles);
+
+% --- Executes on button press in automove.
+function automove_Callback(hObject, eventdata, handles)
+% hObject    handle to automove (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+[handles.M,~]=motioncorrection(handles.normco.AsfromDaysCell,...
+    handles.normco.AsfromDaysPic,handles.normco.options_nonrigid,handles.normco.gridstartend);
+handles.M_intact=handles.M;
+handles=Precalculate_Minfo(handles.M,handles);
+
+% Opening look
+% axes-creat the overlay picture
+handles=Update_Plot(1,handles);
+display('Auto Motion Correction Done.')
+linkaxes([handles.axes1 handles.axes2])
+uicontrol(handles.figure1)
+% Update handles structure
+guidata(hObject, handles);
+
+% --- Executes on button press in automove_cancel.
+function automove_cancel_Callback(hObject, eventdata, handles)
+% hObject    handle to automove_cancel (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.M=handles.M_intact;
+handles.normco.xxsfyysf=handles.normco.xxsfyysf_intact;
+% Update handles structure
+guidata(hObject, handles);
+
+
+
+function edit_gridstartend_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_gridstartend (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_gridstartend as text
+%        str2double(get(hObject,'String')) returns contents of edit_gridstartend as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_gridstartend_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_gridstartend (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in plotgrid.
+function plotgrid_Callback(hObject, eventdata, handles)
+% hObject    handle to plotgrid (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.plotgrid=true;
+d1=handles.d1; d2=handles.d2;
+
+
+Names={'grid_size','min_patch_size','overlap','gridstartend'};
+for j = 1:length(Names)
+    eval(sprintf('%s_str=get(handles.edit_%s,''String'');',Names{j},Names{j}));
+end
+
+grid_size=reshape(sscanf(grid_size_str,'%d,%d'),1,[]);
+display(grid_size)
+
+min_patch_size=[reshape(sscanf(min_patch_size_str,'%d,%d'),1,[]),1];
+
+overlap_pre=[reshape(sscanf(overlap_str,'%d,%d'),1,[]),1];
+handles.normco.overlap=overlap_pre;
+
+gridstartend=[reshape(sscanf(gridstartend_str,'%d,%d,%d,%d'),1,[]),1,1];
+handles.normco.gridstartend=gridstartend;
+
+[xx_s,xx_f,yy_s,yy_f,~,~,~,~,~,~,~,~] = construct_grid([grid_size,1],[1 1 1],d1,d2,1,min_patch_size,gridstartend);
+xxsfyysf{1}=xx_s;   xxsfyysf{2}=xx_f;   xxsfyysf{3}=yy_s;   xxsfyysf{4}=yy_f;
+handles.normco.xxsfyysf=xxsfyysf;
+handles.normco.xxsfyysf_intact=xxsfyysf;
+
+if isfield(handles.normco,'h1')
+    delete(handles.normco.h1); delete(handles.normco.h2);
+    delete(handles.normco.h3); delete(handles.normco.h4);
+end
+
+axes(handles.axes1)
+hold on
+[handles.normco.h1,handles.normco.h2]=plot_grid(handles.normco.xxsfyysf,handles.normco.overlap,d1,d2);
+axes(handles.axes2)
+hold on
+[handles.normco.h3,handles.normco.h4]=plot_grid(handles.normco.xxsfyysf,handles.normco.overlap,d1,d2);
+% Update handles structure
+guidata(hObject, handles);
+
+% --- Executes on button press in notplotgrid.
+function notplotgrid_Callback(hObject, eventdata, handles)
+% hObject    handle to notplotgrid (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.plotgrid=false;
+
+% Update handles structure
+guidata(hObject, handles);
+
+
+% --- Executes on slider movement.
+function slider_auto_Callback(hObject, eventdata, handles)
+% hObject    handle to slider_auto (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+currentpair_ind=get(hObject,'Value');
+currentpair_ind = round(currentpair_ind); %round off this value
+set(hObject, 'Value', currentpair_ind);
+set(handles.text6, 'String', ['Day ' num2str(currentpair_ind) '''s Raw A'])
+handles=Update_Plot_Raw(currentpair_ind,handles);
+guidata(hObject, handles);
+
+% --- Executes during object creation, after setting all properties.
+function slider_auto_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to slider_auto (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+set(hObject, 'Value', 1);
