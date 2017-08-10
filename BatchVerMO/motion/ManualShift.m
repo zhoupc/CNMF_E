@@ -60,34 +60,37 @@ p = inputParser;
 addParameter(p,'M',[]);
 addParameter(p,'d1',300);
 addParameter(p,'d2',400);
+addParameter(p,'cnmfedir',[]);
 
 parse(p, varargin{:});
 handles.M=p.Results.M;
-handles.M_intact=p.Results.M; % for some cancel buttons.
+handles.M_intact=p.Results.M; % for cancel buttons.
 handles.d1=p.Results.d1;
 handles.d2=p.Results.d2;
 handles.pickOrnot=false;
+handles.normco.cnmfedir=p.Results.cnmfedir; % All variables related to normcorr are put in handles.normco
+handles.plotgrid=false;
 
-% All pairs of alignment
-M=p.Results.M;
-diagr=tril(ones(numel(M),numel(M)),-1);
-[row,col]=find(diagr);
-handles.allpairs=[col,row];
-
-
-% Opening look
-% axes-creat the overlay picture
-handles=Update_Plot(1,handles);
-
-linkaxes([handles.axes1 handles.axes2])
-
-
-% % slider1
-set(handles.slider1,'Enable','off')
-set(handles.slider1,'Min',1);
-set(handles.slider1,'Max',size(handles.allpairs,1));
-set(handles.slider1,'Value',1);
-set(handles.slider1,'SliderStep', [1/(size(handles.allpairs,1)-1), 1/(size(handles.allpairs,1)-1)]);
+if ischar(handles.normco.cnmfedir)
+    cnmfedir=handles.normco.cnmfedir; %loadAs will use 'cnmfedir'
+    loadAs
+    handles.normco.AsfromDaysPic=AsfromDaysPic;
+    handles.normco.AsfromDaysCell=AsfromDaysCell;
+    handles=Update_Plot(1,handles);
+    
+    % Opening look if M does not exist
+    set(handles.slider1,'Min',1);
+    set(handles.slider1,'Max',numel(AsfromDaysCell));
+    set(handles.slider1,'Value',1);
+    set(handles.slider1,'SliderStep', [1/(numel(AsfromDaysCell)-1), 1/(numel(AsfromDaysCell)-1)]);
+else
+    % All pairs of alignment
+    M=p.Results.M;
+    
+    % Opening look if M exists
+    handles=Precalculate_Minfo(M,handles); 
+end
+    
 
 % Choose default command line output for ManualShift
 handles.output = hObject;
@@ -315,6 +318,7 @@ function figure1_WindowKeyPressFcn(hObject, eventdata, handles)
 %	Character: character interpretation of the key(s) that was pressed
 %	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
 % handles    structure with handles and user data (see GUIDATA)
+if ~isempty(handles.M)
 uiresume(hObject);
 d1=handles.d1;
 d2=handles.d2;
@@ -335,6 +339,10 @@ switch KeyPressed
         if strcmp(current_axes.Tag,'axes1')
             imshow(handles.B)
             CalText_AddText(handles.B_text);
+            if strcmp(handles.mode,'plotgrid')
+                try plot_grid(handles.xxsfyysf,handles.overlap);
+                catch; disp('No grid information loaded.'); end
+            end
             handles.mode='toAlign';
             set(gca,'tag','axes1')
             set(handles.text6,'String','Registered New A To Template');
@@ -342,6 +350,10 @@ switch KeyPressed
             imshow(handles.D)
             CalText_AddText(handles.D_text);
             handles.mode='toAlign';
+            if strcmp(handles.mode,'plotgrid')
+                try plot_grid(handles.xxsfyysf,handles.overlap);
+                catch; disp('No grid information loaded.'); end
+            end
             set(gca,'tag','axes2');
             set(handles.text7,'String','Original A to Align');
         end
@@ -356,6 +368,10 @@ switch KeyPressed
             imshow(handles.A); CalText_AddText(handles.A_text);
             set(gca,'tag','axes2'); set(handles.text7,'String','Template'); 
             handles.figure1.CurrentAxes=handles.axes2;
+        end
+        if strcmp(handles.mode,'plotgrid')
+                try plot_grid(handles.xxsfyysf,handles.overlap);
+                catch; disp('No grid information loaded.'); end
         end
 
     case 'downarrow'
@@ -375,60 +391,89 @@ switch KeyPressed
             set(gca,'tag','axes2');
             set(handles.text7,'String','Un-Registered(Green) and Template(Red)');
             handles.figure1.CurrentAxes=handles.axes2;
-        end        
+        end
+        if strcmp(handles.mode,'plotgrid')
+            try plot_grid(handles.xxsfyysf,handles.overlap);
+            catch; disp('No grid information loaded.'); end
+        end
     case 'uparrow'
         set(hObject,'CurrentObject',handles.slider1)
 end
 guidata(hObject, handles);
 uiwait(hObject);
+end
 
 function handles=Update_Plot(currentpair_ind,handles)
-handles.mode='overlapping';
 d1=handles.d1;  d2=handles.d2;
-if ~isempty(currentpair_ind)
-    handles.currentpair=handles.allpairs(currentpair_ind,:);
+
+if ~isempty(handles.M)
+    handles.mode='overlapping';    
+    if ~isempty(currentpair_ind)
+        handles.currentpair=handles.allpairs(currentpair_ind,:);
+    end
+    template_num=handles.currentpair(1);
+    ToAlign_num=handles.currentpair(2);
+    set(handles.ToAlign,'String',[num2str(template_num) '-' num2str(ToAlign_num)]);
+    set(handles.text10,'String',[]);
+    [~,currentpair_ind,~] = intersect(handles.allpairs,handles.currentpair,'rows');
+    if ~isempty(currentpair_ind)
+        set(handles.slider1,'Value',currentpair_ind)
+    end
+    set(handles.neuron_list_tmpl,'String',[]);
+    
+    M=handles.M;
+    A=A2image(M{template_num}{template_num},d1,d2,false,'magenta');  handles.A=A;
+    A_b=A2image(M{template_num}{template_num},d1,d2,false); % black and white for imshowpair
+    handles.A_b=A_b;
+    A_text=CalText_AddText(false,M{template_num}{template_num},d1,d2);                           handles.A_text=A_text;
+    
+    B=A2image(M{template_num}{ToAlign_num},d1,d2,false,'green');  handles.B=B;
+    B_b=A2image(M{template_num}{ToAlign_num},d1,d2,false);  B_b = imhistmatch(B_b,A_b); handles.B_b=B_b;
+    B_text=CalText_AddText(false,M{template_num}{ToAlign_num},d1,d2);                        handles.B_text=B_text;
+    
+    D=A2image(M{ToAlign_num}{ToAlign_num},d1,d2,false,'green');   handles.D=D;
+    D_b=A2image(M{ToAlign_num}{ToAlign_num},d1,d2,false);   D_b = imhistmatch(D_b,A_b); handles.D_b=D_b;
+    D_text=CalText_AddText(false,M{ToAlign_num}{ToAlign_num},d1,d2);                        handles.D_text=D_text;
+    
+    axes(handles.axes1)
+    % imshowpair(A_b,B_b,'falsecolor','Scaling','independent')
+    C=imfuse(A_b,B_b,'falsecolor','Scaling','independent');       handles.C=C;
+    imshow(C);
+    CalText_AddText(A_text);
+    CalText_AddText(B_text);
+    if strcmp(handles.mode,'plotgrid')
+        try plot_grid(handles.xxsfyysf,handles.overlap);
+        catch; disp('No grid information loaded.'); end
+    end
+    set(gca,'tag','axes1')
+    axis tight
+    
+    axes(handles.axes2)
+    %imshowpair(A_b,D_b,'falsecolor','Scaling','independent')
+    E=imfuse(A_b,D_b,'falsecolor','Scaling','independent');       handles.E=E;
+    imshow(E);
+    CalText_AddText(A_text);
+    CalText_AddText(D_text);
+    if strcmp(handles.mode,'plotgrid')
+        try plot_grid(handles.xxsfyysf,handles.overlap);
+        catch; disp('No grid information loaded.'); end
+    end
+    set(gca,'tag','axes2')
+    axis tight
+else
+    if ~isempty(currentpair_ind)
+        handles.normco.currentA_ind=currentpair_ind;
+        set(handles.slider1,'Value',currentpair_ind)
+    end
+        
+    handles.normco.currentA_Pic=handles.normco.AsfromDaysPic(:,:,handles.normco.currentA_ind);
+    axes(handles.axes1)
+    imshow(handles.normco.currentA_Pic); 
+    if strcmp(handles.mode,'plotgrid')
+        try plot_grid(handles.xxsfyysf,handles.overlap);
+        catch; disp('No grid information loaded.'); end
+    end
 end
-template_num=handles.currentpair(1);
-ToAlign_num=handles.currentpair(2);
-set(handles.ToAlign,'String',[num2str(template_num) '-' num2str(ToAlign_num)]);
-set(handles.text10,'String',[]);
-[~,currentpair_ind,~] = intersect(handles.allpairs,handles.currentpair,'rows');
-if ~isempty(currentpair_ind)
-    set(handles.slider1,'Value',currentpair_ind)
-end
-set(handles.neuron_list_tmpl,'String',[]);
-
-M=handles.M;
-A=A2image(M{template_num}{template_num},d1,d2,false,'magenta');  handles.A=A;
-A_b=A2image(M{template_num}{template_num},d1,d2,false); % black and white for imshowpair  
-handles.A_b=A_b;
-A_text=CalText_AddText(false,M{template_num}{template_num},d1,d2);                           handles.A_text=A_text;
-
-B=A2image(M{template_num}{ToAlign_num},d1,d2,false,'green');  handles.B=B;
-B_b=A2image(M{template_num}{ToAlign_num},d1,d2,false);  B_b = imhistmatch(B_b,A_b); handles.B_b=B_b;
-B_text=CalText_AddText(false,M{template_num}{ToAlign_num},d1,d2);                        handles.B_text=B_text;
-
-D=A2image(M{ToAlign_num}{ToAlign_num},d1,d2,false,'green');   handles.D=D;
-D_b=A2image(M{ToAlign_num}{ToAlign_num},d1,d2,false);   D_b = imhistmatch(D_b,A_b); handles.D_b=D_b;
-D_text=CalText_AddText(false,M{ToAlign_num}{ToAlign_num},d1,d2);                        handles.D_text=D_text;
-
-axes(handles.axes1)
-% imshowpair(A_b,B_b,'falsecolor','Scaling','independent')
-C=imfuse(A_b,B_b,'falsecolor','Scaling','independent');       handles.C=C;
-imshow(C);
-CalText_AddText(A_text);
-CalText_AddText(B_text);
-set(gca,'tag','axes1')
-axis tight
-
-axes(handles.axes2)
-%imshowpair(A_b,D_b,'falsecolor','Scaling','independent')
-E=imfuse(A_b,D_b,'falsecolor','Scaling','independent');       handles.E=E;
-imshow(E);
-CalText_AddText(A_text);
-CalText_AddText(D_text);
-set(gca,'tag','axes2')
-axis tight
 
 
 % --- Executes on mouse press over figure background.
@@ -446,14 +491,13 @@ function figure1_WindowButtonDownFcn(hObject, eventdata, handles)
 % hObject    handle to figure1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-uiresume(hObject);
-%uicontrol(handles.figure1)
+if ~isempty(handles.M)
+    uiresume(hObject);
 
     cursorPoint = get(gca, 'CurrentPoint');
     current_axes=gca;
     x=round(cursorPoint(1,1,1)); y=round(cursorPoint(1,2,1));
-    display(x)
-    display(y)
+    display(['You picked pixel x=' num2str(x) ' y=' num2str(y)])
     d1=handles.d1;                      d2=handles.d2;              M=handles.M;
     if and(x<=d2,y<=d1)
         mouse_location = sub2ind([d1 d2], y, x);
@@ -479,6 +523,7 @@ uiresume(hObject);
     end
 %end
 uiwait(hObject);
+end
 
 
 % --- Executes when user attempts to close figure1.

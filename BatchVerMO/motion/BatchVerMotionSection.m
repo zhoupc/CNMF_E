@@ -1,6 +1,5 @@
 %% cnmfe (BatchVer) - MotionSection
 %  Shijie Gu
-%To do: delete days that have no neurons.
 
 %% 1. Concatenate A's from all CNMFE_BatchVer.mat's
 % AsfromDaysPic has pictures
@@ -26,6 +25,7 @@ for ia=1:AnumInFolder
 
     k = size(Atemp,2);
     sizes=[sizes k];
+    
     AsfromDaysPic=cat(3,AsfromDaysPic,A2image(Atemp,300,400)); % whole picture, for registering, getting shifts        
 end
 
