@@ -28,6 +28,7 @@ nam=name;
 cnmfe_choose_data;
 neuron_full=neuron_full_partial;
 neuron_full.updateParams('d1',d1, 'd2',d2);
+min_pixel=neuron_full.options.min_pixel;
 %% create Source2D class object for storing results and parameters
 
 mode=Mode;                                 % 'initiation' mode or 'massive' mode
