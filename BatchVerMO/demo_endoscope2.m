@@ -27,6 +27,7 @@ Picname=picname;
 nam=name;
 cnmfe_choose_data;
 neuron_full=neuron_full_partial;
+neuron_full.updateParams('d1',d1, 'd2',d2);
 %% create Source2D class object for storing results and parameters
 
 mode=Mode;                                 % 'initiation' mode or 'massive' mode
