@@ -74,6 +74,9 @@ handles.plotgrid=false;
 if ischar(handles.normco.cnmfedir)
     cnmfedir=handles.normco.cnmfedir; %loadAs will use 'cnmfedir'
     loadAs
+    if or(isempty(AsfromDaysCell),isempty(AsfromDaysPic))
+        error('No results for input.')
+    end
     handles.normco.AsfromDaysPic=AsfromDaysPic;
     handles.normco.AsfromDaysCell=AsfromDaysCell;
     handles=Update_Plot_Raw(1,handles);
