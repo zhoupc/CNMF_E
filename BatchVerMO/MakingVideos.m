@@ -16,7 +16,7 @@ for i=1:length(video_datalist)
 end
 
 %%
-v = VideoWriter([type '.mp4']);
+v = VideoWriter([type(2:end-1) '.mp4']);
 open(v)
 bgPermute=Ysignal/1000;
 clear Ysignal
