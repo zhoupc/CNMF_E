@@ -47,6 +47,7 @@ deconv_flag = options.deconv_flag;
 K = size(Amask,2);
 Ain = zeros(d1*d2, K);  % spatial components
 Cin = zeros(K, T);      % temporal components
+Cin_raw = zeros(K, T);      % temporal components
 STD = zeros(1,K);       % standard deviation
 
 %% start initialization
@@ -66,7 +67,8 @@ for k = 1:K;
 %     end
     
     % extract ci    
-    [ci_raw,ind_success_ci] = extract_c(Ysignal,Amask(:,k),[]);    
+    [ci_raw,ind_success_ci] = extract_c(Ysignal,Amask(:,k),[]);
+    Cin_raw(k,:)=ci_raw;
     
     if ~ind_success_ci   % If it is a "poor" ci, no problem, low STD will let not it contribute much to finalA.
         Ain(:,k)=A(:,k); % Since poor ci will get poor A that has bad shapes. Use normal A to fill in the place.
@@ -120,5 +122,7 @@ end
 ACS_temp=struct('Ain',[],'Cin',[],'STD',[]);
 ACS_temp.Ain = Ain;
 ACS_temp.Cin = Cin;
+ACS_temp.Cin_raw=Cin_raw;
 ACS_temp.STD = STD;
+
 end

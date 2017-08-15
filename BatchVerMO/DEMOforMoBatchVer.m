@@ -6,16 +6,19 @@
 %  (2) normal CNMF-E parameters.
 %  (3) other parameters.
 clear all
-
+Version='MoBatchVer';
 % (1)/1/
 codeDir='/home/shijiegu/cnmf_e/';
 %    /2/
-outputdir='/Volumes/shared/EmilyShijieShared_old/6922_moBatchVer/';
+outputdir='/Volumes/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/';
 outputdir_local=outputdir;
 outputdir=strrep(outputdir,'/Volumes/shared/','/net/feevault/data0/shared/');
 if ~exist(outputdir_local,'dir')
     mkdir(outputdir_local)
 end
+
+mkdir([outputdir_local '/videos'])
+outputdir_video=strrep(outputdir_local,'/Volumes/shared/','/net/feevault/data0/shared/');
 
 % II PARAMETERS
 % about loading data
@@ -43,7 +46,7 @@ neuron_full.options.deconv_options = struct('type', 'ar1', ... % model of the ca
     ...                                     %         exponential functions -
     ...                                     %               h(t) = (exp(-t/tau_d) - exp(-t/tau_r)) / (tau_d-tau_r)
     ...                                     % 'kernel':   a vector of the convolution kernel
-    'method', 'thresholded', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
+    'method', 'constrained', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
     'optimize_pars', true, ...  % optimize AR coefficients
     'optimize_b', false, ... % optimize the baseline
     'optimize_smin', true);  % optimize the threshold
@@ -72,13 +75,13 @@ workersnum=4;
 
 
 % III Specify where data are on your local machine.
-totaldays=[20170712,20170713,20170714,20170715,20170716,20170717,20170718,20170719];
+totaldays=[20170713,20170714,20170715,20170716,20170717,20170718,20170719];
 for i=1:length(totaldays)    
     daynum=totaldays(i);    
     outputdirDetails = [outputdir, num2str(totaldays(i)), '/'];
     
     [datadir,sampledir,~,filelist,samplelist]=...
-           InputOutput('datadir','/Volumes/shared/EmilyShijieShared/ProcessedCalciumData/6991FirstFewDaysForBatch/',...
+           InputOutput('datadir','/Volumes/shared/EmilyShijieShared/ProcessedCalciumData/6991FirstFewDaysForBatch/ActuallyUsedInCNMFE/',...
                        'datakind',['*' num2str(totaldays(i)) '*']);
     % replace for actual dir on cluster
     datadir=strrep(datadir,'/Volumes/shared/','/net/feevault/data0/shared/');
@@ -96,8 +99,8 @@ end
 
 % (1) jobdir folder, shellname
 %jobdir='/home/shijiegu/jobs/6922BatchVerMo/';
-local_jobdir='/Users/gushijie/Documents/MATLAB/Jobs/6922BatchVerMo/';
-shellname='BatchVerMO6922.sh';
+local_jobdir='/Users/gushijie/Documents/MATLAB/Jobs/6922BatchVerMo_NY/';
+shellname='BatchVerMO6922_NY.sh';
 
 if ~exist(local_jobdir,'dir')
     mkdir(local_jobdir)
