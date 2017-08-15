@@ -6,6 +6,7 @@ d1=300;
 d2=400;
 
 video_datalist=dir(fullfile(datafolder,type));
+display(length(video_datalist))
 Ysignal=[];
 for i=1:length(video_datalist)
     Ysignal_tmp=load(fullfile(datafolder,video_datalist(i).name),'Y');
