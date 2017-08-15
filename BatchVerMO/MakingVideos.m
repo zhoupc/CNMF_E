@@ -1,26 +1,27 @@
 %% Making videos for each day's data
 %datafolder='X:\EmilyShijieShared_old\6922_moBatchVer\';
-datafolder='X:\EmilyShijieShared\ProcessedCalciumData\6991FirstFewDaysForBatch\ActuallyUsedInCNMFE\';
-type=type;%'*20170713*';
+%datafolder='X:\EmilyShijieShared\ProcessedCalciumData\6991FirstFewDaysForBatch\ActuallyUsedInCNMFE\';
+type='*20170713*';
 d1=300;
 d2=400;
 
 video_datalist=dir(fullfile(datafolder,type));
+display(length(video_datalist))
 Ysignal=[];
 for i=1:length(video_datalist)
-    Ysignal_tmp=load(video_datalist(i).name,Y);
-    [Yest, results] = local_background(Ysignal_tmp, 1, 17, [], [], 5);
+    Ysignal_tmp=load(fullfile(datafolder,video_datalist(i).name),'Y');
+    [Yest, results] = local_background(double(Ysignal_tmp.Y), 1, 17, [], [], 5);
     clear Ysignal_tmp
-    Ysignal=[Ysignal Yest];
+    Ysignal=cat(3,Ysignal,Yest);
 end
 
 %%
-v = VideoWriter([type '.mp4']);
+v = VideoWriter([type(2:end-1) '.mp4']);
 open(v)
 bgPermute=Ysignal/1000;
 clear Ysignal
 img1 = max(bgPermute, 0);
-img1 = img1 / max(img1(:));
+img1 = img1 ./ max(img1(:));
 outputVideo=VideoWriter([datafolder type(2:end-1) 'ProcessedSignal.avi']);
 outputVideo.FrameRate=30;
 open(outputVideo);
