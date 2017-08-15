@@ -20,7 +20,7 @@ open(v)
 bgPermute=Ysignal/1000;
 clear Ysignal
 img1 = max(bgPermute, 0);
-img1 = img1 / max(img1(:));
+img1 = img1 ./ max(img1(:));
 outputVideo=VideoWriter([datafolder type(2:end-1) 'ProcessedSignal.avi']);
 outputVideo.FrameRate=30;
 open(outputVideo);
