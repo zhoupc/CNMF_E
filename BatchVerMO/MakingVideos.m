@@ -1,17 +1,17 @@
 %% Making videos for each day's data
 %datafolder='X:\EmilyShijieShared_old\6922_moBatchVer\';
-datafolder='X:\EmilyShijieShared\ProcessedCalciumData\6991FirstFewDaysForBatch\ActuallyUsedInCNMFE\';
-type=type;%'*20170713*';
+%datafolder='X:\EmilyShijieShared\ProcessedCalciumData\6991FirstFewDaysForBatch\ActuallyUsedInCNMFE\';
+type='*20170713*';
 d1=300;
 d2=400;
 
 video_datalist=dir(fullfile(datafolder,type));
 Ysignal=[];
 for i=1:length(video_datalist)
-    Ysignal_tmp=load(video_datalist(i).name,Y);
-    [Yest, results] = local_background(Ysignal_tmp, 1, 17, [], [], 5);
+    Ysignal_tmp=load(fullfile(datafolder,video_datalist(i).name),'Y');
+    [Yest, results] = local_background(Ysignal_tmp.Y, 1, 17, [], [], 5);
     clear Ysignal_tmp
-    Ysignal=[Ysignal Yest];
+    Ysignal=cat(3,Ysignal,Yest);
 end
 
 %%
