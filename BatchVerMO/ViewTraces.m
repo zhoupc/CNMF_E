@@ -24,6 +24,7 @@ end
 %%
 %A=cat(2,A0s{:});
 [AllC, ~]=AllTracesfromACS(ACS);
+AllC=AllC(:,1:826);
 
 %newIDs=Day4_newIDs;
 newIDs_nums=[18,19];
@@ -83,4 +84,13 @@ for i=1:K
     plot(AllC(I,:))
     title(['original neuron ' num2str(I)])
 end
+
+%% Just plotting from ACS
+neurons=[20,21];
+K=length(neurons);
+for i =1:K
+    subplot(K,1,i)
+    plot(ACS(1).Cin(neurons(i),:))
+end
+
 
