@@ -232,6 +232,7 @@ if strcmp(mode,'initiation')
     A0s=neuron.A;
     File.options=neuron.options;
     File.Ysignal=Ysignal;
+    File.neuron=neuron;
 end
 clear global
 %globalVars = who('global');
