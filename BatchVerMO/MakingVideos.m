@@ -10,7 +10,7 @@ display(length(video_datalist))
 Ysignal=[];
 for i=1:length(video_datalist)
     Ysignal_tmp=load(fullfile(datafolder,video_datalist(i).name),'Y');
-    [Yest, results] = local_background(Ysignal_tmp.Y, 1, 17, [], [], 5);
+    [Yest, results] = local_background(double(Ysignal_tmp.Y), 1, 17, [], [], 5);
     clear Ysignal_tmp
     Ysignal=cat(3,Ysignal,Yest);
 end
