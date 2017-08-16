@@ -40,7 +40,7 @@ for miter=1:maxIter
         end
         temp = C(k, :) + (U(k, :)-V(k, :)*C)/aa(k);
         %remove baseline and estimate noise level
-        if range(temp)/std(temp)>6
+        if range(temp)/std(temp)>6 || size(temp,2)>3000
             [b, tmp_sn] = estimate_baseline_noise(temp);
         else
             b = mean(temp(temp<median(temp)));
@@ -56,7 +56,6 @@ for miter=1:maxIter
         %         end
         temp = temp -b;
         sn(k) = tmp_sn;
-        
         % deconvolution
         if obj.options.deconv_flag
             if strcmp(mode,'initiation')

@@ -22,6 +22,7 @@ Yac=reshape(Yac,d1,d2,[]);
 Ybg=reshape(Ybg,d1,d2,[]);
 center_ac=median(center_ac);
 
+
 Y=[];
 for i=1:length(filelist)
     Y=matfile(fullfile(datadir,filelist(i).name));
@@ -33,6 +34,8 @@ figure('position', [0,0, 600, 400]);
 
 
 range_res = [-1,1]*center_ac;
+
+
 
 if ~exist('range_ac', 'var')
     range_ac = center_ac*1.01+range_res;

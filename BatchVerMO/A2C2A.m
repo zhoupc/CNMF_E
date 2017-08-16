@@ -80,7 +80,7 @@ for k = 1:K;
     if and(ind_success_ci,deconv_flag)
         try
             % deconv the temporal trace
-            [ci, ~, ~] = deconvolveCa(ci_raw, deconv_options_0, 'sn', 1);  % sn is 1 if Ysignal has no noise.
+            [ci, ~, ~] = deconvolveCa(ci_raw, deconv_options_0);
             % save this initialization
             Cin(k, :) = ci;            
             STD(k)=std(ci);

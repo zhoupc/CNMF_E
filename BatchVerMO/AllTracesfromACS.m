@@ -1,9 +1,19 @@
-function [AllC, boundary]=AllTracesfromACS(ACS)
+function [AllC, boundary]=AllTracesfromACS(ACS,rawOrNot)
+if nargin<2
+    rawOrNot=false;
+end
 AllC=[];
 boundary=[];
 for i=1:length(ACS)
-    AllC=[AllC ACS(i).Cin_raw];
-    boundary=[boundary size(ACS(i).Cin_raw,2)];
+    if rawOrNot
+        AllC=[AllC ACS(i).Cin_raw];
+        boundary=[boundary size(ACS(i).Cin_raw,2)];
+    else
+        AllC=[AllC ACS(i).Cin];
+        boundary=[boundary size(ACS(i).Cin,2)];
+    end
+    boundary=cumsum(boundary);
 end
-boundary=cumsum(boundary);
+
+    
 end
