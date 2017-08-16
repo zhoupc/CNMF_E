@@ -51,7 +51,7 @@ Cin_raw = zeros(K, T);      % temporal components
 STD = zeros(1,K);       % standard deviation
 
 %% start initialization
-for k = 1:K;
+for k = 1:K
     r=Acenter(k,1);
     c=Acenter(k,2);
     
@@ -111,7 +111,7 @@ for k = 1:K;
     ind_ctr = sub2ind([nr, nc], r-rsub(1)+1, c-csub(1)+1);   % index of the center
 
     sz = [nr, nc];
-    [ai,ai_raw,ind_success_ai] = extract_a(ci, [], HY_box, Amask_box, ind_ctr, sz, 1, []); 
+    [ai,ai_raw,ind_success_ai] = extract_a(ci_raw, [], HY_box, Amask_box, ind_ctr, sz, 1, []); 
     if ind_success_ai==false
         Ain(:,k)=A(:,k);
     else
