@@ -20,7 +20,7 @@ function MakingVideos(File,d1,d2,currentday,outputdir,rawOrNot,datadir,filelist)
 % end
 
 %Version2
-if rawOrnot<6
+if rawOrNot<6
     rawOrNot=false;
     filelist=[];
     datadir=[];
