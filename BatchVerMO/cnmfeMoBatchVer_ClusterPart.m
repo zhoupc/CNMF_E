@@ -43,7 +43,7 @@ end
 %%% Order similar neurons in the same sequence in each file, not necessary,
 %%% but nice to do. It is fast.
 A0s=Over_Days_ResequenceA(A0s,correlation_thresh,max2max2nd,skewnessthresh);
-
+save([outputdirDetails 'EachFilecnmfeBatchVer.mat'],'-v7.3')
 %% 2. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
 ACS(length(samplelist)) = struct('Ain',[],'Cin',[],'Cin_raw',[],'STD',[]);
 S_R=length(samplelist);
@@ -57,8 +57,8 @@ parfor i= 1:S_R
     end
     ACS(i).Ain=Ain; ACS(i).Cin=Cin; ACS(i).Cin_raw=Cin_raw; ACS(i).STD=STD;
 end
-outputdir_video='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/videos/';
-MakingVideos(File,File(1).options.d1,File(1).options.d2,num2str(daynum),outputdir_video)
+% outputdir_video='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/videos/';
+% MakingVideos(File,File(1).options.d1,File(1).options.d2,num2str(daynum),outputdir_video)
 
 %% 3 Merge similar neurons
 
@@ -120,7 +120,7 @@ parfor i= 1:length(filelist)
 end
 fprintf('Massive extraction in each file done.');
 
-%% 6 Save A*C.
+%% 6 Save A*C and backsub video
 
 parfor i= 1:length(filelist)
     for j=1:size(neuron_batch(i).neuron.A,2)
@@ -138,3 +138,11 @@ end
 fprintf('ALL extractions done.\n');
 eval(sprintf('save %sCNMFE_BatchVer.mat %s -v7.3', outputdir, 'neuron_batch'));
 fprintf('ALL data saved, check them out!');
+
+%% Making videos
+outputdir_video='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/videos/';
+d1=File(1).options.d1; d2=File(1).options.d2;
+MakingVideos(File,d1,d2,num2str(daynum),outputdir_video)
+clear File ACS
+MakingVideos([],d1,d2,num2str(daynum),outputdir_video,true,datadir,filelist)
+fprintf('ALL videos saved, check them out!');
