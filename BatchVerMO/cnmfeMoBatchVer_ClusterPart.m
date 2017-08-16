@@ -16,7 +16,7 @@ if running_on_cluster % some procedures making cluster use robust
 end
 
 %% 1. Run normal CNMF-E for each file
-File(length(samplelist)) = struct('options',[],'Ysignal',[],'neuron',[]); % pre-allocate for parfor loop. 
+File(length(samplelist)) = struct('options',[],'Ysignal',[],'neuron',[],'Ybg',[]); % pre-allocate for parfor loop. 
 A0s=cell(1,length(samplelist));
 parfor i= 1:length(samplelist)
     Mode='initiation';
@@ -95,9 +95,10 @@ if strcmp(Version,'MoBatchVer')
     try
         outputdir_video='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/videos/';
         d1=File(1).options.d1; d2=File(1).options.d2;
-        MakingVideos(File,d1,d2,num2str(daynum),outputdir_video)
-        clear File ACS
-        MakingVideos([],d1,d2,num2str(daynum),outputdir_video,true,datadir,filelist)
+        %MakingVideos(File,d1,d2,num2str(daynum),outputdir_video)
+        clear ACS
+        %MakingVideos([],d1,d2,num2str(daynum),outputdir_video,true,datadir,filelist)
+        MakingVideos(File,d1,d2,currentday,outputdir,datadir,filelist,1)
         fprintf('Videos saved, check them out!');
     catch
         fprintf('Videos not saved.');

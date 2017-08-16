@@ -70,7 +70,7 @@ if strcmp(Version,'MoBatchVer')
         outputdir_video='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/videos/';
         d1=File(1).options.d1; d2=File(1).options.d2;
         MakingVideos(File,d1,d2,num2str(daynum),outputdir_video)
-        clear File ACS
+        clear ACS
         MakingVideos([],d1,d2,num2str(daynum),outputdir_video,true,datadir,filelist)
         fprintf('Videos saved, check them out!');
     catch

@@ -84,9 +84,7 @@ if strcmp(mode,'initiation')
     fprintf('Time cost in initializing neurons:     %.2f seconds\n', toc);
     if isempty(neuron.A)
         A0s=neuron.A;
-        File.options=[];
-        File.Ysignal=[];
-        File.neuron=[];
+        File.options=[]; File.Ysignal=[]; File.neuron=[]; File.Ybg=[];
         clear global
         return
     end
@@ -147,7 +145,7 @@ while miter <= maxIter
         end    
         % merge neurons
         cnmfe_quick_merge;              % run neuron merges
-        if isempty(neuron.A); A0s=neuron.A; File.options=[]; File.Ysignal=[]; File.neuron=[]; 
+        if isempty(neuron.A); A0s=neuron.A; File.options=[]; File.Ysignal=[]; File.neuron=[]; File.Ybg=[];
             clear global; return; end
     end
     %% udpate background (cell 1, the following three blocks can be run iteratively)
@@ -190,7 +188,7 @@ while miter <= maxIter
             neuron.options.seed_method = 'auto'; % methods for selecting seed pixels {'auto', 'manual'}
             [center_new, Cn_res, pnr_res] = neuron.pickNeurons(Ysignal - neuron.A*neuron.C, patch_par); % method can be either 'auto' or 'manual'
         end
-        if isempty(neuron.A); A0s=neuron.A; File.options=[]; File.Ysignal=[]; File.neuron=[];
+        if isempty(neuron.A); A0s=neuron.A; File.options=[]; File.Ysignal=[]; File.neuron=[]; File.Ybg=[];
             clear global; return; end
     end
     %% stop the iteration 
@@ -236,6 +234,7 @@ if strcmp(mode,'initiation')
     File.options=neuron.options;
     File.Ysignal=Ysignal;
     File.neuron=neuron;
+    File.Ybg=Ybg;
 end
 clear global
 %globalVars = who('global');
