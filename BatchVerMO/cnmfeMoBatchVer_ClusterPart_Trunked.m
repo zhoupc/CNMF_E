@@ -16,34 +16,8 @@ if running_on_cluster % some procedures making cluster use robust
 end
 
 %% 1. Run normal CNMF-E for each file
-File(length(samplelist)) = struct('options',[],'Ysignal',[],'neuron',[]); % pre-allocate for parfor loop. 
-A0s=cell(1,length(samplelist));
-parfor i= 1:length(samplelist)
-    Mode='initiation';
-    picname=samplelist(i).name %(namepattern) % For each file, save A's so you can roughly check what neuron is picked in which file. 
-    name=fullfile(sampledir,samplelist(i).name);
-    [A0s{i},File(i)]=demo_endoscope2(bg_neuron_ratio,merge_thr,with_dendrites,K,sframe,num2read,...
-                                   name,neuron_full,Mode,picname,File(i),[],...
-                                   thresh_detecting_frames);
-    fprintf('Sampling file number %.0f done\n', i);
-end
 
-%%% delete samples that have no neurons.
-emptyA0s_ind=find(cellfun('isempty', A0s));
-if ~isempty(emptyA0s_ind)
-    warning(['sample file number ',num2str(emptyA0s_ind),' with name below has/have no neuron extracted in it.\n'])
-    samplelist(emptyA0s_ind).name
-    fprintf('Deleting these sample A0s.');
-
-    samplelist(emptyA0s_ind)=[];
-    A0s(emptyA0s_ind)=[];    
-    File(emptyA0s_ind)=[];
-end
-
-%%% Order similar neurons in the same sequence in each file, not necessary,
-%%% but nice to do. It is fast.
-A0s=Over_Days_ResequenceA(A0s,correlation_thresh,max2max2nd,skewnessthresh);
-save([outputdirDetails 'EachFilecnmfeBatchVer.mat'],'-v7.3')
+load([outputdirDetails 'EachFilecnmfeBatchVer.mat'])
 %% 2. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
 ACS(length(samplelist)) = struct('Ain',[],'Cin',[],'Cin_raw',[],'STD',[]);
 S_R=length(samplelist);
@@ -59,7 +33,7 @@ parfor i= 1:S_R
 end
 % outputdir_video='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/videos/';
 % MakingVideos(File,File(1).options.d1,File(1).options.d2,num2str(daynum),outputdir_video)
-
+save([outputdirDetails 'ACScnmfeBatchVer.mat'],'-v7.3')
 %% 3 Merge similar neurons
 
 Amask_temp=cat(2,A0s{:});
