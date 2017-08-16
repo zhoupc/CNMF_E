@@ -76,7 +76,7 @@ ColorAllNeurons(Afinal,File(1).options.d1,File(2).options.d2,Apicname,Aoutputdir
 
 Vars = {'Afinal';'samplelist';'File'}; Vars=Vars';
 eval(sprintf('save %s%0.f_cnmfe_BatchVer_ClusterPartI.mat %s -v7.3', Aoutputdir, daynum, strjoin(Vars)));
-%% 5 "massive" procedure: Extract A from each file
+%% 5 "massive" procedure: Extract C from each file
 neuron_batch(length(filelist)) = struct('ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
 
 parfor i= 1:length(filelist)  
