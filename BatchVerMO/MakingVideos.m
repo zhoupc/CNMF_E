@@ -53,7 +53,7 @@ if ~exist('range_Y', 'var')
 end
 %% create avi file
 
-avi_file = VideoWriter([outputdir currentday 'Videos.avi']);
+avi_file = VideoWriter([outputdir currentday '_Videos.avi']);
 if ~isnan(neuron.Fs)
     avi_file.FrameRate= neuron.Fs/kt;
 end
