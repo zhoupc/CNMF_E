@@ -24,10 +24,10 @@ end
 %%
 %A=cat(2,A0s{:});
 [AllC, ~]=AllTracesfromACS(ACS);
-AllC=AllC(:,1:826);
+AllC=AllC(:,:);
 
 %newIDs=Day4_newIDs;
-newIDs_nums=[18,19];
+newIDs_nums=[8,38];
 neuronums=[];
 for i=1:length(newIDs_nums)
     neuronums=[neuronums; newIDs{newIDs_nums(i)}];
