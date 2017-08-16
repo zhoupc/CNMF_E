@@ -20,11 +20,6 @@ function MakingVideos(File,d1,d2,currentday,outputdir,rawOrNot,datadir,filelist)
 % end
 
 %Version2
-if nargin<6
-    rawOrNot=false;
-    filelist=[];
-    datadir=[];
-end
 
 if rawOrNot==false
     Ysignal_all=[];
