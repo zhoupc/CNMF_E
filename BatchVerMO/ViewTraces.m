@@ -30,24 +30,21 @@ AllC=AllC(:,:);
 AllC_raw=AllC_raw(:,:);
 
 %newIDs=Day4_newIDs;
-newIDs_nums=[8,38];
+newIDs_nums=[32,39];
 neuronums=[];
 for i=1:length(newIDs_nums)
     neuronums=[neuronums; newIDs{newIDs_nums(i)}];
 end
 K=length(neuronums);
+figure
 for i=1:K
     I=neuronums(i);
-    subplot(K,2,2*i-1)
-    hold on
-    figure
-    plot(AllC(I,:))
-    title(['original neuron ' num2str(I)])
-    
-    subplot(K,2,2*i)
-    hold on
+    subplot(K,1,i)
     plot(AllC_raw(I,:))
-    title(['original neuron raw ' num2str(I)])
+    hold on
+    plot(AllC(I,:),'r')
+    title(['original neuron ' num2str(I)])
+
 end
 
 

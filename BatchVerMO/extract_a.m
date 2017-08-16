@@ -7,7 +7,7 @@ function [ai, ai_raw, ind_success] = extract_a(ci, Y_box, HY_box, Amask, ind_ctr
     % Input:
     % for both, ind_ctr, sz, are needed for quality control.
     %(1) Y=ac+Ybg+noise for non-denoised Y will need everything.
-    %(2) Y=ac for denoised Y. can have Amask=[] and Y=[].
+    %(2) Y=ac for background subtracted Y and noise-including c. can have Amask=[] and Y=[].
 % Afterwards, 
 % we threshold the spatial shape and remove those too small or empty results. For those succeeded, then
 % return an indicator ind_succes with value 1; otherwise, 0.
