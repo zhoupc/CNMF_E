@@ -20,7 +20,7 @@ function MakingVideos(File,d1,d2,currentday,outputdir,rawOrNot,datadir,filelist)
 % end
 
 %Version2
-if rawOrnot<6
+if nargin<6
     rawOrNot=false;
     filelist=[];
     datadir=[];
@@ -66,8 +66,7 @@ else
     end
     Ysignal=reshape(Ysignal_all,d1,d2,[]);
     
-    v = VideoWriter([currentday '.mp4']);
-    open(v)
+
     bgPermute=Ysignal/1000;
     clear Ysignal
     img1 = max(bgPermute, 0);
