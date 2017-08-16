@@ -1,6 +1,6 @@
 %% Script Making videos from Ysignal
 outputdir='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/';
-outputdir_video='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/videos/';
+outputdir_Corr='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/Correlation/';
 Filesignal_list=dir(fullfile(outputdir,'*PartI_File*'));
 for i=1:length(Filesignal_list)
     nam=Filesignal_list(1).name;

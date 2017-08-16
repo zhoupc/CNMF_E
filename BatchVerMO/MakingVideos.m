@@ -4,7 +4,6 @@ function MakingVideos(File,d1,d2,currentday,outputdir,datadir,filelist,kt)
 
 % some parameters for default
 t_begin = 1;
-t_end = size(neuron.C, 2);
 
 Ysignal=[];
 Yac=[];
@@ -21,6 +20,7 @@ Ysignal=reshape(Ysignal,d1,d2,[]);
 Yac=reshape(Yac,d1,d2,[]);
 Ybg=reshape(Ybg,d1,d2,[]);
 center_ac=median(center_ac);
+t_end=size(Yac,3);
 
 
 Y=[];
