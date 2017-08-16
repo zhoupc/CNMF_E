@@ -59,14 +59,13 @@ if rawOrNot==false
 % writeVideo(v,tmp)
 % close(v)
 else
-    Ysignal_all=[];
+    Ysignal=[];
     for i=1:length(filelist)
         Y=matfile(fullfile(datadir,filelist(i).name));
-        Ysignal_all=[Ysignal_all,Y.Y];
+        Ysignal=cat(3,Ysignal,Y.Y);
     end
-    Ysignal=reshape(Ysignal_all,d1,d2,[]);
+    %Ysignal=reshape(Ysignal,d1,d2,[]);
     
-
     bgPermute=Ysignal/1000;
     clear Ysignal
     img1 = max(bgPermute, 0);
