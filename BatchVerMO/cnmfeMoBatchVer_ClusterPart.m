@@ -92,13 +92,16 @@ newIDs=newIDs(nz_ind);
 
 Apicname=sprintf('%.0fAfinal',daynum);
 if strcmp(Version,'MoBatchVer')
-    outputdir_video='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/videos/';
-    d1=File(1).options.d1; d2=File(1).options.d2;
-    MakingVideos(File,d1,d2,num2str(daynum),outputdir_video)
-    clear File ACS
-    MakingVideos([],d1,d2,num2str(daynum),outputdir_video,true,datadir,filelist)
-    fprintf('ALL videos saved, check them out!');
-
+    try
+        outputdir_video='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/videos/';
+        d1=File(1).options.d1; d2=File(1).options.d2;
+        MakingVideos(File,d1,d2,num2str(daynum),outputdir_video)
+        clear File ACS
+        MakingVideos([],d1,d2,num2str(daynum),outputdir_video,true,datadir,filelist)
+        fprintf('Videos saved, check them out!');
+    catch
+        fprintf('Videos not saved.');
+    end
     ColorAllNeurons(Afinal,File(1).options.d1,File(1).options.d2,Apicname,outputdirDetails);
     Vars = {'Afinal';'samplelist'}; Vars=Vars';
     eval(sprintf('save %s%0.f_cnmfe_BatchVer_PartI_Afinalsam.mat %s -v7.3', outputdir, daynum, strjoin(Vars)));
