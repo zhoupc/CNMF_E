@@ -20,7 +20,9 @@ for i=1:length(log_list)
         Y=cat(3,Y,Y_tmp.Y);
     end
     display(size(Y))
-    Y=double(reshape(Y,d1*d2,[]));
+    Y=double(Y);
+    Y(isnan(Y)) = 0;    % remove nan values
+    
     % divide data into multiple patches
     patch_sz = [3, 3];
     r0_patch = round(linspace(1, d1, 1+patch_sz(1)));
