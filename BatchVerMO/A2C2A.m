@@ -116,7 +116,7 @@ for k = 1:K
 %     else
 %         Ain(ind_nhood,k)=ai;        
 %     end
-    Ysignal(ind_nhood, :) = HY_box - A(:,k)*ci_raw;  % update data
+    Ysignal(ind_nhood, :) = HY_box - A(ind_nhood,k)*ci_raw;  % update data
 end
 ACS_temp=struct('Cin',[],'Cin_raw',[],'STD',[]);
 %ACS_temp.Ain = Ain;
