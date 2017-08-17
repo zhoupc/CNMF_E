@@ -38,7 +38,7 @@ C_thr = merge_thr(2);
 
 %A=cat(2,ACS.Ain);
 C=cat(2,ACS.Cin_raw);
-
+STD=std(C,1,2);
 K = size(C,1);   % number of neurons
 %% find neuron pairs to merge
 % compute spatial correlation
@@ -99,22 +99,30 @@ for m=1:n2merge
     
     % update spatial/temporal components of the merged neuron   
     % data = A(active_pixel, IDs)*C(IDs, :);
-    data=[];
-    for i=1:numel(ACS)
-        FileC=ACS(i).Cin;
-        data = [data A(active_pixel, IDs)*FileC(IDs, :)];
-    end
+%%%%%%%%%    
+%     data=[];
+%     for i=1:numel(ACS)
+%         FileC=ACS(i).Cin;
+%         data = [data A(active_pixel, IDs)*FileC(IDs, :)];
+%     end
+%     
+%     data=data./length(IDs);
+%     [~,I] = max(std(C(IDs, :),0,2)); % choose the most confident(with biggest std) ci.
+%     ci=C(IDs(I),:);
+%     for miter=1:10
+%         ai = data*ci'/(ci*ci');
+%         ci = ai'*data/(ai'*ai);
+%     end
+%%%%%%%%
+    A_temp=A(active_pixel,MC(:,m));
+    STD_temp=STD(MC(:,m));
+    catSTD=STD_temp./sum(STD_temp);
+
+    weightedA=A_temp*catSTD;
     
-    data=data./length(IDs);
-    [~,I] = max(std(C(IDs, :),0,2)); % choose the most confident(with biggest std) ci.
-    ci=C(IDs(I),:);
-    for miter=1:10
-        ai = data*ci'/(ci*ci');
-        ci = ai'*data/(ai'*ai);
-    end
     ind_del(IDs(1))= false;
     newIDs{IDs(1)} = IDs;
-    Afinal(active_pixel,IDs(1))=ai;
+    Afinal(active_pixel,IDs(1))=weightedA;
     % making ai nicer.
 %     temp = ai>quantile(ai, 0.3, 1);
 %     ai(~temp(:)) = 0;

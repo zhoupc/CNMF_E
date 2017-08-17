@@ -54,8 +54,8 @@ end
 %% create avi file
 
 avi_file = VideoWriter([outputdir currentday '_Videos.avi']);
-if ~isnan(neuron.Fs)
-    avi_file.FrameRate= neuron.Fs/kt;
+if ~isnan(File(1).neuron.Fs)
+    avi_file.FrameRate= File(1).neuron.Fs/kt;
 end
 avi_file.open();
 
