@@ -13,7 +13,7 @@ center_ac=[];
 for i=1:length(File)
     Ysignal=[Ysignal,File(i).Ysignal];
     Yac=[Yac,File(i).neuron.A*File(i).neuron.C];
-    center_ac=[center_ac max(File(i).neuron.A,[],1)'.*max(File(i).neuron.C,[],2)];
+    center_ac=[center_ac; max(File(i).neuron.A,[],1)'.*max(File(i).neuron.C,[],2)];
     Ybg=[Ybg,File(i).Ybg];
 end
 Ysignal=reshape(Ysignal,d1,d2,[]);
