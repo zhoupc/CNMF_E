@@ -16,8 +16,8 @@ for i=1:length(log_list)
     
     Y=[];
     for j=1:length(filelist)
-        Y=matfile(fullfile(datadir,filelist(j).name));
-        Y=cat(3,Y,Y.Y);
+        Y_tmp=matfile(fullfile(datadir,filelist(j).name));
+        Y=cat(3,Y,Y_tmp.Y);
     end
     display(size(Y))
     Y=double(reshape(Y,d1*d2,[]));

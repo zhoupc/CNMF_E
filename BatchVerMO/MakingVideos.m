@@ -25,8 +25,8 @@ t_end=size(Yac,3);
 
 Y=[];
 for i=1:length(filelist)
-    Y=matfile(fullfile(datadir,filelist(i).name));
-    Y=cat(3,Y,Y.Y);
+    Y_tmp=matfile(fullfile(datadir,filelist(i).name));
+    Y=cat(3,Y,Y_tmp.Y);
 end
 Y=double(Y);
 
