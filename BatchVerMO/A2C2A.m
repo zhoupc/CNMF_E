@@ -34,7 +34,6 @@ d2 = options.d2;        % image width
 gSiz = options.gSiz;    % average size of neurons
 
 Acenter = round(com(A, d1, d2)); %nr x 2 matrix, with the center of mass coordinates
-Amask=A>0;
 
 Ysignal=File.Ysignal;
 Ysignal(isnan(Ysignal)) = 0;     % remove nan values
@@ -44,8 +43,8 @@ T = size(Ysignal, 2);
 deconv_options_0= options.deconv_options;
 deconv_flag = options.deconv_flag;
 
-K = size(Amask,2);
-Ain = zeros(d1*d2, K);  % spatial components
+K = size(A,2);
+%Ain = zeros(d1*d2, K);  % spatial components
 Cin = zeros(K, T);      % temporal components
 Cin_raw = zeros(K, T);      % temporal components
 STD = zeros(1,K);       % standard deviation
@@ -67,11 +66,11 @@ for k = 1:K
 %     end
     
     % extract ci    
-    [ci_raw,ind_success_ci] = extract_c(Ysignal,Amask(:,k),[]);
+    [ci_raw,ind_success_ci] = extract_c(Ysignal,[],A(:,k));
     Cin_raw(k,:)=ci_raw;
     
     if ~ind_success_ci   % If it is a "poor" ci, no problem, low STD will let not it contribute much to finalA.
-        Ain(:,k)=A(:,k); % Since poor ci will get poor A that has bad shapes. Use normal A to fill in the place.
+        %Ain(:,k)=A(:,k); % Since poor ci will get poor A that has bad shapes. Use normal A to fill in the place.
         Cin(k,:)=ci_raw;
         STD(k)=std(ci_raw);
         continue;
@@ -97,30 +96,30 @@ for k = 1:K
     % if the c is poor
     ci_std = std(diff(ci));
     if max(diff(ci))< ci_std % signal is weak
-        Ain(:,k)=A(:,k);
+        %Ain(:,k)=A(:,k);
         display('Poor C, skipping estimating A.')
         continue
     end
     rsub = max(1, -gSiz+r):min(d1, gSiz+r);
     csub = max(1, -gSiz+c):min(d2, gSiz+c);
     [cind, rind] = meshgrid(csub, rsub);
-    [nr, nc] = size(cind);               % size of the box
+%     [nr, nc] = size(cind);               % size of the box
     ind_nhood = sub2ind([d1, d2], rind(:), cind(:));
     HY_box = Ysignal(ind_nhood, :);      
-    Amask_box=Amask(ind_nhood,k);
-    ind_ctr = sub2ind([nr, nc], r-rsub(1)+1, c-csub(1)+1);   % index of the center
+%     Amask_box=Amask(ind_nhood,k);
+%     ind_ctr = sub2ind([nr, nc], r-rsub(1)+1, c-csub(1)+1);   % index of the center
 
-    sz = [nr, nc];
-    [ai,ai_raw,ind_success_ai] = extract_a(ci_raw, [], HY_box, Amask_box, ind_ctr, sz, 1, []); 
-    if ind_success_ai==false
-        Ain(:,k)=A(:,k);
-    else
-        Ain(ind_nhood,k)=ai;        
-    end
-    Ysignal(ind_nhood, :) = HY_box - ai_raw*ci_raw;  % update data
+%     sz = [nr, nc];
+%     [ai,ai_raw,ind_success_ai] = extract_a(ci_raw, [], HY_box, Amask_box, ind_ctr, sz, 1, []); 
+%     if ind_success_ai==false
+%         Ain(:,k)=A(:,k);
+%     else
+%         Ain(ind_nhood,k)=ai;        
+%     end
+    Ysignal(ind_nhood, :) = HY_box - A(ind_nhood,k)*ci_raw;  % update data
 end
-ACS_temp=struct('Ain',[],'Cin',[],'STD',[]);
-ACS_temp.Ain = Ain;
+ACS_temp=struct('Cin',[],'Cin_raw',[],'STD',[]);
+%ACS_temp.Ain = Ain;
 ACS_temp.Cin = Cin;
 ACS_temp.Cin_raw=Cin_raw;
 ACS_temp.STD = STD;

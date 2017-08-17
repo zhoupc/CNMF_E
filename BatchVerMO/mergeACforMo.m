@@ -104,9 +104,7 @@ for i=1:numel(M)
     Afinal=zeros(size(Amask));
 
     A=cat(2,M{i}{:}); %This day's As.
-    %Afinal(:,Aunique_Bool)=A(:,Aunique_Bool);
-%     Aunique_ind=find(Aunique_Bool);
-%     for ii=1:length(Aunique_ind); newIDs{Aunique_ind(ii)} = Aunique_ind(ii); end
+
     for m=1:n2merge   %merge A's by their STD deviation.
         IDs = find(MC(:, m));
         merged_ROIs{m} = IDs;
@@ -114,9 +112,9 @@ for i=1:numel(M)
         A_temp=A(:,MC(:,m));
         STD_temp=STD(MC(:,m));
         catSTD=STD_temp./sum(STD_temp);
-        %catSTD=diag(STD_temp./sum(STD_temp));
-        weightedA=A_temp*catSTD; %weightedA=reshape(weightedA,size(A,1),1,[]);
-        %weightedA=sum(weightedA,3);
+
+        weightedA=A_temp*catSTD;
+
         ind_del(IDs(1))= false;
         newIDs{IDs(1)} = IDs;
         Afinal(:,IDs(1))=weightedA;

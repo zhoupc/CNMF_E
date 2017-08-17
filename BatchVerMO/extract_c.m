@@ -20,9 +20,13 @@ function [ci,ind_success] = extract_c(Ysignal,Amask,A)
 %%Shijie Gu, techel@live.cn (ShanghaiTech University; Fee Lab at MIT-BCS)
 
 if ~isempty(A)
-    X = A; 
-    ci = (X'*X)\(X'*Ysignal);
-    ci(isnan(ci)) = 0; 
+%     X = A; 
+%     ci = (X'*X)\(X'*Ysignal);
+%     ci(isnan(ci)) = 0;
+    ind_nonzero = A>0;
+    ai_mask = mean(A(ind_nonzero))*ind_nonzero;
+    ci = (A-ai_mask)'*A\((A-ai_mask)'*Ysignal);
+    ci(isnan(ci)) = 0;
 elseif ~isempty(Amask)    
     cs=Ysignal(Amask,:);
     ci=mean(cs);

@@ -13,7 +13,7 @@ center_ac=[];
 for i=1:length(File)
     Ysignal=[Ysignal,File(i).Ysignal];
     Yac=[Yac,File(i).neuron.A*File(i).neuron.C];
-    center_ac=[center_ac max(File(i).neuron.A,[],1)'.*max(File(i).neuron.C,[],2)];
+    center_ac=[center_ac; max(File(i).neuron.A,[],1)'.*max(File(i).neuron.C,[],2)];
     Ybg=[Ybg,File(i).Ybg];
 end
 Ysignal=reshape(Ysignal,d1,d2,[]);
@@ -25,8 +25,8 @@ t_end=size(Yac,3);
 
 Y=[];
 for i=1:length(filelist)
-    Y=matfile(fullfile(datadir,filelist(i).name));
-    Y=cat(3,Y,Y.Y);
+    Y_tmp=matfile(fullfile(datadir,filelist(i).name));
+    Y=cat(3,Y,Y_tmp.Y);
 end
 Y=double(Y);
 
@@ -54,8 +54,8 @@ end
 %% create avi file
 
 avi_file = VideoWriter([outputdir currentday '_Videos.avi']);
-if ~isnan(neuron.Fs)
-    avi_file.FrameRate= neuron.Fs/kt;
+if ~isnan(File(1).neuron.Fs)
+    avi_file.FrameRate= File(1).neuron.Fs/kt;
 end
 avi_file.open();
 
