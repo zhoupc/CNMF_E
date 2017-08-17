@@ -33,7 +33,7 @@ end
 A_thr = merge_thr(1);
 C_thr = merge_thr(2);
 
-A=cat(2,ACS.Ain);
+%A=cat(2,ACS.Ain);
 C=cat(2,ACS.Cin_raw);
 
 K = size(C,1);   % number of neurons
