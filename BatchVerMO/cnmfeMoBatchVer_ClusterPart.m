@@ -103,7 +103,7 @@ if strcmp(Version,'MoBatchVer')
         %MakingVideos(File,d1,d2,num2str(daynum),outputdir_video)
         clear ACS
         %MakingVideos([],d1,d2,num2str(daynum),outputdir_video,true,datadir,filelist)
-        MakingVideos(File,d1,d2,num2str(currentday),outputdir,datadir,filelist,1)
+        MakingVideos(File,d1,d2,num2str(daynum),outputdir,datadir,filelist,1)
         fprintf('Videos saved, check them out!');
 
     return
