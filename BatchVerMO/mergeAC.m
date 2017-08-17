@@ -1,4 +1,4 @@
-function  [Afinal,MC,newIDs,merged_ROIs,close_ind] = MergeAC(A,ACS,merge_thr,dmin)
+function  [Afinal,MC,newIDs,merged_ROIs,close_ind] = mergeAC(A,ACS,merge_thr,dmin,d1,d2)
 %% merge neurons based on simple spatial and temporal correlation
 % input:
 %   Amask: concatnated Amask from neurons from one or many files.

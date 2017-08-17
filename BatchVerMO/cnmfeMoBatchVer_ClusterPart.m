@@ -44,6 +44,7 @@ end
 %%% but nice to do. It is fast.
 A0s=Over_Days_ResequenceA(A0s,correlation_thresh,max2max2nd,skewnessthresh);
 save([outputdirDetails 'EachFilecnmfeBatchVer.mat'],'-v7.3')
+
 %% 2. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
 ACS(length(samplelist)) = struct('Cin',[],'Cin_raw',[],'STD',[]);
 S_R=length(samplelist);
@@ -63,7 +64,7 @@ save([outputdirDetails 'ACScnmfeBatchVer.mat'],'-v7.3')
 
 Amask_temp=cat(2,A0s{:});
 Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
-[Afinal,MC,newIDs,merged_ROIs,close_ind] = mergeAC(Amask_temp,ACS,merge_thr_2,5);
+[Afinal,MC,newIDs,merged_ROIs,close_ind] = mergeAC(Amask_temp,ACS,merge_thr_2,5,File(1).options.d1,File(1).options.d2);
 
 if strcmp(Version,'MoBatchVer')
     save([outputdirDetails 'commonAcnmfeBatchVer.mat'],'-v7.3')

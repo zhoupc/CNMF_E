@@ -17,27 +17,27 @@ end
 
 %% 1. Run normal CNMF-E for each file
 
-load([outputdirDetails 'EachFilecnmfeBatchVer.mat'])
-%% 2. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
-ACS(length(samplelist)) = struct('Cin',[],'Cin_raw',[],'STD',[]);
-S_R=length(samplelist);
-parfor i= 1:S_R
-    Cin=[]; Cin_raw=[]; STD=[];
-    for j=1:S_R % parfor needs this
-        Aj=A0s{j};
-        ACS_temp=A2C2A(File(i), Aj, File(i).options);
-        Cin = [Cin; ACS_temp.Cin]; STD=[STD ACS_temp.STD]; Cin_raw=[Cin_raw; ACS_temp.Cin_raw];
-    end
-    ACS(i).Cin=Cin; ACS(i).Cin_raw=Cin_raw; ACS(i).STD=STD;
-end
-% outputdir_video='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/videos/';
-% MakingVideos(File,File(1).options.d1,File(1).options.d2,num2str(daynum),outputdir_video)
-save([outputdirDetails 'ACScnmfeBatchVer.mat'],'-v7.3')
+load([outputdirDetails 'ACScnmfeBatchVer.mat'])
+% %% 2. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
+% ACS(length(samplelist)) = struct('Cin',[],'Cin_raw',[],'STD',[]);
+% S_R=length(samplelist);
+% parfor i= 1:S_R
+%     Cin=[]; Cin_raw=[]; STD=[];
+%     for j=1:S_R % parfor needs this
+%         Aj=A0s{j};
+%         ACS_temp=A2C2A(File(i), Aj, File(i).options);
+%         Cin = [Cin; ACS_temp.Cin]; STD=[STD ACS_temp.STD]; Cin_raw=[Cin_raw; ACS_temp.Cin_raw];
+%     end
+%     ACS(i).Cin=Cin; ACS(i).Cin_raw=Cin_raw; ACS(i).STD=STD;
+% end
+% % outputdir_video='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/videos/';
+% % MakingVideos(File,File(1).options.d1,File(1).options.d2,num2str(daynum),outputdir_video)
+% save([outputdirDetails 'ACScnmfeBatchVer.mat'],'-v7.3')
 %% 3 Merge similar neurons
 
 Amask_temp=cat(2,A0s{:});
 Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
-[Afinal,MC,newIDs,merged_ROIs,close_ind] = mergeAC(Amask_temp,ACS,merge_thr_2,5);
+[Afinal,MC,newIDs,merged_ROIs,close_ind] = mergeAC(Amask_temp,ACS,merge_thr_2,5,File(1).options.d1,File(1).options.d2);
 
 if strcmp(Version,'MoBatchVer')
     save([outputdirDetails 'commonAcnmfeBatchVer.mat'],'-v7.3')

@@ -9,6 +9,7 @@ end
 cd(outputdir_Corr)
 
 log_list=dir(fullfile(outputdir,'*LogisticscnmfeBatchVer*'));
+display(length(log_list))
 for i=1:length(log_list)
     log_nam=log_list(1).name;
     load(fullfile(outputdir,log_nam))
@@ -18,6 +19,7 @@ for i=1:length(log_list)
         Y=matfile(fullfile(datadir,filelist(j).name));
         Y=cat(3,Y,Y.Y);
     end
+    display(size(Y))
     Y=double(reshape(Y,d1*d2,[]));
     % divide data into multiple patches
     patch_sz = [3, 3];
@@ -48,15 +50,15 @@ for i=1:length(log_list)
             % copute signal to noise ratio
             %HY = reshape(HY, [], T);
             %HY = bsxfun(@minus, HY, median(HY, 2));
-            HY_max=max(Y,[],2);%HY_max = max(HY, [], 2);
-            Ysig = get_noise_fft(Y);
+            HY_max=max(Ypatch,[],2);%HY_max = max(HY, [], 2);
+            Ysig = get_noise_fft(Ypatch);
 %             tmp_PNR = reshape(HY_max./Ysig, nrows, ncols);
 %             PNR(r0:r1, c0:c1) = max(PNR(r0:r1, c0:c1), tmp_PNR);
         
         
             %  compute loal correlation
-            Y(bsxfun(@lt, Y, Ysig*sig)) = 0;
-            tmp_Cn = correlation_image(Y, [1,2], nrows, ncols);
+            Ypatch(bsxfun(@lt, Ypatch, Ysig*sig)) = 0;
+            tmp_Cn = correlation_image(Ypatch, [1,2], nrows, ncols);
             Cn(r0:r1, c0:c1) = max(Cn(r0:r1, c0:c1), tmp_Cn);   
         end
     end
@@ -80,4 +82,4 @@ end
 %     MakingVideos([],d1,d2,num2str(daynum),outputdir_video,true,datadir,filelist)
 %     fprintf([daynum 'videos saved, check them out!']);
 % end
-fprintf('ALL videos saved, check them out!');
+fprintf('ALL correlation images saved, check them out!');
