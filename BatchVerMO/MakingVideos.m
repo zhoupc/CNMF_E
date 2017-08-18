@@ -15,13 +15,15 @@ for i=1:length(File)
     Yac=[Yac,File(i).neuron.A*File(i).neuron.C];
     center_ac=[center_ac; max(File(i).neuron.A,[],1)'.*max(File(i).neuron.C,[],2)];
     Ybg=[Ybg,File(i).Ybg];
+    display(size(Ybg))
 end
 Ysignal=reshape(Ysignal,d1,d2,[]);
 Yac=reshape(Yac,d1,d2,[]);
 Ybg=reshape(Ybg,d1,d2,[]);
 center_ac=median(center_ac);
 t_end=size(Yac,3);
-
+display(t_end)
+display(size(Ybg))
 
 Y=[];
 for i=1:length(filelist)

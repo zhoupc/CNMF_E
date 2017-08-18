@@ -1,4 +1,4 @@
-function  [Afinal,MC,newIDs,merged_ROIs,close_ind] = mergeAC(A,ACS,merge_thr,dmin,d1,d2)
+function  [Afinal,MC,newIDs,merged_ROIs,close_ind,real_ind] = mergeAC(A,ACS,merge_thr,dmin,d1,d2)
 %% merge neurons based on simple spatial and temporal correlation
 % input:
 %   Amask: concatnated Amask from neurons from one or many files.
@@ -31,14 +31,19 @@ if ~exist('merge_thr', 'var') || isempty(merge_thr) || numel(merge_thr)~=2
     merge_thr = [0.7, 0.7];
 end
 
-Amask=A>0;
-
 A_thr = merge_thr(1);
 C_thr = merge_thr(2);
 
 %A=cat(2,ACS.Ain);
-C=cat(2,ACS.Cin_raw);
+%C=cat(2,ACS.Cin_raw);
+C=cat(2,ACS.Cin);
 STD=std(C,1,2);
+real_ind=STD>quantile(STD,10);
+A=A(:,real_ind);
+C=C(real_ind,:);
+STD=STD(real_ind);
+
+Amask=A>0;
 K = size(C,1);   % number of neurons
 %% find neuron pairs to merge
 % compute spatial correlation

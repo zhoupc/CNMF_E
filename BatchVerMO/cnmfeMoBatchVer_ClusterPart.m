@@ -63,8 +63,8 @@ save([outputdirDetails 'ACScnmfeBatchVer.mat'],'-v7.3')
 %% 3 Merge similar neurons
 
 Amask_temp=cat(2,A0s{:});
-Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
-[Afinal,MC,newIDs,merged_ROIs,close_ind] = mergeAC(Amask_temp,ACS,merge_thr_2,5,File(1).options.d1,File(1).options.d2);
+%Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
+[Afinal,MC,newIDs,merged_ROIs,close_ind,real_ind] = mergeAC(Amask_temp,ACS,merge_thr_2,5,File(1).options.d1,File(1).options.d2);
 
 if strcmp(Version,'MoBatchVer')
     save([outputdirDetails 'commonAcnmfeBatchVer.mat'],'-v7.3')

@@ -18,6 +18,7 @@ end
 %% 1. Run normal CNMF-E for each file
 
 load([outputdirDetails 'ACScnmfeBatchVer.mat'])
+merge_thr_2=[0.6,0.65];
 % %% 2. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
 % ACS(length(samplelist)) = struct('Cin',[],'Cin_raw',[],'STD',[]);
 % S_R=length(samplelist);
@@ -36,8 +37,8 @@ load([outputdirDetails 'ACScnmfeBatchVer.mat'])
 %% 3 Merge similar neurons
 
 Amask_temp=cat(2,A0s{:});
-Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
-[Afinal,MC,newIDs,merged_ROIs,close_ind] = mergeAC(Amask_temp,ACS,merge_thr_2,5,File(1).options.d1,File(1).options.d2);
+%Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
+[Afinal,MC,newIDs,merged_ROIs,close_ind,real_ind] = mergeAC(Amask_temp,ACS,merge_thr_2,5,File(1).options.d1,File(1).options.d2);
 
 if strcmp(Version,'MoBatchVer')
     save([outputdirDetails 'commonAcnmfeBatchVer.mat'],'-v7.3')
