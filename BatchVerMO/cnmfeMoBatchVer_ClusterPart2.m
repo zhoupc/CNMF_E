@@ -28,8 +28,8 @@ for i=1:numel(AandSample_list) %go through days
     eachdayfilenum=[eachdayfilenum length(File_temponeday.File)];
     File_temp(length(File_temponeday.File)) = struct('Ysignal',[],'options',[]);
     for j=1:length(File_temponeday.File)
-        File_temp(j).Ysignal=File_temponeday(j).File.Ysignal;
-        File_temp(j).options=File_temponeday(j).File.options;
+        File_temp(j).Ysignal=File_temponeday.File(j).Ysignal;
+        File_temp(j).options=File_temponeday.File(j).options;
     end
     clear File_temponeday
     if i==1
