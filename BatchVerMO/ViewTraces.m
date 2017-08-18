@@ -12,7 +12,7 @@
 % sizecumsum=cumsum(size2);
 
 %C=cat(2,ACS.Cin);
-neuronums=[12,60];
+neuronums=[1,60];
 K=length(neuronums);
 for i=1:K
     I=neuronums(i);
@@ -30,19 +30,21 @@ AllC=AllC(:,:);
 AllC_raw=AllC_raw(:,:);
 
 %newIDs=Day4_newIDs;
-newIDs_nums=[32,39];
+newIDs_nums=[1];
 neuronums=[];
 for i=1:length(newIDs_nums)
     neuronums=[neuronums; newIDs{newIDs_nums(i)}];
 end
+%%
+neuronums=[1 57 19 60];
 K=length(neuronums);
 figure
 for i=1:K
     I=neuronums(i);
     subplot(K,1,i)
-    plot(AllC_raw(I,:))
+    plot(AllC_raw(I,:),'r')
     hold on
-    plot(AllC(I,:),'r')
+    plot(AllC(I,:),'b')
     title(['original neuron ' num2str(I)])
 
 end

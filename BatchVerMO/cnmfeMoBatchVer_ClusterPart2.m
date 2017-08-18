@@ -1,7 +1,7 @@
 %% C-2 Run All below on cluster!
 
 % cnmfefolder is where 1)logistics,2)PartI's results,3)Motion-corrected A's are saved
-cnmfefolder='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVer/';
+cnmfefolder='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/';
 
 % load one of the logistics
 load(fullfile(cnmfefolder,'LogisticscnmfeBatchVer20170712.mat'));
@@ -22,16 +22,20 @@ samplist_full_temp=cell(1,numel(Filesignal_list));
 File_full_temp=cell(1,numel(Filesignal_list));
 eachdayfilenum=[];
 
-for i=1:numel(AandSample_list) %go through days
-    File_temponeday=load(fullfile(cnmfefolder,Filesignal_list(i).name)); 
+for i=1:numel(AandSample_list) %go through days 
+    File_temponeday=load(fullfile(cnmfefolder,Filesignal_list(i).name));
     AandSample_temponeday=load(fullfile(cnmfefolder,AandSample_list(i).name));     
     eachdayfilenum=[eachdayfilenum length(File_temponeday.File)];
+    File_temp(length(File_temponeday.File)) = struct('Ysignal',[],'options',[]); 
+    File_temp.Ysignal=File_temponeday.File.Ysignal;
+    File_temp.options=File_temponeday.File.options;
+    clear File_temponeday
     if i==1
         filelist_fulllist=AandSample_temponeday.samplelist;
-        File_fulllist=File_temponeday.File;
+        File_fulllist=File_temp;
     else
         filelist_fulllist=[filelist_fulllist; AandSample_temponeday.samplelist];
-        File_fulllist=[File_fulllist File_temponeday.File];
+        File_fulllist=[File_fulllist File_temp];
     end   
 end
 %%%%% File_samplelist can be used to substitute for File_fulllist if there
@@ -49,19 +53,19 @@ M1=Over_Days_ResequenceAForMo(M,correlation_thresh,max2max2nd,skewnessthresh);
 %% 2. Next, Use M1, in each file i, find C's corresponding to each A's found in file j.
 eachfilenum_cumsum=cumsum(eachdayfilenum);
 filenumsum = eachfilenum_cumsum(end);
-ACS(filenumsum) = struct('Ain',[],'Cin',[],'STD',[]);  
+ACS(filenumsum) = struct('Cin',[],'Cin_raw',[],'STD',[]);  
 
 S_L=length(eachfilenum_cumsum);
 
 parfor i= 1:filenumsum % file
-    Ain=[]; Cin=[]; STD=[];
+    Cin=[]; Cin_raw=[]; STD=[];
     k=find((eachfilenum_cumsum>=i),1);
     for j=1:S_L % parfor needs this
         Aj=M1{k}{j};
         ACS_temp=A2C2A(File_fulllist(i), Aj, File_fulllist(i).options);
-        Ain = [Ain ACS_temp.Ain]; Cin = [Cin; ACS_temp.Cin]; STD=[STD ACS_temp.STD];
+        Cin = [Cin; ACS_temp.Cin]; Cin_raw=[Cin_raw; ACS_temp.Cin_raw]; STD=[STD ACS_temp.STD];
     end
-    ACS(i).Ain=Ain; ACS(i).Cin=Cin; ACS(i).STD=STD;
+    ACS(i).Cin=Cin; ACS(i).Cin_raw=Cin_raw; ACS(i).STD=STD;
 end
 save([outputdir 'PartTwoOFcnmfeBatchVerMOTION.mat'],'-v7.3')
 %% 3 Merge similar neurons
@@ -69,14 +73,15 @@ save([outputdir 'PartTwoOFcnmfeBatchVerMOTION.mat'],'-v7.3')
 % use the highest correlation one, here we use the middle day one to approximate.
 
 midone=round(S_L/2);
-Amask_temp=cat(2,M1{midone}{:})>0;
+Amask_temp=cat(2,M1{midone}{:});
 
 %Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
 C=cat(2,ACS.Cin);
 d1=File_fulllist(1).options.d1;
 d2=File_fulllist(1).options.d2;
+dmin=4;%%%%%%%%%%
 clear ACS File_fulllist File_samplelist;
-[M2,MC,newIDs,merged_ROIs] = mergeACforMo(Amask_temp,C,merge_thr_2,M1);
+[M2,MC,newIDs,merged_ROIs,close_ind] = mergeACforMo(Amask_temp,C,merge_thr_2,M1,dmin,d1,d2);
 
 save([outputdir 'RoughAfinalcnmfeBatchVerMOTION.mat'],'-v7.3')
 
@@ -101,8 +106,8 @@ for c=1:numel(M2)
     ColorAllNeurons(Afinal,d1,d2,Apicname,[outputdir, num2str(totaldays(c)), '/']);
     M3{c}=Afinal;
 end
-
-eval(sprintf('save %sAfinalcnmfeBatchVerMotion %s', outputdir, 'newIDs'));
+Vars = {'newIDs';'close_ind';'M2';'M3'}; Vars=Vars';
+eval(sprintf('save %sAfinalcnmfeBatchVerMotion %s -v7.3', outputdir, strjoin(Vars)));
 %% 5 "massive" procedure: Extract A from each file
 neuron_batchMO(length(filelist_fulllist)) = struct('ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
 

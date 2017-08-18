@@ -1,7 +1,7 @@
-function  [Afinal_alldays,MC,newIDs_alldays,merged_ROIs_alldays] = mergeACforMo(Amask,C,merge_thr,M)
+function  [Afinal_alldays,MC,newIDs_alldays,merged_ROIs_alldays,close_ind] = mergeACforMo(A,C,merge_thr,M,dmin,d1,d2)
 %% merge neurons based on simple spatial and temporal correlation
 % input:
-%   Amask: concatnated Amask from neurons from one or many files.
+%   A: concatnated Amask from neurons from one or many files.
 %   ACS:  structure, having fields of Ain, Cin (concatnated A and C from
 %         neurons from all files), and std of Cin(STD).
 %   merge_thr: 1X2 vector, threshold for two metrics {'A', 'C'}. it merge neurons based
@@ -34,45 +34,40 @@ A_thr = merge_thr(1);
 C_thr = merge_thr(2);
 
 STD=std(C,1,2);
+STD=max(diff(C,1,2))./STD;
+% qt=quantile(STD,10); %pick the last 10 percent to waste.
+% real_ind=STD>qt(1);  %%
+% A(:,real_ind)=0;
+% C(real_ind,:)=0;
+% STD(real_ind)=0;
 
 K = size(C,1);   % number of neurons
 %% find neuron pairs to merge
 % compute spatial correlation
+Amask=A>0;
 temp = bsxfun(@times, Amask, 1./sqrt(sum(Amask)));
+clear Amask
 A_overlap = temp'*temp;
 
 % compute temporal correlation
 C_corr = corr(C')-eye(K);
 
+% compute center distance
+ctr = round(com(A, d1, d2));
+yy = ctr(:,1);
+xx = ctr(:,2);
+dist_v = sqrt(bsxfun(@minus, xx, xx').^2 + bsxfun(@minus, yy, yy').^2); 
+
 % using merging criterion to detect paired neurons
-flag_merge = (A_overlap>A_thr)&(C_corr>C_thr);
+flag_merge1 = (A_overlap>A_thr)&(C_corr>C_thr);
+flag_merge2 = (dist_v<=dmin);
+flag_merge=or(flag_merge1,flag_merge2);
 
-mergegroups={};
-for i=1:size(flag_merge,1)
-    ind_temp=find(flag_merge(i,:));
-    if isempty(ind_temp)
-        continue
-    else
-        ind_temp=[i ind_temp];
-    end
-    mergegroups_intersect = cellfun(@(x) intersect(x,ind_temp),mergegroups,'UniformOutput', false);
-    mergegroups_idx = find(~cellfun('isempty',mergegroups_intersect));
-    if ~isempty(mergegroups_idx)
-        %mergegroups{mergegroups_idx}=union(ind_temp,mergegroups{mergegroups_idx});
-        mergegroups{mergegroups_idx(1)}=unique(cat(2,ind_temp,mergegroups{mergegroups_idx}));
-        if length(mergegroups_idx)>1
-            mergegroups(mergegroups_idx(2:end))=[];
-        end
-    else        
-        mergegroups{end+1}=ind_temp;
-    end
-end
-allneurons=1:size(flag_merge,1);
-MC=cellfun(@(x) ismember(allneurons,x),mergegroups,'UniformOutput',false);
-MC=cat(1,MC{:});
-MC=MC';
+MC=merge_detail(flag_merge);
+MC1=merge_detail(flag_merge1);
+[~,close_ind]=setdiff(MC',MC1','rows','stable');
 
-clear A_overlap C_corr C flag_merge;
+clear A_overlap C_corr C flag_merge1 flag_merge2 flag_merge;
 display('Deleted some big variables.')
 
 numofcells=max(sum(MC,1));
@@ -101,7 +96,7 @@ for i=1:numel(M)
     merged_ROIs = cell(n2merge,1);
     newIDs=cell(1,nr);
     ind_del=true(nr,1);
-    Afinal=zeros(size(Amask));
+    Afinal=zeros(size(A));
 
     A=cat(2,M{i}{:}); %This day's As.
 

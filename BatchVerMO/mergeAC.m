@@ -34,15 +34,14 @@ end
 A_thr = merge_thr(1);
 C_thr = merge_thr(2);
 
-%A=cat(2,ACS.Ain);
-%C=cat(2,ACS.Cin_raw);
 C=cat(2,ACS.Cin);
 STD=std(C,1,2);
-qt=quantile(STD,10); %pick the last 10 percent to waste.
-real_ind=STD>qt(1);  %%
+
+real_ind=max(diff(C,1,2))> 3*STD;
 A=A(:,real_ind);
 C=C(real_ind,:);
 STD=STD(real_ind);
+STD=max(diff(C,1,2))./STD;
 
 Amask=A>0;
 K = size(C,1);   % number of neurons
