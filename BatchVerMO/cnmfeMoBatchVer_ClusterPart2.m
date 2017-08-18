@@ -4,7 +4,7 @@
 cnmfefolder='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/';
 
 % load one of the logistics
-load(fullfile(cnmfefolder,'LogisticscnmfeBatchVer20170712.mat'));
+load(fullfile(cnmfefolder,'LogisticscnmfeBatchVer20170713.mat'));
 
 % load motion corrected A's
 load(fullfile(cnmfefolder,'cnmfe_BatchVer_PartII_MotionCorrection.mat'))
