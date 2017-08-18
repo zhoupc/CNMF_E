@@ -7,7 +7,7 @@ function [PartC, kernel_pars, sn, boundary,neuron_batch]=PartTraces(neuron_batch
 % Modified by Shijie Gu, ShanghaiTech University; Fee Lab at BCS, MIT.
 % Main dependence: deconvolveCa.mat in the original cnmf_e package.
 
-K=size(neuron_batch(1).signal,1);
+K=size(neuron_batch(1).rawsignal,1);
 PartC={};
 boundary={};
 kernel_pars={};
@@ -19,9 +19,9 @@ deconv_options_0 = neuron_batch(1).neuron.options.deconv_options;
 for ni=1:K
     C=[]; bound=[];
     for fi=1:length(neuron_batch)
-        sig_temp_inpoint=find(neuron_batch(fi).signal(ni,:)<inpoint,1,'first'); % estimate first noise level point
-        sig_temp_outpoint=find(neuron_batch(fi).signal(ni,:)<inpoint,1,'last'); % estimate last noise level point
-        C_tmp=neuron_batch(fi).signal(ni,sig_temp_inpoint:sig_temp_outpoint);
+        sig_temp_inpoint=find(neuron_batch(fi).rawsignal(ni,:)<inpoint,1,'first'); % estimate first noise level point
+        sig_temp_outpoint=find(neuron_batch(fi).rawsignal(ni,:)<inpoint,1,'last'); % estimate last noise level point
+        C_tmp=neuron_batch(fi).rawsignal(ni,sig_temp_inpoint:sig_temp_outpoint);
         C=[C C_tmp];                 % concatenate temporal signals
         bound=[bound size(C_tmp,2)]; %for debug
     end
@@ -43,7 +43,7 @@ for ni=1:K
     boundary{ni}=cumsum(bound); %for debug
     
     for fi=1:length(neuron_batch)
-        [neuron_batch(fi).signal(ni,:), ~, ~]= deconvolveCa(neuron_batch(fi).signal(ni,:), deconv_options_0,'pars', (kernel_pars{ni})','sn', sn{ni}, 'maxIter', 2);
+        [neuron_batch(fi).signal(ni,:), ~, ~]= deconvolveCa(neuron_batch(fi).rawsignal(ni,:), deconv_options_0,'pars', (kernel_pars{ni})','sn', sn{ni}, 'maxIter', 2);
     end
 end    
     

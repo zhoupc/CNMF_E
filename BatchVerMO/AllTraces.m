@@ -2,8 +2,8 @@ function [AllC, boundary]=AllTraces(neuron_batch)
 AllC=[];
 boundary=[];
 for i=1:length(neuron_batch)
-    AllC=[AllC neuron_batch(i).signal];
-    boundary=[boundary size(neuron_batch(i).signal,2)];
+    AllC=[AllC neuron_batch(i).rawsignal];
+    boundary=[boundary size(neuron_batch(i).rawsignal,2)];
 end
 boundary=cumsum(boundary);
 end

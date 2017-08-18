@@ -26,9 +26,11 @@ for i=1:numel(AandSample_list) %go through days
     File_temponeday=load(fullfile(cnmfefolder,Filesignal_list(i).name));
     AandSample_temponeday=load(fullfile(cnmfefolder,AandSample_list(i).name));     
     eachdayfilenum=[eachdayfilenum length(File_temponeday.File)];
-    File_temp(length(File_temponeday.File)) = struct('Ysignal',[],'options',[]); 
-    File_temp.Ysignal=File_temponeday.File.Ysignal;
-    File_temp.options=File_temponeday.File.options;
+    File_temp(length(File_temponeday.File)) = struct('Ysignal',[],'options',[]);
+    for j=1:length(File_temponeday.File)
+        File_temp(j).Ysignal=File_temponeday(j).File.Ysignal;
+        File_temp(j).options=File_temponeday(j).File.options;
+    end
     clear File_temponeday
     if i==1
         filelist_fulllist=AandSample_temponeday.samplelist;
@@ -109,14 +111,14 @@ end
 Vars = {'newIDs';'close_ind';'M2';'M3'}; Vars=Vars';
 eval(sprintf('save %sAfinalcnmfeBatchVerMotion %s -v7.3', outputdir, strjoin(Vars)));
 %% 5 "massive" procedure: Extract A from each file
-neuron_batchMO(length(filelist_fulllist)) = struct('ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
+neuron_batchMO(length(filelist_fulllist)) = struct('ind_del',[],'rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[]);
 
 parfor i= 1:length(filelist_fulllist)
     mode='massive';
     nam=fullfile(datadir,filelist_fulllist(i).name);
     k=find((eachfilenum_cumsum>=i),1);      
     %[~,neuron_batchMO(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],M3{k},neuron_batchMO(i),convolveType,merge_thr);
-    [~,neuron_batch(i)]=demo_endoscope2(bg_neuron_ratio,merge_thr,with_dendrites,K,sframe,num2read,...
+    [~,neuron_batchMO(i)]=demo_endoscope2(bg_neuron_ratio,merge_thr,with_dendrites,K,sframe,num2read,...
                                    nam,neuron_full,mode,[],neuron_batchMO(i),M3{k},...
                                    thresh_detecting_frames);
     neuron_batchMO(i).FileOrigin=filelist_fulllist(i); % save origin(filelist)
@@ -129,8 +131,8 @@ save([outputdir 'MassivecnmfeBatchVerMotion.mat'],'-v7.3')
 for i= 1:length(filelist_fulllist)
     for j=1:size(neuron_batchMO(i).neuron.A,2)
         jA=neuron_batchMO(i).neuron.A(:,j);
-        jC=neuron_batchMO(i).neuron.C(j,:);
-        neuron_batchMO(i).signal(j,:)=median(jA(jA>0)*jC);
+        jC=neuron_batchMO(i).neuron.C_raw(j,:);
+        neuron_batchMO(i).rawsignal(j,:)=median(jA(jA>0)*jC);
     end        
     fprintf('neuron_batch %.0f extraction done\n', i);
 end

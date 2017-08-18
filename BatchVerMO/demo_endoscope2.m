@@ -100,13 +100,13 @@ elseif strcmp(mode,'massive')
     BackgroundSub
     [C,~]=extract_c(Ysignal,[],Afinal);
     neuron.A=Afinal;
-    neuron.C=C;
+    neuron.C_raw=C;
     [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
     cnmfe_update_BG;
     [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
     A0s=[];
     File.ind_del=ind_del;
-    File.neuron=neuron;    
+    File.neuron=neuron;
     return 
 end
 
@@ -231,9 +231,9 @@ close(gcf);
 ColorAllNeurons(neuron.A,d1,d2,Picname,outputdir);
 if strcmp(mode,'initiation')
     A0s=neuron.A;
-    File.options=neuron.options;
-    File.Ysignal=Ysignal;
+    File.options=neuron.options;    
     File.neuron=neuron;
+    File.Ysignal=Ysignal;
     File.Ybg=Ybg;
 end
 clear global
