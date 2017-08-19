@@ -101,6 +101,7 @@ elseif strcmp(mode,'massive')
     [C,~]=extract_c(Ysignal,[],Afinal);
     neuron.A=Afinal;
     neuron.C_raw=C;
+    neuron.C=C;
     [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
     cnmfe_update_BG;
     [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
