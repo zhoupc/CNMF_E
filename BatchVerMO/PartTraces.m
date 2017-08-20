@@ -27,14 +27,15 @@ for ni=1:K
     end
 
     %% modification from updateTemporal
-%             if range(temp)/std(temp)>6
-%             [b, tmp_sn] = estimate_baseline_noise(temp);
-%         else
-%             b = mean(temp(temp<median(temp)));
-%             tmp_sn = GetSn(temp);
+    if range(temp)/std(temp)>6
+        [b, tmp_sn] = estimate_baseline_noise(C);
+    else
+        b = mean(C(C<median(C(C~=0))));%%%%%%%%%%%
+        tmp_sn = GetSn(C);
+    end
 %         end
-    b = mean(C(C<median(C(C~=0))));%%%%%%%%%%%
-    tmp_sn = GetSn(C);
+%     b = mean(C(C<median(C(C~=0))));%%%%%%%%%%%
+%     tmp_sn = GetSn(C);
     C = C -b;
     %C(C<0)=0;
     sn{ni} = tmp_sn;
