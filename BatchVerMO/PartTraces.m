@@ -27,7 +27,7 @@ for ni=1:K
     end
 
     %% modification from updateTemporal
-    if range(temp)/std(temp)>6
+    if range(C)/std(C)>6
         [b, tmp_sn] = estimate_baseline_noise(C);
     else
         b = mean(C(C<median(C(C~=0))));%%%%%%%%%%%
