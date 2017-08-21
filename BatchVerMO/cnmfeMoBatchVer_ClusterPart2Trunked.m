@@ -9,48 +9,9 @@ if running_on_cluster % some procedures making cluster use robust
     [~, ~, ~] = maybe_spawn_workers(workersnum); 
     init_par_rng(2016);
 end
-load(fullfile(outputdir,'PartTwoOFcnmfeBatchVerMOTION.mat'))
+load(fullfile(outputdir,'RoughAfinalcnmfeBatchVerMOTION.mat'))
 filelist_fulllist=filelist_fulllist(1:50);
-%save([outputdir 'PartTwoOFcnmfeBatchVerMOTION.mat'],'-v7.3')
-%% 3 Merge similar neurons
-%%% Merge similar neurons based on spatial AND temporal correlation
-% use the highest correlation one, here we use the middle day one to approximate.
 
-midone=round(S_L/2);
-Amask_temp=cat(2,M1{midone}{:});
-
-%Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
-C=cat(2,ACS.Cin);
-d1=File_fulllist(1).options.d1;
-d2=File_fulllist(1).options.d2;
-dmin=4;%%%%%%%%%%
-clear ACS File_samplelist; %File_fulllist
-[M2,MC,newIDs,merged_ROIs,close_ind] = mergeACforMo(Amask_temp,C,merge_thr_2,M1,dmin,d1,d2);
-
-save([outputdir 'RoughAfinalcnmfeBatchVerMOTION.mat'],'-v7.3')
-%% 4.5 Determine Afinal that will be used to extract C's in each file.
-
-%%% Some processes making Afinal nicer, modified from Pengcheng Zhou's
-%%% idea.
-M3=cell(1,numel(M2));
-for c=1:numel(M2)
-    Afinal=M2{c};
-    for i=1:size(Afinal,2)
-        ai=Afinal(:,i);
-        temp = full(ai>quantile(ai, 0.5, 1));
-        ai(~temp(:)) = 0;
-        Afinal(:,i)=ai;
-    end
-    % Just in case some all zero A's got passed to this stage.
-    nz_ind=any(Afinal);
-    Afinal=Afinal(:,nz_ind);
-    newIDs{c}=newIDs{c}(nz_ind);
-    Apicname=sprintf('Day%.0fAFinal',num2str(totaldays(c)));
-    ColorAllNeurons(Afinal,d1,d2,Apicname,[outputdir, num2str(totaldays(c)), '/']);
-    M3{c}=Afinal;
-end
-Vars = {'newIDs';'close_ind';'M2';'M3'}; Vars=Vars';
-eval(sprintf('save %sAfinalcnmfeBatchVerMotion %s -v7.3', outputdir, strjoin(Vars)));
 %% 5 "massive" procedure: Extract A from each file
 neuron_batchMO(length(filelist_fulllist)) = struct('ind_del',[],'rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[]);
 
@@ -59,6 +20,7 @@ parfor i= 1:length(filelist_fulllist)
     nam=cell(1,2);
     nam{1}=fullfile(datadir,filelist_fulllist(i).name);
     nam{2}=File_fulllist(i).Ysignal;
+    display([nam{1} num2str(size(nam{2},2))])
     k=find((eachfilenum_cumsum>=i),1);      
     %[~,neuron_batchMO(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],M3{k},neuron_batchMO(i),convolveType,merge_thr);
     [~,neuron_batchMO(i)]=demo_endoscope2(bg_neuron_ratio,merge_thr,with_dendrites,K,sframe,num2read,...
