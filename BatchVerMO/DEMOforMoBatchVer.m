@@ -10,22 +10,22 @@ Version='MoBatchVer';
 % (1)/1/
 codeDir='/home/shijiegu/cnmf_e/';
 %    /2/
-outputdir='/Volumes/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/';
+outputdir='/Volumes/shared-2/EmilyShijieShared_old/6922_moBatchVerNYVersion/';
 outputdir_local=outputdir;
-outputdir=strrep(outputdir,'/Volumes/shared/','/net/feevault/data0/shared/');
+outputdir=strrep(outputdir,'/Volumes/shared-2/','/net/feevault/data0/shared/');
 if ~exist(outputdir_local,'dir')
     mkdir(outputdir_local)
 end
 
 mkdir([outputdir_local '/videos'])
-outputdir_video=strrep(outputdir_local,'/Volumes/shared/','/net/feevault/data0/shared/');
+outputdir_video=strrep(outputdir_local,'/Volumes/shared-2/','/net/feevault/data0/shared/');
 
 % II PARAMETERS
 % about loading data
 sframe=1;                                          % first frame to read (optional, default:1)
 num2read= [];                                      % how many frames to read   (optional, default: until the end)
 
-% create Source2D class object for storing results and parameters
+% create Source2D class object for storing results and parameters  
 with_dendrites=false;                              % with dendrites or not
 K = [];                                            % maximum number of neurons to search. 
                                                    % Use [] to search the number automatically
@@ -35,7 +35,7 @@ neuron_full = Sources2D('ssub',1, 'tsub',1, ...  % downsampling
     'min_corr',0.8,'min_pnr',10, ...
     'min_pixel',50,...                            % minimum number of nonzero pixels for each neuron
     'bd',1);                                      % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
-neuron_full.Fs = 30;                               % frame rate    
+neuron_full.Fs = 30;                               % frame rate  
 % options for running deconvolution 
 neuron_full.options.deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1', 'ar2'}
     ...% convolveType: string, defines the model of the deconvolution kernel. possible options are:
@@ -80,11 +80,11 @@ for i=1:length(totaldays)
     outputdirDetails = [outputdir, num2str(totaldays(i)), '/'];
     
     [datadir,sampledir,~,filelist,samplelist]=...
-           InputOutput('datadir','/Volumes/shared/EmilyShijieShared/ProcessedCalciumData/6991FirstFewDaysForBatch/ActuallyUsedInCNMFE/',...
+           InputOutput('datadir','/Volumes/shared-2/EmilyShijieShared/ProcessedCalciumData/6991FirstFewDaysForBatch/ActuallyUsedInCNMFE/',...
                        'datakind',['*' num2str(totaldays(i)) '*']);
     % replace for actual dir on cluster
-    datadir=strrep(datadir,'/Volumes/shared/','/net/feevault/data0/shared/');
-    sampledir=strrep(sampledir,'/Volumes/shared/','/net/feevault/data0/shared/');
+    datadir=strrep(datadir,'/Volumes/shared-2/','/net/feevault/data0/shared/');
+    sampledir=strrep(sampledir,'/Volumes/shared-2/','/net/feevault/data0/shared/');
     
    % Finally, save all these parameters/variables into LogisticscnmfeBatchVer.mat
     ininame='LogisticscnmfeBatchVer';
@@ -98,7 +98,8 @@ end
 
 % (1) jobdir folder, shellname
 %jobdir='/home/shijiegu/jobs/6922BatchVerMo/';
-local_jobdir='/Users/gushijie/Documents/MATLAB/Jobs/6922BatchVerMo_NY/';
+jobdir='6922BatchVerMo_NY';
+local_jobdir=['/Users/gushijie/Documents/MATLAB/Jobs/' jobdir '/'];%6922BatchVerMo_NY/';
 shellname='BatchVerMO6922_NY.sh';
 
 if ~exist(local_jobdir,'dir')
@@ -135,8 +136,9 @@ end
 
 %% C. making the shell script
 fileID = fopen('BatchVerMO6922_shell.sh','w');
-forloop=['for file in %s; do\n',...
+forloop=['cd %s\n',...
+         'for file in %s; do\n',...
          'sbatch BatchVerMO6922_${file}.sbatch\n',...
          'sleep 1\n',...
          'done'];
-fprintf(fileID,forloop,num2str(totaldays));    
+fprintf(fileID,forloop,jobdir,num2str(totaldays));    
