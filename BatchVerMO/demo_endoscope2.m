@@ -25,6 +25,7 @@ global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
 Picname=picname;
 %% select data and map it to the RAM
 nam=name;
+display(nam)
 cnmfe_choose_data;
 neuron_full=neuron_full_partial;
 neuron_full.updateParams('d1',d1, 'd2',d2);
@@ -102,12 +103,14 @@ elseif strcmp(mode,'massive')
     neuron.A=Afinal;
     neuron.C_raw=C;
     neuron.C=C;
+    display(size(C))
     [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
     cnmfe_update_BG;
     [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
     A0s=[];
     File.ind_del=ind_del;
     File.neuron=neuron;
+    clear global
     return 
 end
 

@@ -17,6 +17,7 @@ inpoint=max(AllC(1,:),[],2)/50; % estimate noise level first point
 deconv_options_0 = neuron_batch(1).neuron.options.deconv_options;
 
 for ni=1:K
+    display(ni)
     C=[]; bound=[];
     for fi=1:length(neuron_batch)
         sig_temp_inpoint=find(neuron_batch(fi).rawsignal(ni,:)<inpoint,1,'first'); % estimate first noise level point

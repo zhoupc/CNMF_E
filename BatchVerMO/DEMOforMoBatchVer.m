@@ -26,7 +26,6 @@ sframe=1;                                          % first frame to read (option
 num2read= [];                                      % how many frames to read   (optional, default: until the end)
 
 % create Source2D class object for storing results and parameters
-neuron_full.Fs = 30;                               % frame rate    
 with_dendrites=false;                              % with dendrites or not
 K = [];                                            % maximum number of neurons to search. 
                                                    % Use [] to search the number automatically
@@ -36,7 +35,7 @@ neuron_full = Sources2D('ssub',1, 'tsub',1, ...  % downsampling
     'min_corr',0.8,'min_pnr',10, ...
     'min_pixel',50,...                            % minimum number of nonzero pixels for each neuron
     'bd',1);                                      % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
-
+neuron_full.Fs = 30;                               % frame rate    
 % options for running deconvolution 
 neuron_full.options.deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1', 'ar2'}
     ...% convolveType: string, defines the model of the deconvolution kernel. possible options are:
