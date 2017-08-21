@@ -10,7 +10,11 @@ function [C_offset,ind_del] = updateTemporal_endoscope(obj, Y, allow_deletion)
 
 % options
 global mode
-maxIter = obj.options.maxIter;
+if strcmp(mode,'initiation')
+    maxIter = obj.options.maxIter;
+else
+    maxIter=1;
+end
 deconv_options_0 = obj.options.deconv_options;
 
 if ~exist('allow_deletion', 'var')
@@ -76,7 +80,7 @@ for miter=1:maxIter
             end
             
             if strcmp(mode,'massive')
-                ck = max(0, temp);
+                ck = temp;%max(0, temp);
                 sk=zeros(1,size(C,2));
                 if or(strcmp(deconv_options_0.type,'ar1'),strcmp(deconv_options_0.type,'kernel'))
                     kernel_pars{k}=single(0); 

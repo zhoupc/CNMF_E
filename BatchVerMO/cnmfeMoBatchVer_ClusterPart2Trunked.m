@@ -10,7 +10,7 @@ if running_on_cluster % some procedures making cluster use robust
     init_par_rng(2016);
 end
 load(fullfile(outputdir,'RoughAfinalcnmfeBatchVerMOTION.mat'))
-
+filelist_fulllist=filelist_fulllist(1:50);
 %% 4.5 Determine Afinal that will be used to extract C's in each file.
 
 %%% Some processes making Afinal nicer, modified from Pengcheng Zhou's
@@ -39,7 +39,9 @@ neuron_batchMO(length(filelist_fulllist)) = struct('ind_del',[],'rawsignal',[],'
 
 parfor i= 1:length(filelist_fulllist)
     mode='massive';
-    nam=fullfile(datadir,filelist_fulllist(i).name);
+    nam=cell(1,2);
+    nam{1}=fullfile(datadir,filelist_fulllist(i).name);
+    nam{2}=File_fulllist(i).Ysignal;
     k=find((eachfilenum_cumsum>=i),1);      
     %[~,neuron_batchMO(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],M3{k},neuron_batchMO(i),convolveType,merge_thr);
     [~,neuron_batchMO(i)]=demo_endoscope2(bg_neuron_ratio,merge_thr,with_dendrites,K,sframe,num2read,...

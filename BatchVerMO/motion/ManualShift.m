@@ -22,7 +22,7 @@ function varargout = ManualShift(varargin)
 
 % Edit the above text to modify the response to help ManualShift
 
-% Last Modified by GUIDE v2.5 10-Aug-2017 18:39:08
+% Last Modified by GUIDE v2.5 21-Aug-2017 13:41:49
 
 
 % Begin initialization code - DO NOT EDIT
@@ -942,3 +942,51 @@ if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColo
     set(hObject,'BackgroundColor',[.9 .9 .9]);
 end
 set(hObject, 'Value', 1);
+
+
+
+function edit_del_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_del (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_del as text
+%        str2double(get(hObject,'String')) returns contents of edit_del as a double
+temp_neuron_list_str=get(hObject,'String');
+display(temp_neuron_list_str)
+if ~strcmp(temp_neuron_list_str(end),';')
+    temp_neuron_list_str(end+1)=';';
+end
+temp_neuron_list=sscanf(temp_neuron_list_str,'%d-%d;');
+handles.temp_neuron_list=reshape(temp_neuron_list,2,[]);  %two rows, first row-template, second row-the toAlign.
+% Update handles structure
+guidata(hObject, handles);
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_del_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_del (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in pushbutton_del.
+function pushbutton_del_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_del (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+whichpic=handles.temp_neuron_list(1);
+whichneuron=handles.temp_neuron_list(2);
+for i = 1:length(handles.M)
+    handles.M{i}{whichpic}(:,whichneuron)=[];
+end
+display(['neuron ' num2str(whichneuron) 'in file ' num2str(whichpic) ' deleted.')
+% Update handles structure
+guidata(hObject, handles);
+ToAlign_Callback(handles.ToAlign, eventdata, handles)

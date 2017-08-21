@@ -24,9 +24,12 @@ global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
     neuron_full Ybg_weights mode Picname nam outputdir; %#ok<NUSED> % global variables, don't change them manually
 Picname=picname;
 %% select data and map it to the RAM
-nam=name;
+nam=name{1};
 display(nam)
 cnmfe_choose_data;
+
+Ysignal=name{2};
+display(size(Ysignal))
 neuron_full=neuron_full_partial;
 neuron_full.updateParams('d1',d1, 'd2',d2);
 min_pixel=neuron_full.options.min_pixel;
@@ -98,7 +101,7 @@ elseif strcmp(mode,'massive')
     % parameters, estimate the background
     spatial_ds_factor = 1;              % spatial downsampling factor. it's for faster estimation
     thresh = 10;                        % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
-    BackgroundSub
+    %BackgroundSub
     [C,~]=extract_c(Ysignal,[],Afinal);
     neuron.A=Afinal;
     neuron.C_raw=C;

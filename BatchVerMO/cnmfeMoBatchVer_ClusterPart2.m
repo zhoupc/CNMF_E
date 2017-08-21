@@ -82,7 +82,7 @@ C=cat(2,ACS.Cin);
 d1=File_fulllist(1).options.d1;
 d2=File_fulllist(1).options.d2;
 dmin=4;%%%%%%%%%%
-clear ACS File_fulllist File_samplelist;
+clear ACS File_fulllist %File_samplelist;
 [M2,MC,newIDs,merged_ROIs,close_ind] = mergeACforMo(Amask_temp,C,merge_thr_2,M1,dmin,d1,d2);
 
 save([outputdir 'RoughAfinalcnmfeBatchVerMOTION.mat'],'-v7.3')
