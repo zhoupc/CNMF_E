@@ -22,7 +22,7 @@ function varargout = ManualShift(varargin)
 
 % Edit the above text to modify the response to help ManualShift
 
-% Last Modified by GUIDE v2.5 21-Aug-2017 13:41:49
+% Last Modified by GUIDE v2.5 21-Aug-2017 15:57:48
 
 
 % Begin initialization code - DO NOT EDIT
@@ -222,6 +222,7 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 
 neuron_list_tmpl_Callback(handles.neuron_list_tmpl,eventdata, handles)
 handles=guidata(hObject);
+handles.M_intact=handles.M;
 d1=handles.d1;                             d2=handles.d2;
 template_num=handles.currentpair(1);       ToAlign_num=handles.currentpair(2);
 neuron_templ_ind=handles.neuron_list(1,:); neuron_ToAlign_ind=handles.neuron_list(2,:);
@@ -983,10 +984,26 @@ function pushbutton_del_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 whichpic=handles.temp_neuron_list(1);
 whichneuron=handles.temp_neuron_list(2);
+handles.M_intact=handles.M;
 for i = 1:length(handles.M)
     handles.M{i}{whichpic}(:,whichneuron)=[];
 end
-display(['neuron ' num2str(whichneuron) 'in file ' num2str(whichpic) ' deleted.')
+display(['neuron ' num2str(whichneuron) 'in file ' num2str(whichpic) ' deleted.'])
+set(handles.edit_del,'String',[]);
+uicontrol(handles.slider1)
+% Update handles structure
+guidata(hObject, handles);
+ToAlign_Callback(handles.ToAlign, eventdata, handles)
+
+
+% --- Executes on button press in cancel_del.
+function cancel_del_Callback(hObject, eventdata, handles)
+% hObject    handle to cancel_del (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+handles.M=handles.M_intact;
+
 % Update handles structure
 guidata(hObject, handles);
 ToAlign_Callback(handles.ToAlign, eventdata, handles)
