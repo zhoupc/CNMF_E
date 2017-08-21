@@ -9,8 +9,25 @@ if running_on_cluster % some procedures making cluster use robust
     [~, ~, ~] = maybe_spawn_workers(workersnum); 
     init_par_rng(2016);
 end
-load(fullfile(outputdir,'RoughAfinalcnmfeBatchVerMOTION.mat'))
+load(fullfile(outputdir,'PartTwoOFcnmfeBatchVerMOTION.mat'))
 filelist_fulllist=filelist_fulllist(1:50);
+%save([outputdir 'PartTwoOFcnmfeBatchVerMOTION.mat'],'-v7.3')
+%% 3 Merge similar neurons
+%%% Merge similar neurons based on spatial AND temporal correlation
+% use the highest correlation one, here we use the middle day one to approximate.
+
+midone=round(S_L/2);
+Amask_temp=cat(2,M1{midone}{:});
+
+%Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
+C=cat(2,ACS.Cin);
+d1=File_fulllist(1).options.d1;
+d2=File_fulllist(1).options.d2;
+dmin=4;%%%%%%%%%%
+clear ACS File_samplelist; %File_fulllist
+[M2,MC,newIDs,merged_ROIs,close_ind] = mergeACforMo(Amask_temp,C,merge_thr_2,M1,dmin,d1,d2);
+
+save([outputdir 'RoughAfinalcnmfeBatchVerMOTION.mat'],'-v7.3')
 %% 4.5 Determine Afinal that will be used to extract C's in each file.
 
 %%% Some processes making Afinal nicer, modified from Pengcheng Zhou's
