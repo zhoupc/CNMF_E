@@ -9,33 +9,9 @@ if running_on_cluster % some procedures making cluster use robust
     [~, ~, ~] = maybe_spawn_workers(workersnum); 
     init_par_rng(2016);
 end
-load(fullfile(outputdir,'RoughAfinalcnmfeBatchVerMOTION.mat'))
+load(fullfile(outputdir,'NiceAfinalcnmfeBatchVerMOTION.mat'))
 filelist_fulllist=filelist_fulllist(1:50);
 
-%% 4.5 Determine Afinal that will be used to extract C's in each file.
-
-%%% Some processes making Afinal nicer, modified from Pengcheng Zhou's
-%%% idea.
-M3=cell(1,numel(M2));
-for c=1:numel(M2)
-    Afinal=M2{c};
-    for i=1:size(Afinal,2)
-        ai=Afinal(:,i);
-        temp = full(ai>quantile(ai, 0.5, 1));
-        ai(~temp(:)) = 0;
-        Afinal(:,i)=ai;
-    end
-    % Just in case some all zero A's got passed to this stage.
-    nz_ind=any(Afinal);
-    Afinal=Afinal(:,nz_ind);
-    newIDs{c}=newIDs{c}(nz_ind);
-    Apicname=sprintf('Day%.0fAFinal',num2str(totaldays(c)));
-    ColorAllNeurons(Afinal,d1,d2,Apicname,[outputdir, num2str(totaldays(c)), '/']);
-    M3{c}=Afinal;
-end
-Vars = {'newIDs';'close_ind';'M2';'M3'}; Vars=Vars';
-eval(sprintf('save %sAfinalcnmfeBatchVerMotion %s -v7.3', outputdir, strjoin(Vars)));
-save([outputdir 'NiceAfinalcnmfeBatchVerMOTION.mat'],'-v7.3')
 %% 5 "massive" procedure: Extract A from each file
 neuron_batchMO(length(filelist_fulllist)) = struct('ind_del',[],'rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[]);
 

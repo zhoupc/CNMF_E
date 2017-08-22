@@ -102,17 +102,17 @@ elseif strcmp(mode,'massive')
     spatial_ds_factor = 1;              % spatial downsampling factor. it's for faster estimation
     thresh = 10;                        % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
     %BackgroundSub
+    NEURON=neuron;
     [C,~]=extract_c(Ysignal,[],Afinal);
-    neuron.A=Afinal;
-    neuron.C_raw=C;
-    neuron.C=C;
+    NEURON.A=Afinal;
+    NEURON.C_raw=C;
+    NEURON.C=C;
     display(size(C))
-    [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
-    cnmfe_update_BG;
-    [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
+    [~,ind_del]=NEURON.updateTemporal_endoscope(Ysignal,false);
+    cnmfe_update_BG_2;
+    [~,ind_del]=NEURON.updateTemporal_endoscope(Ysignal,false);
     A0s=[];
     File.ind_del=ind_del;
-    NEURON=neuron;
     File.neuron=NEURON;
     clear global
     return 
