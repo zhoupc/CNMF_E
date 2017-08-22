@@ -112,7 +112,8 @@ elseif strcmp(mode,'massive')
     [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
     A0s=[];
     File.ind_del=ind_del;
-    File.neuron=neuron;
+    NEURON=neuron;
+    File.neuron=NEURON;
     clear global
     return 
 end
@@ -236,10 +237,11 @@ neuron.drawPNRCn(min_pnr,min_corr)
 close(gcf);
 
 ColorAllNeurons(neuron.A,d1,d2,Picname,outputdir);
+NEURON=neuron;
 if strcmp(mode,'initiation')
     A0s=neuron.A;
     File.options=neuron.options;    
-    File.neuron=neuron;
+    File.neuron=NEURON;
     File.Ysignal=Ysignal;
     File.Ybg=Ybg;
 end
