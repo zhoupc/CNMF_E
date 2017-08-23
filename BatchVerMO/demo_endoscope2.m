@@ -117,7 +117,7 @@ elseif strcmp(mode,'massive')
     %File.A=Afinal;
     File.C=neuron.C;
     File.C_raw=neuron.C_raw;
-    NEURON=neuron;
+    NEURON=neuron.copy();
     File.neuron=NEURON;
     clear global
     clear NEURON

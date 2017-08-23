@@ -28,9 +28,13 @@ parfor i= 1:length(filelist_fulllist)
                                    nam,neuron_full,mode,[],neuron_batchMO(i),M3{k},...
                                    thresh_detecting_frames);
     display('line30')
-    neuron_batchMO(i).neuron.C=neuron_batchMO(i).C;
-    neuron_batchMO(i).neuron.C_raw=neuron_batchMO(i).C_raw;
-    neuron_batchMO(i).neuron.A=M3{k};
+    NEURON=neuron_batchMO(i).neuron.copy();
+    NEURON.C=[]; NEURON.C_raw=[];
+    NEURON.C=neuron_batchMO(i).C;
+    NEURON.C_raw=neuron_batchMO(i).C_raw;
+    NEURON.A=M3{k};
+    neuron_batchMO(i).neuron=[];
+    neuron_batchMO(i).neuron=NEURON;
     display('line36')
     neuron_batchMO(i).FileOrigin=filelist_fulllist(i); % save origin(filelist)
 end
