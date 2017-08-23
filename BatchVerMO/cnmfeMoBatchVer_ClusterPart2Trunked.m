@@ -26,8 +26,10 @@ parfor i= 1:length(filelist_fulllist)
     [~,neuron_batchMO(i)]=demo_endoscope2(bg_neuron_ratio,merge_thr,with_dendrites,K,sframe,num2read,...
                                    nam,neuron_full,mode,[],neuron_batchMO(i),M3{k},...
                                    thresh_detecting_frames);
-    neuron_batchMO(i).neuron.C=neuron_batchMO(i).C;
-    neuron_batchMO(i).neuron.C_raw=neuron_batchMO(i).C_raw;
+    neuron=neuron_batchMO(i).neuron;
+    neuron.C=neuron_batchMO(i).C;
+    neuron.C_raw=neuron_batchMO(i).C_raw;
+    neuron_batchMO(i).neuron=neuron;
     neuron_batchMO(i).FileOrigin=filelist_fulllist(i); % save origin(filelist)
 end
 fprintf('Massive extraction done.');
