@@ -114,7 +114,7 @@ elseif strcmp(mode,'massive')
     [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
     A0s=[];
     File.ind_del=ind_del;
-    File.A=Afinal;
+    %File.A=Afinal;
     File.C=neuron.C;
     File.C_raw=neuron.C_raw;
     NEURON=neuron;
