@@ -10,7 +10,7 @@ if running_on_cluster % some procedures making cluster use robust
     init_par_rng(2016);
 end
 load(fullfile(outputdir,'NiceAfinalcnmfeBatchVerMOTION.mat'))
-filelist_fulllist=filelist_fulllist(1:50);
+filelist_fulllist=filelist_fulllist(1:25);
 
 %% 5 "massive" procedure: Extract A from each file
 neuron_batchMO(length(filelist_fulllist)) = struct('ind_del',[],'rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[],'C',[],'C_raw',[]);
