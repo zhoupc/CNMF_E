@@ -21,15 +21,19 @@ parfor i= 1:length(filelist_fulllist)
     nam{1}=fullfile(datadir,filelist_fulllist(i).name);
     nam{2}=File_fulllist(i).Ysignal;
     display([nam{1} num2str(size(nam{2},2))])
-    k=find((eachfilenum_cumsum>=i),1);      
+    k=find((eachfilenum_cumsum>=i),1);  
+    display('line25')
     %[~,neuron_batchMO(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],M3{k},neuron_batchMO(i),convolveType,merge_thr);
     [~,neuron_batchMO(i)]=demo_endoscope2(bg_neuron_ratio,merge_thr,with_dendrites,K,sframe,num2read,...
                                    nam,neuron_full,mode,[],neuron_batchMO(i),M3{k},...
                                    thresh_detecting_frames);
+    display('line30')
     neuron=neuron_batchMO(i).neuron;
+    display('line32')
     neuron.C=neuron_batchMO(i).C;
     neuron.C_raw=neuron_batchMO(i).C_raw;
     neuron_batchMO(i).neuron=neuron;
+    display('line36')
     neuron_batchMO(i).FileOrigin=filelist_fulllist(i); % save origin(filelist)
 end
 fprintf('Massive extraction done.');
