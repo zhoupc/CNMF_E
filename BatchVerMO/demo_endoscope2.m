@@ -31,6 +31,7 @@ cnmfe_choose_data;
 Ysignal=name{2};
 display(size(Ysignal))
 neuron_full=neuron_full_partial;
+clear neuron_full_partial
 neuron_full.updateParams('d1',d1, 'd2',d2);
 min_pixel=neuron_full.options.min_pixel;
 min_pnr=neuron_full.options.min_pnr;
@@ -102,19 +103,24 @@ elseif strcmp(mode,'massive')
     spatial_ds_factor = 1;              % spatial downsampling factor. it's for faster estimation
     thresh = 10;                        % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
     %BackgroundSub
-    NEURON=neuron;
+    %NEURON=neuron;
     [C,~]=extract_c(Ysignal,[],Afinal);
-    NEURON.A=Afinal;
-    NEURON.C_raw=C;
-    NEURON.C=C;
+    neuron.A=Afinal;
+    neuron.C_raw=C;
+    neuron.C=C;
     display(size(C))
-    [~,ind_del]=NEURON.updateTemporal_endoscope(Ysignal,false);
-    cnmfe_update_BG_2;
-    [~,ind_del]=NEURON.updateTemporal_endoscope(Ysignal,false);
+    [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
+    cnmfe_update_BG;
+    [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
     A0s=[];
     File.ind_del=ind_del;
+    File.A=Afinal;
+    File.C=neuron.C;
+    File.C_raw=neuron.C_raw;
+    NEURON=neuron;
     File.neuron=NEURON;
     clear global
+    clear NEURON
     return 
 end
 
@@ -237,11 +243,11 @@ neuron.drawPNRCn(min_pnr,min_corr)
 close(gcf);
 
 ColorAllNeurons(neuron.A,d1,d2,Picname,outputdir);
-NEURON=neuron;
+neuron=neuron;
 if strcmp(mode,'initiation')
     A0s=neuron.A;
     File.options=neuron.options;    
-    File.neuron=NEURON;
+    File.neuron=neuron;
     File.Ysignal=Ysignal;
     File.Ybg=Ybg;
 end

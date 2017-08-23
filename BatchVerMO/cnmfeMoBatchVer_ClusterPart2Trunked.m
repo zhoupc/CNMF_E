@@ -13,7 +13,7 @@ load(fullfile(outputdir,'NiceAfinalcnmfeBatchVerMOTION.mat'))
 filelist_fulllist=filelist_fulllist(1:50);
 
 %% 5 "massive" procedure: Extract A from each file
-neuron_batchMO(length(filelist_fulllist)) = struct('ind_del',[],'rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[]);
+neuron_batchMO(length(filelist_fulllist)) = struct('ind_del',[],'rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[],'C',[],'C_raw',[]);
 
 parfor i= 1:length(filelist_fulllist)
     mode='massive';
@@ -26,6 +26,8 @@ parfor i= 1:length(filelist_fulllist)
     [~,neuron_batchMO(i)]=demo_endoscope2(bg_neuron_ratio,merge_thr,with_dendrites,K,sframe,num2read,...
                                    nam,neuron_full,mode,[],neuron_batchMO(i),M3{k},...
                                    thresh_detecting_frames);
+    neuron_batchMO(i).neuron.C=neuron_batchMO(i).C;
+    neuron_batchMO(i).neuron.C_raw=neuron_batchMO(i).C_raw;
     neuron_batchMO(i).FileOrigin=filelist_fulllist(i); % save origin(filelist)
 end
 fprintf('Massive extraction done.');
