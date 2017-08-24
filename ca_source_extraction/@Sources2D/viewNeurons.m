@@ -118,7 +118,7 @@ while and(m>=1, m<=length(ind))
                 obj.C_raw(end+1, :) = obj.C_raw(ind(m), :);
                 obj.P.kernel_pars(end+1, :) = obj.P.kernel_pars(ind(m), :);
             catch
-                sprintf('the neuron was not split\n');
+                fprintf('the neuron was not split\n');
             end
         elseif strcmpi(temp, 't')
             try
@@ -128,13 +128,16 @@ while and(m>=1, m<=length(ind))
                 Amask(:, ind(m)) = tmp_ind(:);
                 ind_trim(m) = true; 
             catch
-                sprintf('the neuron was not trimmed\n');
+                fprintf('the neuron was not trimmed\n');
             end
         elseif strcmpi(temp, 'tc')
                 Amask(:, ind(m)) = (obj.A(:, ind(m)) > 0);
                 ind_trim(m) = false; 
         elseif strcmpi(temp, 'e')
             break;
+        elseif ~isnan(str2double(temp))
+            m = m + floor(str2double(temp)); 
+            fprintf('jump to neuron %d / %d', m, length(ind)); 
         else
             m = m+1;
         end

@@ -464,10 +464,6 @@ classdef Sources2D < handle
                 
                 temp = full(ai_open>max(ai)*thr);
                 l = bwlabel(obj.reshape(temp,2), 4);   % remove disconnected components
-                %
-                %                 [tmp_count, tmp_l] = hist(l(l>0), unique(l(l>0)));
-                %                 [~, ind] = max(tmp_count);
-                %                 lmax = tmp_l(ind);
                 [~, ind_max] = max(ai_open(:));
                 
                 ai(l(:)~=l(ind_max)) = 0;
@@ -479,6 +475,15 @@ classdef Sources2D < handle
             ind_small = find(ind_small);
             obj.delete(ind_small);
         end
+        
+        %% keep spatial shapes compact 
+        function compactSpatial(obj)
+            for m=1:size(obj.A, 2)
+                ai = obj.reshape(obj.A(:, m), 2); 
+                ai = spatial_constraints(ai); 
+                obj.A(:, m) = ai(:); 
+            end
+        end 
         
         %% solve A & C with regression
         function [ind_delete] = regressAC(obj, Y)
