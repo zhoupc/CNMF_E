@@ -25,12 +25,11 @@ parfor i= 1:length(filelist_fulllist)
     [~,neuron_batchMO(i)]=demo_endoscope2(bg_neuron_ratio,merge_thr,with_dendrites,K,sframe,num2read,...
                                    nam,neuron_full,mode,[],neuron_batchMO(i),M3{k},...
                                    thresh_detecting_frames);
-    NEURON=neuron_batchMO(i).neuron.copy();
-    NEURON.C=neuron_batchMO(i).C;
-    NEURON.C_raw=neuron_batchMO(i).C_raw;
-    NEURON.A=M3{k};
-    %neuron_batchMO(i).neuron=[];
-    neuron_batchMO(i).neuron=NEURON;
+    %NEURON=neuron_batchMO(i).neuron.copy();
+    %NEURON.C=neuron_batchMO(i).C;
+    %NEURON.C_raw=neuron_batchMO(i).C_raw;
+    %NEURON.A=M3{k};
+    %neuron_batchMO(i).neuron=NEURON;
     neuron_batchMO(i).FileOrigin=filelist_fulllist(i); % save origin(filelist)
 end
 neuron_batchMO = rmfield(neuron_batchMO,{'C','C_raw'});
