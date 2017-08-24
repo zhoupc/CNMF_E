@@ -22,18 +22,14 @@ parfor i= 1:length(filelist_fulllist)
     nam{2}=File_fulllist(i).Ysignal;
     display([nam{1} num2str(size(nam{2},2))])
     k=find((eachfilenum_cumsum>=i),1);  
-    display('line25')
-    %[~,neuron_batchMO(i)]=demo_endoscope2(gSig,gSiz,min_corr,min_pnr,min_pixel,bd,FS,SSub,TSub,bg_neuron_ratio,nam,mode,[],M3{k},neuron_batchMO(i),convolveType,merge_thr);
     [~,neuron_batchMO(i)]=demo_endoscope2(bg_neuron_ratio,merge_thr,with_dendrites,K,sframe,num2read,...
                                    nam,neuron_full,mode,[],neuron_batchMO(i),M3{k},...
                                    thresh_detecting_frames);
-    display('line30')
     NEURON=neuron_batchMO(i).neuron.copy();
-    %NEURON.C=[]; NEURON.C_raw=[];
     NEURON.C=neuron_batchMO(i).C;
     NEURON.C_raw=neuron_batchMO(i).C_raw;
     NEURON.A=M3{k};
-    neuron_batchMO(i).neuron=[];
+    %neuron_batchMO(i).neuron=[];
     neuron_batchMO(i).neuron=NEURON;
     neuron_batchMO(i).FileOrigin=filelist_fulllist(i); % save origin(filelist)
 end
