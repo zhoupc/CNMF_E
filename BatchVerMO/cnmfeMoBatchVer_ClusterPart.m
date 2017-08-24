@@ -141,7 +141,7 @@ parfor i= 1:length(filelist)
 end
 
 %% 5.5 deconvolve signal
-[~, ~, ~, ~,neuron_batch]=PartTraces(neuron_batch);
+[~, ~, ~, ~,~,neuron_batch,~]=PartTraces(neuron_batch);
 
 %fprintf('First %.0f neurons are successfully deconvolved in each file while those after that are missing in some files\n', sum(~ind_del_final));
 fprintf('ALL extractions done.\n');

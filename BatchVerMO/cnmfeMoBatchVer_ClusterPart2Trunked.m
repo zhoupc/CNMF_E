@@ -29,15 +29,15 @@ parfor i= 1:length(filelist_fulllist)
                                    thresh_detecting_frames);
     display('line30')
     NEURON=neuron_batchMO(i).neuron.copy();
-    NEURON.C=[]; NEURON.C_raw=[];
+    %NEURON.C=[]; NEURON.C_raw=[];
     NEURON.C=neuron_batchMO(i).C;
     NEURON.C_raw=neuron_batchMO(i).C_raw;
     NEURON.A=M3{k};
     neuron_batchMO(i).neuron=[];
     neuron_batchMO(i).neuron=NEURON;
-    display('line36')
     neuron_batchMO(i).FileOrigin=filelist_fulllist(i); % save origin(filelist)
 end
+neuron_batchMO = rmfield(neuron_batchMO,{'C','C_raw'});
 fprintf('Massive extraction done.');
 save([outputdir 'MassivecnmfeBatchVerMotion.mat'],'-v7.3')
 
@@ -53,8 +53,9 @@ for i= 1:length(filelist_fulllist)
 end
 
 %% 5.5 deconvolve signal
-[~, ~, ~, ~,neuron_batchMO]=PartTraces(neuron_batchMO);
+[~, ~, ~, ~,~,neuron_batchMO,boundary_raw]=PartTraces(neuron_batchMO);
+Vars = {'neuron_batchMO';'boundary_raw'}; Vars=Vars';
 
 fprintf('ALL moBatchVer extractions done.\n');
-eval(sprintf('save %sCNMFE_moBatchVer.mat %s -v7.3', outputdir, 'neuron_batchMO'));
+eval(sprintf('save %sCNMFE_moBatchVer.mat %s -v7.3', outputdir, strjoin(Vars)));
 fprintf('ALL moBatchVer data saved, check them out!');
