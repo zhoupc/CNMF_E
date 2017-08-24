@@ -2,34 +2,24 @@
 %  modified by Shijie Gu and Emily Mackevicius
 
 %% A. Input on your PC
-%  (1) 1/code directory, 2/output directory, 3/data directory, sample directory, what to sample, what to extract.
-%  (2) normal CNMF-E parameters.
-%  (3) other parameters.
+%  I normal CNMF-E parameters and other new parameters for CNMF-E.
+%  II 1/code directory...  [codeDir]
+%     2/output directory...[outputdir,outputdirDetails,datadir,outputdir_video,filelist,samplelist]
+%     3/data directory...sample directory, what to sample, what to extract.
+%     4/days               [totaldays]
+
 clear all
-Version='MoBatchVer';
-% (1)/1/
-codeDir='/home/shijiegu/cnmf_e/';
-%    /2/
-outputdir='/Volumes/shared-2/EmilyShijieShared_old/6922_moBatchVerNYVersion/';
-outputdir_local=outputdir;
-outputdir=strrep(outputdir,'/Volumes/shared-2/','/net/feevault/data0/shared/');
-if ~exist(outputdir_local,'dir')
-    mkdir(outputdir_local)
-end
-
-mkdir([outputdir_local '/videos'])
-outputdir_video=strrep(outputdir_local,'/Volumes/shared-2/','/net/feevault/data0/shared/');
-
-% II PARAMETERS
+% I PARAMETERS
+% ----(2)
 % about loading data
 sframe=1;                                          % first frame to read (optional, default:1)
-num2read= [];                                      % how many frames to read   (optional, default: until the end)
+num2read=[];                                       % how many frames to read   (optional, default: until the end)
 
 % create Source2D class object for storing results and parameters  
 with_dendrites=false;                              % with dendrites or not
 K = [];                                            % maximum number of neurons to search. 
                                                    % Use [] to search the number automatically
-neuron_full = Sources2D('ssub',1, 'tsub',1, ...  % downsampling
+neuron_full = Sources2D('ssub',1, 'tsub',1, ...   % downsampling
     'gSig',10,...                                 % sigma of the 2D gaussian (width of the gaussian kernel) that approximates cell bodies
     'gSiz',17,...                                 % maximum diameter of neurons in the image plane. larger values are preferred.
     'min_corr',0.8,'min_pnr',10, ...
@@ -47,7 +37,7 @@ neuron_full.options.deconv_options = struct('type', 'ar1', ... % model of the ca
     ...                                     % 'kernel':   a vector of the convolution kernel
     'method', 'constrained', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
     'optimize_pars', true, ...  % optimize AR coefficients
-    'optimize_b', false, ... % optimize the baseline
+    'optimize_b', true, ... % optimize the baseline
     'optimize_smin', true);  % optimize the threshold
 
 % Parameters in updating
@@ -64,24 +54,51 @@ skewnessthresh=0;       % type help findn1n2
 merge_thr=[0.7,0.5,0];
 merge_thr_2=[0.7,0.5];
 
-%
 thresh_detecting_frames=10;  % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
 
 % There are a few more techinical parametrs in demo_endoscope2.
-%(4)
+
+% Cluster-specific parameters
 running_on_cluster=true;
 workersnum=4;
 
+% II code directory and output directory
 
-% III Specify where data are on your local machine.
+Version='MoBatchVer';
+% ---- /1/----------------------------------------------------------------
+codeDir='/home/shijiegu/cnmf_e/';
+% ------------------------------------------------------------------------
+
+% ---- /2/----------------------------------------------------------------
+outputdir_local='/Volumes/shared-2/EmilyShijieShared_old/6922_moBatchVerNYVersion/';
+outputdir=strrep(outputdir_local,'/Volumes/shared-2/','/net/feevault/data0/shared/');
+% ------------------------------------------------------------------------
+
+% -----------------------------ignore this auto area----------------------
+if ~exist(outputdir_local,'dir')
+    mkdir(outputdir_local)
+end
+if ~exist([outputdir_local '/videos/'],'dir')
+    mkdir([outputdir_local '/videos/'])
+end
+outputdir_video=strrep([outputdir_local '/videos/'],'/Volumes/shared-2/','/net/feevault/data0/shared/');
+% ------------------------------------------------------------------------
+
+% ---- /3/ ----------------------------------------------------------------
 totaldays=[20170713,20170714,20170715,20170716,20170717,20170718,20170719];
+% -------------------------------------------------------------------------
+
+% --------------ignore below, unless there is motion within the day----------------------
 for i=1:length(totaldays)    
     daynum=totaldays(i);    
     outputdirDetails = [outputdir, num2str(totaldays(i)), '/'];
     
     [datadir,sampledir,~,filelist,samplelist]=...
            InputOutput('datadir','/Volumes/shared-2/EmilyShijieShared/ProcessedCalciumData/6991FirstFewDaysForBatch/ActuallyUsedInCNMFE/',...
-                       'datakind',['*' num2str(totaldays(i)) '*']);
+                       'datakind',['*' num2str(totaldays(i)) '*'],...
+                       'DataMethod','auto');
+    % if there is any motion within a day
+                       %Add another day in totaldays, use ('DataMethod','manual');
     % replace for actual dir on cluster
     datadir=strrep(datadir,'/Volumes/shared-2/','/net/feevault/data0/shared/');
     sampledir=strrep(sampledir,'/Volumes/shared-2/','/net/feevault/data0/shared/');
@@ -90,6 +107,7 @@ for i=1:length(totaldays)
     ininame='LogisticscnmfeBatchVer';
     save([outputdir_local ininame num2str(totaldays(i)) '.mat'])     
 end
+% ----------------------------------------------------------------------------------------
 
 %% B. making cluster script
 % To better control each day's cnmfe behavior, each day has its own script,
@@ -97,19 +115,21 @@ end
 % write in jobdir folder with the common prefix as variable "shellname".
 
 % (1) jobdir folder, shellname
-%jobdir='/home/shijiegu/jobs/6922BatchVerMo/';
+% ---- /1/ ----------------------------------------------------------------
 jobdir='6922BatchVerMo_NY';
-local_jobdir=['/Users/gushijie/Documents/MATLAB/Jobs/' jobdir '/'];%6922BatchVerMo_NY/';
-shellname='BatchVerMO6922_NY.sh';
+local_jobdir=['/Users/gushijie/Documents/MATLAB/Jobs/' jobdir '/'];
+shellname='BatchVerMO6922_NY';
+% -------------------------------------------------------------------------
 
+% -----------------------------ignore this auto area-----------------------
 if ~exist(local_jobdir,'dir')
     mkdir(local_jobdir)
 end
-
 cd(local_jobdir)
+% -------------------------------------------------------------------------
 
 for i=1:length(totaldays)
-    scriptname=sprintf('BatchVerMO6922_%.0f.sbatch',totaldays(i));
+    scriptname=sprintf([shellname '_%.0f.sbatch'],totaldays(i));
     fileID = fopen(scriptname,'w');
     request=['#!/bin/bash\n',...
         '\n',...
@@ -135,7 +155,7 @@ end
 %chmod g+rwx /net/feevault/data0/shared/EmilyShijieShared
 
 %% C. making the shell script
-fileID = fopen('BatchVerMO6922_shell.sh','w');
+fileID = fopen([shellname '.sh'],'w');
 forloop=['cd %s\n',...
          'for file in %s; do\n',...
          'sbatch BatchVerMO6922_${file}.sbatch\n',...
