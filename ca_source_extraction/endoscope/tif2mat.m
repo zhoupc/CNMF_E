@@ -19,7 +19,7 @@ end
 info = imfinfo(nam);
 
       
-if  isfield(info(1), 'ImageDescription') && strfind(info(1).ImageDescription,'ImageJ')
+if  isfield(info(1), 'ImageDescription') && ~isempty(strfind(info(1).ImageDescription,'ImageJ'))
     junk1=regexp(info(1).ImageDescription,'images=\d*','match');
     if isempty(junk1)
         junk1=regexp(info(1).ImageDescription,'frames=\d*','match');
