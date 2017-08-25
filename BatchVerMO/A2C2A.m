@@ -1,14 +1,14 @@
-function ACS_temp=A2C2A(File, A, options)
+function ACS_temp=A2C2A(Ysignal, A, options)
 % ACS=A2C2A(ACS, File, A, options)
 % General Description:
-%      This function is designed to extract C in de-noised signal
-%      from A's Amask in File. After getting C, it will find its paired(corresponding) A.
-%      For each neuron, from Amask, get C from mean(see help extract_c), then regress for A.
+%      This function is designed to extract C in background-subtracted signal
+%      from A(not Amask) in File.
+%      The method relies on CNMF-E's conference script.
 %      For each successful ai extraction, peel A*C off Ysignal.
-%      Iterate for all the neurons indicated by Amask.
+%      Iterate for all the neurons indicated by A.
 % Input: 
-% File is a structure that contains at least one field: Ysignal(denoised-Bgsubtracted)
-% A is used for Amask and center calculation(for rough checking and trimming A).
+% File is a structure that contains at least one field: Ysignal(background-subtracted)
+% A is also used for center calculation(for rough checking and trimming A).
 % options: struct data of paramters/options
     %    d1:     number of rows
     %    d2:     number of columns
@@ -23,7 +23,7 @@ function ACS_temp=A2C2A(File, A, options)
 %       standard deviation(STD). This structure is used for merging in later steps in cnmf_e-BatchVer. 
 
 % Modified from "greedyROI_endoscope"
-% Main dependences are "extract_a", "extract_c", and "com" for neuron center by Pengcheng Zhou.
+% Main dependences are "extract_a", "extract_c" in CNMF-E BatchVer, and "com" for neuron center by Pengcheng Zhou.
 
 % Shijie Gu, techel@live.cn
 
@@ -35,7 +35,6 @@ gSiz = options.gSiz;    % average size of neurons
 
 Acenter = round(com(A, d1, d2)); %nr x 2 matrix, with the center of mass coordinates
 
-Ysignal=File.Ysignal;
 Ysignal(isnan(Ysignal)) = 0;     % remove nan values
 Ysignal = double(Ysignal);
 T = size(Ysignal, 2);
@@ -44,7 +43,6 @@ deconv_options_0= options.deconv_options;
 deconv_flag = options.deconv_flag;
 
 K = size(A,2);
-%Ain = zeros(d1*d2, K);  % spatial components
 Cin = zeros(K, T);      % temporal components
 Cin_raw = zeros(K, T);      % temporal components
 STD = zeros(1,K);       % standard deviation
@@ -69,8 +67,7 @@ for k = 1:K
     [ci_raw,ind_success_ci] = extract_c(Ysignal,[],A(:,k));
     Cin_raw(k,:)=ci_raw;
     
-    if ~ind_success_ci   % If it is a "poor" ci, no problem, low STD will let not it contribute much to finalA.
-        %Ain(:,k)=A(:,k); % Since poor ci will get poor A that has bad shapes. Use normal A to fill in the place.
+    if ~ind_success_ci          % If it is a "poor" ci, no need to subtract it before next neuron.
         Cin(k,:)=ci_raw;
         STD(k)=std(ci_raw);
         continue;
@@ -86,40 +83,26 @@ for k = 1:K
             ci=ci';
         catch
             Cin(k, :)=ci_raw;
+            STD(k)=std(ci_raw);
             ci=ci_raw;
-            STD(k)=std(ci_raw);                        
         end      
     end
-    % extract ai        
-    % select its neighbours for estimation of ai, the box size is
+    
+    % select its neighbours to subtract some data, the box size is
     %[2*gSiz+1, 2*gSiz+1]
     % if the c is poor
     ci_std = std(diff(ci));
     if max(diff(ci))< ci_std % signal is weak
-        %Ain(:,k)=A(:,k);
-        display('Poor C, skipping estimating A.')
         continue
     end
     rsub = max(1, -gSiz+r):min(d1, gSiz+r);
     csub = max(1, -gSiz+c):min(d2, gSiz+c);
     [cind, rind] = meshgrid(csub, rsub);
-%     [nr, nc] = size(cind);               % size of the box
     ind_nhood = sub2ind([d1, d2], rind(:), cind(:));
     HY_box = Ysignal(ind_nhood, :);      
-%     Amask_box=Amask(ind_nhood,k);
-%     ind_ctr = sub2ind([nr, nc], r-rsub(1)+1, c-csub(1)+1);   % index of the center
-
-%     sz = [nr, nc];
-%     [ai,ai_raw,ind_success_ai] = extract_a(ci_raw, [], HY_box, Amask_box, ind_ctr, sz, 1, []); 
-%     if ind_success_ai==false
-%         Ain(:,k)=A(:,k);
-%     else
-%         Ain(ind_nhood,k)=ai;        
-%     end
     Ysignal(ind_nhood, :) = HY_box - A(ind_nhood,k)*ci_raw;  % update data
 end
 ACS_temp=struct('Cin',[],'Cin_raw',[],'STD',[]);
-%ACS_temp.Ain = Ain;
 ACS_temp.Cin = Cin;
 ACS_temp.Cin_raw=Cin_raw;
 ACS_temp.STD = STD;

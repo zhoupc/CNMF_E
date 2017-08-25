@@ -24,21 +24,23 @@ global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
     neuron_full Ybg_weights mode Picname nam outputdir; %#ok<NUSED> % global variables, don't change them manually
 Picname=picname;
 %% select data and map it to the RAM
-nam=name{1};
-display(nam)
-cnmfe_choose_data;
-
-Ysignal=name{2};
-display(size(Ysignal))
+mode=Mode;                                 % 'initiation' mode or 'massive' mode
+if strcmp(mode,'initiation')
+    nam=name;
+elseif strcmp(mode,'massive')
+    nam=name{1};
+    display(nam)
+    cnmfe_choose_data;
+    Ysignal=name{2};
+end
 neuron_full=neuron_full_partial;
 clear neuron_full_partial
 neuron_full.updateParams('d1',d1, 'd2',d2);
 min_pixel=neuron_full.options.min_pixel;
 min_pnr=neuron_full.options.min_pnr;
 min_corr=neuron_full.options.min_corr;
-%% create Source2D class object for storing results and parameters
 
-mode=Mode;                                 % 'initiation' mode or 'massive' mode
+%% create Source2D class object for storing results and parameters
 Fs = neuron_full.Fs;                       % frame rate
 ssub = neuron_full.options.ssub;           % spatial downsampling factor
 tsub = neuron_full.options.tsub;           % temporal downsampling factor
@@ -58,9 +60,9 @@ end
 %% downsample data for fast and better initialization
 sframe=start_frame;					% user input: first frame to read (optional, default:1)
 if isempty(num_2read)
-    num2read= numFrame;             % user input: how many frames to read   (optional, default: until the end)
+    num2read = numFrame;             % user input: how many frames to read   (optional, default: until the end)
 else
-    num2read=num_2read;
+    num2read = num_2read;
 end
 
 tic;
@@ -102,25 +104,19 @@ elseif strcmp(mode,'massive')
     % parameters, estimate the background
     spatial_ds_factor = 1;              % spatial downsampling factor. it's for faster estimation
     thresh = 10;                        % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
-    %BackgroundSub
-    %NEURON=neuron;
     [C,~]=extract_c(Ysignal,[],Afinal);
     neuron.A=Afinal;
     neuron.C_raw=C;
     neuron.C=C;
-    display(size(C))
     [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
     cnmfe_update_BG;
     [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
     A0s=[];
     File.ind_del=ind_del;
-    %File.A=Afinal;
     File.C=neuron.C;
     File.C_raw=neuron.C_raw;
-    NEURON=neuron.copy();
-    File.neuron=NEURON;
+    File.neuron=neuron.copy();
     clear global
-    clear NEURON
     return 
 end
 
@@ -247,7 +243,7 @@ neuron=neuron;
 if strcmp(mode,'initiation')
     A0s=neuron.A;
     File.options=neuron.options;    
-    File.neuron=neuron;
+    File.neuron=neuron.copy();
     File.Ysignal=Ysignal;
     File.Ybg=Ybg;
 end
