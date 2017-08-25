@@ -2,7 +2,7 @@ function [C_offset,ind_del] = updateTemporal_endoscope(obj, Y, allow_deletion)
 %% run HALS by fixating all spatial components
 % input:
 %   Y:  d*T, fluorescence data
-%   allow_deletion: boolean, allow deletion (default: true) 
+%   allow_deletion: boolean, allow deletion (default: true)
 % output:
 %   C_raw: K*T, temporal components without being deconvolved
 
@@ -18,7 +18,7 @@ end
 deconv_options_0 = obj.options.deconv_options;
 
 if ~exist('allow_deletion', 'var')
-    allow_deletion = false; 
+    allow_deletion = false;
 end
 %% initialization
 A = obj.A;
@@ -39,12 +39,19 @@ kernel_pars = cell(K,1);
 ind_del = false(K, 1);
 for miter=1:maxIter
     for k=1:K
+        if  aa(k)==0
+            C_raw(k, :) = C_raw(k, :)*0;
+            C(k,:) = C(k, :)*0;
+            S(k, :) = S(k, :)*0;
+            ind_del(k) = true;
+            continue;
+        end
         if ind_del
             continue;
         end
         temp = C(k, :) + (U(k, :)-V(k, :)*C)/aa(k);
         %remove baseline and estimate noise level
-        if range(temp)/std(temp)>6 || size(temp,2)>3000
+        if range(temp)/std(temp)>10
             [b, tmp_sn] = estimate_baseline_noise(temp);
         else
             b = mean(temp(temp<median(temp)));
@@ -115,6 +122,7 @@ obj.S = bsxfun(@times, S, 1./sn');
 obj.P.kernel_pars =cell2mat(kernel_pars);
 obj.P.smin = smin/sn;
 obj.P.sn_neuron = sn;
+
 if strcmp(mode,'initiation')
     if allow_deletion
         obj.delete(ind_del);
