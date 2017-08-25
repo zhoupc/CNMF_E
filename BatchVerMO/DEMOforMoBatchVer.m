@@ -116,9 +116,9 @@ end
 
 % (1) jobdir folder, shellname
 % ---- /1/ ----------------------------------------------------------------
-jobdir='6922BatchVerMo_NY';
+jobdir='6922BatchVerMo_NYBos';
 local_jobdir=['/Users/gushijie/Documents/MATLAB/Jobs/' jobdir '/'];
-shellname='BatchVerMO6922_NY';
+shellname='BatchVerMO6922_NYBos';
 % -------------------------------------------------------------------------
 
 % -----------------------------ignore this auto area-----------------------
@@ -158,7 +158,7 @@ end
 fileID = fopen([shellname '.sh'],'w');
 forloop=['cd %s\n',...
          'for file in %s; do\n',...
-         'sbatch BatchVerMO6922_${file}.sbatch\n',...
+         'sbatch %s_${file}.sbatch\n',...
          'sleep 1\n',...
          'done'];
-fprintf(fileID,forloop,jobdir,num2str(totaldays));    
+fprintf(fileID,forloop,jobdir,num2str(totaldays),shellname);    

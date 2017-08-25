@@ -1,7 +1,9 @@
 function  [Afinal,MC,newIDs,merged_ROIs,close_ind,real_ind] = mergeAC(A,ACS,merge_thr,dmin,d1,d2)
-%% merge neurons based on simple spatial and temporal correlation
+% General Description: first filter neurons with diff(C,1,2)> 3*STD as
+%   criteria for not being noise, then, merge neurons based on
+%   spatial, temporal correlation, and their distance.
 % input:
-%   Amask: concatnated Amask from neurons from one or many files.
+%   A:    concatnated A from neurons from one or many files.
 %   ACS:  structure, having fields of Ain, Cin (concatnated A and C from
 %         neurons from all files), and std of Cin(STD).
 %   merge_thr: 1X2 vector, threshold for two metrics {'A', 'C'}. it merge neurons based
@@ -12,20 +14,14 @@ function  [Afinal,MC,newIDs,merged_ROIs,close_ind,real_ind] = mergeAC(A,ACS,merg
 %   newIDs: cell array, dim: 1*(number of neurons after merging). Each
 %       cell element has the orginal neuron number it has merged from (the
 %       nueron number is cumsum across the second dim of A0s).
+%   close_ind: ind of neurons for output (that are merged) just because some neurons are
+%       close together.
+%   real_ind: neuron ind for input A's column as real neurons.
 %   Other outputs are the same as the original quickMerge().
 %   merged_ROIs
 
-%%%%%%%%Older version
-%(%   Merged-component reduced ACS. For those neurons that are merged, they all have the same A as well
-%       as STD in each file's ACS. For example, if neuron 1,3,5 are merged,
-%       neuron 1 in each file's ACS's A and STD will be the same while neuron 3,5 are
-%       deleted in all files's ACS's A and STD. Since C is not used in
-%       later steps, C in ACS is not updated.)
-%%%%%%%%
-
 % Author: Shijie Gu, techel@live.cn, modified from quickMerge() by Pengcheng Zhou
-%  The basic idea is proposed by Eftychios A. Pnevmatikakis: high temporal
-%  correlation + spatial overlap
+%  The basic idea is proposed by Eftychios A. Pnevmatikakis: high temporal correlation + spatial overlap
 %  reference: Pnevmatikakis et.al.(2016). Simultaneous Denoising, Deconvolution, and Demixing of Calcium Imaging Data. Neuron
 %% variables & parameters
 if ~exist('merge_thr', 'var') || isempty(merge_thr) || numel(merge_thr)~=2
