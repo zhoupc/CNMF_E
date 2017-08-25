@@ -56,13 +56,17 @@ T = length(ci);
 X = [ones(T,1), y_bg', ci']; 
 temp = (X'*X)\(X'*Y'); 
 ai = max(0, temp(3,:)'); 
+ai = spatial_constraints(reshape(ai, nr, nc)); % assume neuron shapes are spatially convex 
+ai = ai(:); 
 
-%% threshold the spatial shape and remove outliers 
-% remove outliers and trim
-temp =  full(ai>quantile(ai(:), 0.5)); 
-l = bwlabel(reshape(temp, nr, nc), 4); 
-temp(l~=l(ind_ctr)) = false; 
-ai(~temp(:)) = 0; 
+
+% %% threshold the spatial shape and remove outliers 
+% % remove outliers 
+% temp =  full(ai>quantile(ai(:), 0.5)); 
+% l = bwlabel(reshape(temp, nr, nc), 4); 
+% temp(l~=l(ind_ctr)) = false; 
+% ai(~temp(:)) = 0; 
+
 if sum(ai(:)>0) < min_pixels %the ROI is too small
     ind_success=false;
     return;
@@ -71,7 +75,7 @@ end
 % refine ci given ai 
 % ind_nonzero = (ai>0);
 % ai_mask = mean(ai(ind_nonzero))*ind_nonzero;
-% ci = (ai-ai_mask)'*ai\((ai-ai_mask)'*Y);
+% ci0 = (ai-ai_mask)'*ai\((ai-ai_mask)'*Y);
 % plot(ci, 'r'); 
 % pause; 
 
@@ -84,8 +88,8 @@ if sn>psd_sn
 else
     ci = ci - b; 
 end 
-ind_neg = (ci<-4*sn); 
-ci(ind_neg) = rand(sum(ind_neg), 1)*sn; 
+% ind_neg = (ci<-4*sn); 
+% ci(ind_neg) = rand(sum(ind_neg), 1)*sn; 
 
 % normalize the result
 ci = ci / sn;

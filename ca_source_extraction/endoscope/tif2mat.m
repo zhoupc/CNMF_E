@@ -21,13 +21,16 @@ info = imfinfo(nam);
       
 if  isfield(info(1), 'ImageDescription') && ~isempty(strfind(info(1).ImageDescription,'ImageJ'))
     junk1=regexp(info(1).ImageDescription,'images=\d*','match');
+    if isempty(junk1)
+        junk1=regexp(info(1).ImageDescription,'frames=\d*','match');
+    end
     junk2=strjoin(junk1);
     T=strread(junk2,'%*s %d','delimiter','=');
 else
     T = length(info);   % number of frames
 end
-d1 = info.Height;   % height of the image 
-d2 = info.Width;    % width of the image 
+d1 = info.Height;   % height of the image
+d2 = info.Width;    % width of the image
 Ysiz = [d1, d2, T]'; 
 
 fprintf('CNMF_E is converting TIFF file to *.mat file'); 
