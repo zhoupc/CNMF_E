@@ -1,4 +1,4 @@
-function ACS_temp=A2C2A(Ysignal, A, options)
+function ACS_temp=A2C(Ysignal, A, options)
 % ACS=A2C2A(ACS, File, A, options)
 % General Description:
 %      This function is designed to extract C in background-subtracted signal
