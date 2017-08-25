@@ -2,13 +2,13 @@ function ACS_temp=A2C2A(Ysignal, A, options)
 % ACS=A2C2A(ACS, File, A, options)
 % General Description:
 %      This function is designed to extract C in background-subtracted signal
-%      from A(not Amask) in File.
+%      from A(not Amask) in Ysignal.
 %      The method relies on CNMF-E's conference script.
 %      For each successful ai extraction, peel A*C off Ysignal.
 %      Iterate for all the neurons indicated by A.
 % Input: 
-% File is a structure that contains at least one field: Ysignal(background-subtracted)
-% A is also used for center calculation(for rough checking and trimming A).
+% Ysignal(background-subtracted), with dimenstion of [d1*d2,T];
+% A is also used for center calculation(for subtraction previous signal).
 % options: struct data of paramters/options
     %    d1:     number of rows
     %    d2:     number of columns
@@ -44,7 +44,7 @@ deconv_flag = options.deconv_flag;
 
 K = size(A,2);
 Cin = zeros(K, T);      % temporal components
-Cin_raw = zeros(K, T);      % temporal components
+Cin_raw = zeros(K, T);  % temporal components
 STD = zeros(1,K);       % standard deviation
 
 %% start initialization
