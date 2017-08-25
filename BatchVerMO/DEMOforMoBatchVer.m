@@ -4,7 +4,7 @@
 %% A. Input on your PC
 %  I normal CNMF-E parameters and other new parameters for CNMF-E.
 %  II 1/code directory...  [codeDir]
-%     2/output directory...[outputdir,outputdirDetails,datadir,outputdir_video,filelist,samplelist]
+%     2/output directory...[outputdir,outputdirDetails,datadir,filelist,samplelist]
 %     3/data directory...sample directory, what to sample, what to extract.
 %     4/days               [totaldays]
 
@@ -54,6 +54,9 @@ skewnessthresh=0;       % type help findn1n2
 merge_thr=[0.7,0.5,0];
 merge_thr_2=[0.7,0.5];
 
+% Merge neurons that are very close.
+dmin=5;
+
 thresh_detecting_frames=10;  % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
 
 % There are a few more techinical parametrs in demo_endoscope2.
@@ -78,10 +81,6 @@ outputdir=strrep(outputdir_local,'/Volumes/shared-2/','/net/feevault/data0/share
 if ~exist(outputdir_local,'dir')
     mkdir(outputdir_local)
 end
-if ~exist([outputdir_local '/videos/'],'dir')
-    mkdir([outputdir_local '/videos/'])
-end
-outputdir_video=strrep([outputdir_local '/videos/'],'/Volumes/shared-2/','/net/feevault/data0/shared/');
 % ------------------------------------------------------------------------
 
 % ---- /3/ ----------------------------------------------------------------
