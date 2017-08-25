@@ -1,6 +1,6 @@
 %% C Run All below on cluster!
 if strcmp(Version,'MoBatchVer')
-    fprintf('Running BatchVer For Motion')
+    fprintf('Running BatchVer with Motion Correction Later.')
     if ~exist(outputdirDetails,'dir')
         mkdir(outputdirDetails)
     end
@@ -16,7 +16,8 @@ if running_on_cluster % some procedures making cluster use robust
 end
 
 %% 1. Run normal CNMF-E for each file
-File(length(samplelist)) = struct('options',[],'Ysignal',[],'neuron',[],'Ybg',[]); % pre-allocate for parfor loop. 
+File(length(samplelist)) = struct('options',[],'Ysignal',[],'neuron',[],'Ybg',[]); % Ysignal and Ybg for video making.
+                                                                                   % pre-allocate for parfor loop. 
 A0s=cell(1,length(samplelist));
 parfor i= 1:length(samplelist)
     Mode='initiation';
@@ -24,10 +25,10 @@ parfor i= 1:length(samplelist)
     name=fullfile(sampledir,samplelist(i).name);
     [A0s{i},File(i)]=demo_endoscope2(bg_neuron_ratio,merge_thr,with_dendrites,K,sframe,num2read,...
                                    name,neuron_full,Mode,picname,File(i),[],...
-                                   thresh_detecting_frames);
+                                   thresh_detecting_frames);                               
     fprintf('Sampling file number %.0f done\n', i);
 end
-
+   
 %%% delete samples that have no neurons.
 emptyA0s_ind=find(cellfun('isempty', A0s));
 if ~isempty(emptyA0s_ind)
@@ -50,28 +51,25 @@ ACS(length(samplelist)) = struct('Cin',[],'Cin_raw',[],'STD',[]);
 S_R=length(samplelist);
 parfor i= 1:S_R
     Cin=[]; Cin_raw=[]; STD=[];
-    for j=1:S_R % parfor needs this
+    for j=1:S_R % parfor needs S_R rather than length(samplelist)
         Aj=A0s{j};
-        ACS_temp=A2C2A(File(i), Aj, File(i).options);
+        ACS_temp=A2C2A(File(i).Ysignal, Aj, File(i).options);
         Cin = [Cin; ACS_temp.Cin]; STD=[STD ACS_temp.STD]; Cin_raw=[Cin_raw; ACS_temp.Cin_raw];
     end
     ACS(i).Cin=Cin; ACS(i).Cin_raw=Cin_raw; ACS(i).STD=STD;
 end
-% outputdir_video='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/videos/';
-% MakingVideos(File,File(1).options.d1,File(1).options.d2,num2str(daynum),outputdir_video)
+
 save([outputdirDetails 'ACScnmfeBatchVer.mat'],'-v7.3')
+
 %% 3 Merge similar neurons
 
 Amask_temp=cat(2,A0s{:});
 %Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
-[Afinal,MC,newIDs,merged_ROIs,close_ind,real_ind] = mergeAC(Amask_temp,ACS,merge_thr_2,5,File(1).options.d1,File(1).options.d2);
+[Afinal,MC,newIDs,merged_ROIs,close_ind,real_ind] = mergeAC(Amask_temp,ACS,merge_thr_2,dmin,File(1).options.d1,File(1).options.d2);
 
-if strcmp(Version,'MoBatchVer')
-    save([outputdirDetails 'commonAcnmfeBatchVer.mat'],'-v7.3')
-elseif strcmp(Version,'BatchVer')
-    save([outputdir 'commonAcnmfeBatchVer.mat'],'-v7.3')
+if strcmp(Version,'MoBatchVer'); save([outputdirDetails 'commonAcnmfeBatchVer.mat'],'-v7.3')
+elseif strcmp(Version,'BatchVer');save([outputdir 'commonAcnmfeBatchVer.mat'],'-v7.3')
 end
-
 
 %% 4 Determine Afinal that will be used to extract C's in each file.
 

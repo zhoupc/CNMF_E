@@ -13,6 +13,7 @@ function  [Afinal,MC,newIDs,merged_ROIs,close_ind,real_ind] = mergeAC(A,ACS,merg
 %       cell element has the orginal neuron number it has merged from (the
 %       nueron number is cumsum across the second dim of A0s).
 %   Other outputs are the same as the original quickMerge().
+%   merged_ROIs
 
 %%%%%%%%Older version
 %(%   Merged-component reduced ACS. For those neurons that are merged, they all have the same A as well
@@ -37,7 +38,7 @@ C_thr = merge_thr(2);
 C=cat(2,ACS.Cin);
 STD=std(C,1,2);
 
-real_ind=max(diff(C,1,2))> 3*STD;
+real_ind=max(diff(C,1,2))> 3*STD; %not noise
 A=A(:,real_ind);
 C=C(real_ind,:);
 STD=STD(real_ind);
