@@ -57,6 +57,6 @@ else
 end
 
 %% thresholding the minimum number of neurons
-obj.delete(sum(obj.A, 1)<=obj.options.min_pixel);
+obj.delete(sum(obj.A>0, 1)<=obj.options.min_pixel);
 
 end

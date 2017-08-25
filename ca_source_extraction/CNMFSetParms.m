@@ -102,6 +102,7 @@ Names = [
     'deconv_options     ' % options for running deconvolution 
     'smin               ' % mimimum spike size
     'center_psf         ' % center psf or not 
+    'gaussian_shape     ' % neurons have 2D gaussian shapes. 
     ];
 
 [m,n] = size(Names);
@@ -275,6 +276,7 @@ Values = [
     {true}
     {[]}
     {5}
+    {true}
     {true}
     ];
 

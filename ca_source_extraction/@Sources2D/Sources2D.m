@@ -476,14 +476,21 @@ classdef Sources2D < handle
             obj.delete(ind_small);
         end
         
-        %% keep spatial shapes compact 
+        %% keep spatial shapes compact
         function compactSpatial(obj)
+            ind_del = false(1, size(obj.A,2));
             for m=1:size(obj.A, 2)
-                ai = obj.reshape(obj.A(:, m), 2); 
-                ai = spatial_constraints(ai); 
-                obj.A(:, m) = ai(:); 
+                ai = obj.reshape(obj.A(:, m), 2);
+                ai = spatial_constraints(ai);
+                if sum(ai(:))>0
+                    obj.A(:, m) = ai(:);
+                else
+                    ind_del(m) = true;
+                end
             end
-        end 
+            obj.delete(ind_del);
+            obj.delete(sum(obj.A>0, 1)<=obj.options.min_pixel);
+        end
         
         %% solve A & C with regression
         function [ind_delete] = regressAC(obj, Y)

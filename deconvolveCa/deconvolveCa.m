@@ -67,15 +67,19 @@ end
 win = options.window;   % length of the convolution kernel
 % estimate the noise
 if isempty(options.sn)
-    psd_sn = GetSn(y);
-    [~, sn] = estimate_baseline_noise(y);
-    options.sn = min(sn, psd_sn); 
+    options.sn = GetSn(y);
 end
 % estimate time constant
 if isempty(options.pars)
     switch options.type
         case 'ar1'
+            try
             options.pars = estimate_time_constant(y, 1, options.sn);
+            catch 
+                c = y*0;
+                s = c; 
+                fprintf('fail to deconvolve the trace\n'); 
+            end
             if length(options.pars)~=1
                 c = zeros(size(y)); 
                 s = zeros(size(y)); 
