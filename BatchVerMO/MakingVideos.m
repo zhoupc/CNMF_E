@@ -1,4 +1,4 @@
-function MakingVideos(File,d1,d2,currentday,outputdir,datadir,filelist,kt)
+function [Ysignal,Ybg,Yac,center_ac]=MakingVideos(File,neuron_batchMO,str_p,datadir,filelist,d1,d2,currentday,outputdir,kt)
 %% Making videos for each day's data
 % kt: avi_file.FrameRate= neuron.Fs/kt;
 
@@ -12,11 +12,15 @@ center_ac=[];
 
 for i=1:length(File)
     Ysignal=[Ysignal,File(i).Ysignal];
-    Yac=[Yac,File(i).neuron.A*File(i).neuron.C];
-    display(size(Yac))
-    center_ac=[center_ac; max(File(i).neuron.A,[],1)'.*max(File(i).neuron.C,[],2)];
+        
     Ybg=[Ybg,File(i).Ybg];
     display(size(Ybg))
+    
+    j=i+str_p;
+    Yac=[Yac,neuron_batchMO(j).neuron.A*neuron_batchMO(j).neuron.C];
+    center_ac=[center_ac; max(neuron_batchMO(j).neuron.A,[],1)'.*max(neuron_batchMO(j).neuron.C,[],2)];
+    
+    display(size(Yac))
 end
 Ysignal=reshape(Ysignal,d1,d2,[]);
 Yac=reshape(Yac,d1,d2,[]);
@@ -37,9 +41,6 @@ figure('position', [0,0, 600, 400]);
 
 
 range_res = [-1,1]*center_ac;
-
-
-
 if ~exist('range_ac', 'var')
     range_ac = center_ac*1.01+range_res;
 end
@@ -56,7 +57,7 @@ if ~exist('range_Y', 'var')
 end
 %% create avi file
 
-avi_file = VideoWriter([outputdir currentday '_Videos.avi']);
+avi_file = VideoWriter([outputdir currentday '_videos.avi']);
 if ~isnan(File(1).neuron.Fs)
     avi_file.FrameRate= File(1).neuron.Fs/kt;
 end
@@ -70,7 +71,7 @@ ax_res =    axes('position', [0.675, 0.51, 0.3, 0.42]);
 
 for m=t_begin:kt:t_end
     axes(ax_y); cla;
-    imagesc(Ybg(:, :,m)+Ysignal(:, :, m), range_Y);
+    imagesc(Y(:, :,m), range_Y);
     %     set(gca, 'children', flipud(get(gca, 'children')));
     title('Raw data');
     axis equal off tight;
@@ -90,13 +91,13 @@ for m=t_begin:kt:t_end
     axes(ax_denoised); cla;
     imagesc(Yac(:, :, m), range_ac);
     %     imagesc(Ybg(:, :, m), [-50, 50]);
-    title(sprintf('Denoised X %d', multi_factor));
+    title(sprintf('A*C X %d', multi_factor));
     axis equal off tight;
     
     axes(ax_res); cla;
     imagesc(Ysignal(:, :, m)-Yac(:, :, m), range_res);
     %     set(gca, 'children', flipud(get(gca, 'children')));
-    title(sprintf('Residual X %d', multi_factor));
+    title(sprintf('Residual(Ysignal-Yac) X %d', multi_factor));
     axis equal off tight;
     %         subplot(4,6, [5,6,11,12]+12);
     

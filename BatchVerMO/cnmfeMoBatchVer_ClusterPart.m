@@ -45,6 +45,15 @@ end
 A0s=Over_Days_ResequenceA(A0s,correlation_thresh,max2max2nd,skewnessthresh);
 save([outputdirDetails 'EachFilecnmfeBatchVer.mat'],'-v7.3')
 
+if strcmp(Version,'MoBatchVer')
+    eval(sprintf('save %s%0.f_cnmfe_BatchVer_PartI_File.mat %s -v7.3', outputdir, daynum, 'File'));
+    fprintf('Variable ''File'', which includes fields of ''options'' ''Ysignal'' ''neuron'' ''Ybg'' saved.');
+elseif strcmp(Version,'BatchVer')
+    Vars = {'File'}; Vars=Vars';
+    eval(sprintf('save %s%0.f_cnmfe_BatchVer_ClusterPartI.mat %s -v7.3', Aoutputdir, daynum, strjoin(Vars)));
+end
+File = rmfield(File,{'Ybg','neuron'});
+
 %% 2. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
 ACS(length(samplelist)) = struct('Cin',[],'Cin_raw',[],'STD',[]);
 S_R=length(samplelist);
@@ -57,8 +66,7 @@ parfor i= 1:S_R
     end
     ACS(i).Cin=Cin; ACS(i).Cin_raw=Cin_raw; ACS(i).STD=STD;
 end
-% outputdir_video='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/videos/';
-% MakingVideos(File,File(1).options.d1,File(1).options.d2,num2str(daynum),outputdir_video)
+
 save([outputdirDetails 'ACScnmfeBatchVer.mat'],'-v7.3')
 %% 3 Merge similar neurons
 
@@ -95,26 +103,16 @@ if strcmp(Version,'MoBatchVer')
     ColorAllNeurons(Afinal,File(1).options.d1,File(1).options.d2,Apicname,outputdirDetails);
     Vars = {'Afinal';'samplelist'}; Vars=Vars';
     eval(sprintf('save %s%0.f_cnmfe_BatchVer_PartI_Afinalsam.mat %s -v7.3', outputdir, daynum, strjoin(Vars)));
-    eval(sprintf('save %s%0.f_cnmfe_BatchVer_PartI_File.mat %s -v7.3', outputdir, daynum, 'File'));
     fprintf('cnmfe_BatchVer_for motion Part1 data saved, check them out!');
-
-        outputdir_video='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/videos/';
-        d1=File(1).options.d1; d2=File(1).options.d2;
-        %MakingVideos(File,d1,d2,num2str(daynum),outputdir_video)
-        clear ACS
-        %MakingVideos([],d1,d2,num2str(daynum),outputdir_video,true,datadir,filelist)
-        MakingVideos(File,d1,d2,num2str(daynum),outputdir,datadir,filelist,1)
-        fprintf('Videos saved, check them out!');
-
     return
 elseif strcmp(Version,'BatchVer')
     ColorAllNeurons(Afinal,File(1).options.d1,File(1).options.d2,Apicname,outputdir);
-    Vars = {'Afinal';'samplelist';'File'}; Vars=Vars';
-    eval(sprintf('save %s%0.f_cnmfe_BatchVer_ClusterPartI.mat %s -v7.3', Aoutputdir, daynum, strjoin(Vars)));
+    Vars = {'Afinal';'samplelist'}; Vars=Vars';
+    eval(sprintf('save %s%0.f_cnmfe_BatchVer_ClusterPartI.mat %s -append', Aoutputdir, daynum, strjoin(Vars)));
 end
 
-% The following will be executed for cnmf_e(BatchVer) without the need for
-% motion correction
+% The following will be executed for cnmf_e(BatchVer), without motion
+% correction.
 %% 5 "massive" procedure: Extract A from each file
 neuron_batch(length(filelist)) = struct('ind_del',[],'signal',[],'FileOrigin',[],'neuron',[]);
 

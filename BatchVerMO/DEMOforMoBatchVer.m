@@ -24,7 +24,8 @@ neuron_full = Sources2D('ssub',1, 'tsub',1, ...   % downsampling
     'gSiz',17,...                                 % maximum diameter of neurons in the image plane. larger values are preferred.
     'min_corr',0.8,'min_pnr',10, ...
     'min_pixel',50,...                            % minimum number of nonzero pixels for each neuron
-    'bd',1);                                      % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
+    'bd',1,...                                    % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
+    'center_psf',false);                          
 neuron_full.Fs = 30;                               % frame rate  
 % options for running deconvolution 
 neuron_full.options.deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1', 'ar2'}
@@ -36,9 +37,9 @@ neuron_full.options.deconv_options = struct('type', 'ar1', ... % model of the ca
     ...                                     %               h(t) = (exp(-t/tau_d) - exp(-t/tau_r)) / (tau_d-tau_r)
     ...                                     % 'kernel':   a vector of the convolution kernel
     'method', 'constrained', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
-    'optimize_pars', true, ...  % optimize AR coefficients
-    'optimize_b', true, ... % optimize the baseline
-    'optimize_smin', true);  % optimize the threshold
+    'optimize_pars', true, ...   % optimize AR coefficients
+    'optimize_b', true, ...      % optimize the baseline
+    'optimize_smin', true);      % optimize the threshold
 
 % Parameters in updating
 bg_neuron_ratio = 1;    % spatial range / diameter of neurons

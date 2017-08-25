@@ -310,7 +310,11 @@ while searching_flag
         if options.center_psf
             [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
         else
-            [ai, ci_raw, ind_success] =  extract_ac_2p(HY_box, Y_box, ind_ctr, sz);
+            [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
+            if options.gaussian_shape && ind_success
+                ai = spatial_constraints(reshape(ai, sz));
+                ai = ai(:);
+            end
         end
         
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
