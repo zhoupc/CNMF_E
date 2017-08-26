@@ -27,6 +27,7 @@ Picname=picname;
 mode=Mode;                                 % 'initiation' mode or 'massive' mode
 if strcmp(mode,'initiation')
     nam=name;
+    cnmfe_choose_data;
 elseif strcmp(mode,'massive')
     nam=name{1};
     display(nam)
