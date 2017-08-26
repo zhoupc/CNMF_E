@@ -117,7 +117,7 @@ neuron_batch(length(filelist_fulllist)) = struct('ind_del',[],'rawsignal',[],'si
 parfor i= 1:length(samplelist)  
     mode='massive';
     nam=cell(1,2);
-    nam{1}=fullfile(datadir,filelist(i).name);
+    nam{1}=fullfile(datadir,samplelist(i).name);
     nam{2}=File(i).Ysignal;
     [~,neuron_batch(i)]=demo_endoscope2(bg_neuron_ratio,[],with_dendrites,K,sframe,num2read,...
                                    nam,neuron_full,mode,[],neuron_batch(i),Afinal,...
