@@ -65,7 +65,7 @@ parfor i= 1:filenumsum % file
     k=find((eachfilenum_cumsum>=i),1);
     for j=1:S_L % parfor needs this
         Aj=M1{k}{j};
-        ACS_temp=A2C2A(File_fulllist(i), Aj, File_fulllist(i).options);
+        ACS_temp=A2C(File_fulllist(i), Aj, File_fulllist(i).options);
         Cin = [Cin; ACS_temp.Cin]; Cin_raw=[Cin_raw; ACS_temp.Cin_raw]; STD=[STD ACS_temp.STD];
     end
     ACS(i).Cin=Cin; ACS(i).Cin_raw=Cin_raw; ACS(i).STD=STD;
@@ -112,6 +112,7 @@ end
 Vars = {'newIDs';'close_ind';'M2';'M3'}; Vars=Vars';
 eval(sprintf('save %sAfinalcnmfeBatchVerMotion %s -v7.3', outputdir, strjoin(Vars)));
 save([outputdir 'NiceAfinalcnmfeBatchVerMOTION.mat'],'-v7.3')
+
 %% 5 "massive" procedure: Extract A from each file
 neuron_batchMO(length(filelist_fulllist)) = struct('ind_del',[],'rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[],'C',[],'C_raw',[]);
 
@@ -120,16 +121,11 @@ parfor i= 1:length(filelist_fulllist)
     nam=cell(1,2);
     nam{1}=fullfile(datadir,filelist_fulllist(i).name);
     nam{2}=File_fulllist(i).Ysignal;
-    display([nam{1} num2str(size(nam{2},2))])
     k=find((eachfilenum_cumsum>=i),1);  
-    [~,neuron_batchMO(i)]=demo_endoscope2(bg_neuron_ratio,merge_thr,with_dendrites,K,sframe,num2read,...
+    [~,neuron_batchMO(i)]=demo_endoscope2(bg_neuron_ratio,[],with_dendrites,K,sframe,num2read,...
                                    nam,neuron_full,mode,[],neuron_batchMO(i),M3{k},...
                                    thresh_detecting_frames);
-    NEURON=neuron_batchMO(i).neuron.copy();
-    NEURON.C=neuron_batchMO(i).C;
-    NEURON.C_raw=neuron_batchMO(i).C_raw;
-    NEURON.A=M3{k};
-    neuron_batchMO(i).neuron=NEURON;
+
     neuron_batchMO(i).FileOrigin=filelist_fulllist(i); % save origin(filelist)
 end
 neuron_batchMO = rmfield(neuron_batchMO,{'C','C_raw'});

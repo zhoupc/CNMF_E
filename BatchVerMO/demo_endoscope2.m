@@ -27,6 +27,7 @@ Picname=picname;
 mode=Mode;                                 % 'initiation' mode or 'massive' mode
 if strcmp(mode,'initiation')
     nam=name;
+    cnmfe_choose_data;
 elseif strcmp(mode,'massive')
     nam=name{1};
     display(nam)
@@ -239,7 +240,6 @@ neuron.drawPNRCn(min_pnr,min_corr)
 close(gcf);
 
 ColorAllNeurons(neuron.A,d1,d2,Picname,outputdir);
-neuron=neuron;
 if strcmp(mode,'initiation')
     A0s=neuron.A;
     File.options=neuron.options;    

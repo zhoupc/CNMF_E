@@ -24,7 +24,8 @@ neuron_full = Sources2D('ssub',1, 'tsub',1, ...   % downsampling
     'gSiz',17,...                                 % maximum diameter of neurons in the image plane. larger values are preferred.
     'min_corr',0.8,'min_pnr',10, ...
     'min_pixel',50,...                            % minimum number of nonzero pixels for each neuron
-    'bd',1);                                      % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
+    'bd',1,...                                    % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
+    'center_psf',false);                          
 neuron_full.Fs = 30;                               % frame rate  
 % options for running deconvolution 
 neuron_full.options.deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1', 'ar2'}
@@ -36,9 +37,9 @@ neuron_full.options.deconv_options = struct('type', 'ar1', ... % model of the ca
     ...                                     %               h(t) = (exp(-t/tau_d) - exp(-t/tau_r)) / (tau_d-tau_r)
     ...                                     % 'kernel':   a vector of the convolution kernel
     'method', 'constrained', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
-    'optimize_pars', true, ...  % optimize AR coefficients
-    'optimize_b', true, ... % optimize the baseline
-    'optimize_smin', true);  % optimize the threshold
+    'optimize_pars', true, ...   % optimize AR coefficients
+    'optimize_b', true, ...      % optimize the baseline
+    'optimize_smin', true);      % optimize the threshold
 
 % Parameters in updating
 bg_neuron_ratio = 1;    % spatial range / diameter of neurons
@@ -115,9 +116,9 @@ end
 
 % (1) jobdir folder, shellname
 % ---- /1/ ----------------------------------------------------------------
-jobdir='6922BatchVerMo_NY';
+jobdir='6922BatchVerMo_NYBos';
 local_jobdir=['/Users/gushijie/Documents/MATLAB/Jobs/' jobdir '/'];
-shellname='BatchVerMO6922_NY';
+shellname='BatchVerMO6922_NYBos';
 % -------------------------------------------------------------------------
 
 % -----------------------------ignore this auto area-----------------------
@@ -157,7 +158,7 @@ end
 fileID = fopen([shellname '.sh'],'w');
 forloop=['cd %s\n',...
          'for file in %s; do\n',...
-         'sbatch BatchVerMO6922_${file}.sbatch\n',...
+         'sbatch %s_${file}.sbatch\n',...
          'sleep 1\n',...
          'done'];
-fprintf(fileID,forloop,jobdir,num2str(totaldays));    
+fprintf(fileID,forloop,jobdir,num2str(totaldays),shellname);    
