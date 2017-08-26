@@ -38,7 +38,7 @@ C_thr = merge_thr(2);
 C=cat(2,ACS.Cin);
 STD=std(C,1,2);
 
-real_ind=max(diff(C,1,2))> 3*STD; %not noise
+real_ind=max(diff(C,1,2),[],2)> 3*STD; %not noise
 A=A(:,real_ind);
 C=C(real_ind,:);
 STD=STD(real_ind);
