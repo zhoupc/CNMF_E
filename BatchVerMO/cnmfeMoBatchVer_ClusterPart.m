@@ -38,7 +38,7 @@ if ~isempty(emptyA0s_ind)
 
     samplelist(emptyA0s_ind)=[];
     A0s(emptyA0s_ind)=[];    
-    File(emptyA0s_ind)=[];
+    %File(emptyA0s_ind)=[];
 end
 
 %%% Order similar neurons in the same sequence in each file, not necessary,
@@ -56,9 +56,10 @@ end
 File = rmfield(File,{'Ybg','neuron'});
 
 %% 2. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
-ACS(length(samplelist)) = struct('Cin',[],'Cin_raw',[],'STD',[]);
+ACS(length(filelist)) = struct('Cin',[],'Cin_raw',[],'STD',[]);
+S_A=length(filelist);
 S_R=length(samplelist);
-parfor i= 1:S_R
+parfor i= 1:S_A
     Cin=[]; Cin_raw=[]; STD=[];
     for j=1:S_R % parfor needs S_R rather than length(samplelist)
         Aj=A0s{j};
@@ -112,12 +113,12 @@ end
 % The following will be executed for cnmf_e(BatchVer), without motion
 % correction.
 %% 5 "massive" procedure: Extract A from each file
-neuron_batch(length(filelist_fulllist)) = struct('ind_del',[],'rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[]);
+neuron_batch(length(filelist)) = struct('ind_del',[],'rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[]);
 
-parfor i= 1:length(samplelist)  
+parfor i= 1:length(filelist)  
     mode='massive';
     nam=cell(1,2);
-    nam{1}=fullfile(datadir,samplelist(i).name);
+    nam{1}=fullfile(datadir,filelist(i).name);
     nam{2}=File(i).Ysignal;
     [~,neuron_batch(i)]=demo_endoscope2(bg_neuron_ratio,[],with_dendrites,K,sframe,num2read,...
                                    nam,neuron_full,mode,[],neuron_batch(i),Afinal,...
