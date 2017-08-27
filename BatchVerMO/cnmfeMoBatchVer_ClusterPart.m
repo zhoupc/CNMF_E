@@ -38,7 +38,7 @@ if ~isempty(emptyA0s_ind)
 
     samplelist(emptyA0s_ind)=[];
     A0s(emptyA0s_ind)=[];    
-    %File(emptyA0s_ind)=[];
+    File(emptyA0s_ind)=[];
 end
 
 %%% Order similar neurons in the same sequence in each file, not necessary,
@@ -56,10 +56,9 @@ end
 File = rmfield(File,{'Ybg','neuron'});
 
 %% 2. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
-ACS(length(filelist)) = struct('Cin',[],'Cin_raw',[],'STD',[]);
-S_A=length(filelist);
+ACS(length(samplelist)) = struct('Cin',[],'Cin_raw',[],'STD',[]);
 S_R=length(samplelist);
-parfor i= 1:S_A
+parfor i= 1:S_R
     Cin=[]; Cin_raw=[]; STD=[];
     for j=1:S_R % parfor needs S_R rather than length(samplelist)
         Aj=A0s{j};
