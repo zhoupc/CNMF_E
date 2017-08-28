@@ -1,13 +1,13 @@
 %% E Run All below on cluster!
 
-% cnmfefolder is where 1)logistics,2)PartI's results,3)Motion-corrected A's are saved
-cnmfefolder='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/';
-
-% load one of the logistics
-load(fullfile(cnmfefolder,'LogisticscnmfeBatchVer20170713.mat'));
-
-% load motion corrected A's
-load(fullfile(cnmfefolder,'cnmfe_BatchVer_PartII_MotionCorrection.mat'))
+% % cnmfefolder is where 1)logistics,2)PartI's results,3)Motion-corrected A's are saved
+% cnmfefolder='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/';
+% 
+% % load one of the logistics
+% load(fullfile(cnmfefolder,'LogisticscnmfeBatchVer20170713.mat'));
+% 
+% % load motion corrected A's
+% load(fullfile(cnmfefolder,'cnmfe_BatchVer_PartII_MotionCorrection.mat'))
 M=M_GUI;
 %--------------------------No need to read below-------------------------------
 %% 0. Get cluster ready
