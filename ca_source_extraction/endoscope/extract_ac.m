@@ -56,7 +56,7 @@ T = length(ci);
 X = [ones(T,1), y_bg', ci']; 
 temp = (X'*X)\(X'*Y'); 
 ai = max(0, temp(3,:)'); 
-%ai = spatial_constraints(reshape(ai, nr, nc)); % assume neuron shapes are spatially convex 
+ai = spatial_constraints(reshape(ai, nr, nc)); % assume neuron shapes are spatially convex 
 ai = ai(:); 
 
 
