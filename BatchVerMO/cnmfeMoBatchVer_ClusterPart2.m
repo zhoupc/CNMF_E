@@ -65,7 +65,7 @@ parfor i= 1:filenumsum % file
     k=find((eachfilenum_cumsum>=i),1);
     for j=1:S_L % parfor needs this
         Aj=M1{k}{j};
-        ACS_temp=A2C(File_fulllist(i), Aj, File_fulllist(i).options);
+        ACS_temp=A2C(File_fulllist(i).Ysignal, Aj, File_fulllist(i).options);
         Cin = [Cin; ACS_temp.Cin]; Cin_raw=[Cin_raw; ACS_temp.Cin_raw]; STD=[STD ACS_temp.STD];
     end
     ACS(i).Cin=Cin; ACS(i).Cin_raw=Cin_raw; ACS(i).STD=STD;
