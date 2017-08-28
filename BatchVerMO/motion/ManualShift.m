@@ -121,8 +121,8 @@ function varargout = ManualShift_OutputFcn(hObject, eventdata, handles)
 
 % Get default command line output from handles structure
 display('Saving results...')
-varargout{1} = handles.output;
-varargout{2} = handles.M;
+varargout{1} = handles.M;
+varargout{2} = handles.output;
 varargout{3} = handles.M_intact;
 delete(handles.figure1);
 
