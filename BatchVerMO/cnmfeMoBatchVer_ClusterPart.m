@@ -112,12 +112,12 @@ end
 % The following will be executed for cnmf_e(BatchVer), without motion
 % correction.
 %% 5 "massive" procedure: Extract A from each file
-neuron_batch(length(filelist)) = struct('rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[]);
+neuron_batch(length(samplelist)) = struct('rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[]);
 
-parfor i= 1:length(filelist)  
+parfor i= 1:length(samplelist)  
     mode='massive';
     nam=cell(1,2);
-    nam{1}=fullfile(datadir,filelist(i).name);
+    nam{1}=fullfile(datadir,samplelist(i).name);
     nam{2}=File(i).Ysignal;
     [~,neuron_batch(i)]=demo_endoscope2(bg_neuron_ratio,[],with_dendrites,K,sframe,num2read,...
                                    nam,neuron_full,mode,[],neuron_batch(i),Afinal,...
@@ -126,7 +126,7 @@ parfor i= 1:length(filelist)
 end
 fprintf('Massive extraction in each file done.');
 
-%% 6 Save A*C and backsub video
+%% 6 Save A*C
 
 parfor i= 1:length(filelist)
     for j=1:size(neuron_batch(i).neuron.A,2)
@@ -137,7 +137,7 @@ parfor i= 1:length(filelist)
     fprintf('neuron_batch %.0f extraction done\n', i);
 end
 
-%% 5.5 deconvolve signal
+%% 7 deconvolve signal
 [~, ~, ~, ~,~,neuron_batch,boundary_raw]=PartTraces(neuron_batch);
 Vars = {'neuron_batch';'boundary_raw'}; Vars=Vars';
 fprintf('ALL extractions done.\n');

@@ -1,4 +1,4 @@
-%% C-2 Run All below on cluster!
+%% E Run All below on cluster!
 
 % cnmfefolder is where 1)logistics,2)PartI's results,3)Motion-corrected A's are saved
 cnmfefolder='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/';
@@ -19,10 +19,7 @@ end
 AandSample_list=dir(fullfile(cnmfefolder,'*PartI_Afinalsam*'));
 Filesignal_list=dir(fullfile(cnmfefolder,'*PartI_File*'));
 
-samplist_full_temp=cell(1,numel(Filesignal_list));
-File_full_temp=cell(1,numel(Filesignal_list));
 eachdayfilenum=[];
-
 for i=1:numel(AandSample_list) %go through days 
     File_temponeday=load(fullfile(cnmfefolder,Filesignal_list(i).name));
     AandSample_temponeday=load(fullfile(cnmfefolder,AandSample_list(i).name));     
@@ -42,6 +39,7 @@ for i=1:numel(AandSample_list) %go through days
         File_fulllist=[File_fulllist File_temp];
     end   
 end
+%-------------------Not needed 99% of situations-------------------
 %%%%% File_samplelist can be used to substitute for File_fulllist if there
 %%%%% are too many files.
             daylength=length(eachdayfilenum); avefilenum=mean(eachdayfilenum);
@@ -49,6 +47,7 @@ every_file_num=floor(daylength^2/avefilenum);
 choose_ind=mod(1:numel(filelist_fulllist),every_file_num)==1;
 filelist_samplelist=filelist_fulllist(choose_ind);
 File_samplelist=File_fulllist(choose_ind);
+%----------------------Just Leave them here-------------------------
 
 %%% Order similar neurons in the same sequence in each file, not necessary,
 %%% but nice to do. It is fast.
@@ -89,7 +88,7 @@ clear ACS File_samplelist %File_fulllist
 
 save([outputdir 'RoughAfinalcnmfeBatchVerMOTION.mat'],'-v7.3')
 
-%% 4.5 Determine Afinal that will be used to extract C's in each file.
+%% 4 Determine Afinal that will be used to extract C's in each file.
 
 %%% Some processes making Afinal nicer, modified from Pengcheng Zhou's
 %%% idea.
@@ -144,7 +143,7 @@ for i= 1:length(filelist_fulllist)
     fprintf('neuron_batch %.0f extraction done\n', i);
 end
 
-%% 5.5 deconvolve signal
+%% 7 deconvolve signal
 [~, ~, ~, ~,~,neuron_batchMO,boundary_raw]=PartTraces(neuron_batchMO);
 Vars = {'neuron_batchMO';'boundary_raw'}; Vars=Vars';
 
