@@ -113,7 +113,7 @@ end
 % The following will be executed for cnmf_e(BatchVer), without motion
 % correction.
 %% 5 "massive" procedure: Extract A from each file
-neuron_batch(length(filelist)) = struct('ind_del',[],'rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[]);
+neuron_batch(length(filelist)) = struct('rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[]);
 
 parfor i= 1:length(filelist)  
     mode='massive';

@@ -109,13 +109,10 @@ elseif strcmp(mode,'massive')
     neuron.A=Afinal;
     neuron.C_raw=C;
     neuron.C=C;
-    [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
+    [~,~]=neuron.updateTemporal_endoscope(Ysignal,false);
     cnmfe_update_BG;
-    [~,ind_del]=neuron.updateTemporal_endoscope(Ysignal,false);
+    [~,~]=neuron.updateTemporal_endoscope(Ysignal,false);
     A0s=[];
-    File.ind_del=ind_del;
-    File.C=neuron.C;
-    File.C_raw=neuron.C_raw;
     File.neuron=neuron.copy();
     clear global
     return 
