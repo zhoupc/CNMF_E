@@ -25,7 +25,7 @@ neuron_full = Sources2D('ssub',1, 'tsub',1, ...   % downsampling
     'min_corr',0.8,'min_pnr',10, ...
     'min_pixel',50,...                            % minimum number of nonzero pixels for each neuron
     'bd',1,...                                    % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
-    'center_psf',false);                          
+    'center_psf',true);                          
 neuron_full.Fs = 30;                               % frame rate  
 % options for running deconvolution 
 neuron_full.options.deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1', 'ar2'}
@@ -52,6 +52,8 @@ max2max2nd=1.1;         % type help Over_Days_findAnn
 skewnessthresh=0;       % type help findn1n2
 
 % Merge similar neurons based on spatial AND temporal correlation
+% "merge_thr_2" here will be used in MergeAC, the BatchVer specific merging, 
+% while "merge_thr" in section2 is used for for normal CNMF-E neuron merging in initiation and iteration process.
 merge_thr=[0.7,0.5,0];
 merge_thr_2=[0.7,0.5];
 
@@ -60,20 +62,22 @@ dmin=5;
 
 thresh_detecting_frames=10;  % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
 
-% There are a few more techinical parametrs in demo_endoscope2.
+%%%% There are a few more techinical parametrs in demo_endoscope2.
 
-% Cluster-specific parameters
+% Cluster-specific parameters, depend on the cluster you use and the CPU number you request. 
+    % With this workersnum, cnmfeBatchVer_ClusterPart has functions written to create a cluster and a parpool within it. 
+    % The design caters to parpool in cluster use. The functions for these are in a seperate folder "HandlingParforbyGalen" which is written by Galen Lynch.
 running_on_cluster=true;
 workersnum=4;
 
 % II code directory and output directory
 
-Version='MoBatchVer';
+Version='MoBatchVer';               %with motion: MoBatchVer; without motion: BatchVer.
 % ---- /1/----------------------------------------------------------------
-codeDir='/home/shijiegu/cnmf_e/';
+codeDir='/home/shijiegu/cnmf_e/';   %where code is on the cluster
 % ------------------------------------------------------------------------
 
-% ---- /2/----------------------------------------------------------------
+% ---- /2/Output directory, local and on cluster--------------------------
 outputdir_local='/Volumes/shared-2/EmilyShijieShared_old/6922_moBatchVerNYVersion/';
 outputdir=strrep(outputdir_local,'/Volumes/shared-2/','/net/feevault/data0/shared/');
 % ------------------------------------------------------------------------
@@ -84,11 +88,11 @@ if ~exist(outputdir_local,'dir')
 end
 % ------------------------------------------------------------------------
 
-% ---- /3/ ----------------------------------------------------------------
+% ---- /3/ "Motion batch", within batch, no motion, between batch, motion.-
 totaldays=[20170713,20170714,20170715,20170716,20170717,20170718,20170719];
 % -------------------------------------------------------------------------
 
-% --------------ignore below, unless there is motion within the day----------------------
+% -----/4/ Fill in datadir on local machine, datakind----------------------
 for i=1:length(totaldays)    
     daynum=totaldays(i);    
     outputdirDetails = [outputdir, num2str(totaldays(i)), '/'];
@@ -154,7 +158,7 @@ for i=1:length(totaldays)
 end
 %chmod g+rwx /net/feevault/data0/shared/EmilyShijieShared
 
-%% C. making the shell script
+%% B2. making the shell script
 fileID = fopen([shellname '.sh'],'w');
 forloop=['cd %s\n',...
          'for file in %s; do\n',...
