@@ -172,10 +172,35 @@ classdef Sources2D < handle
             % srt: sorting order
             nA = sqrt(sum(obj.A.^2));
             nr = length(nA);
-            if nargin<2; srt=[]; end
+            if nargin<2
+                srt=[];
+            elseif ischar(srt)
+                if strcmpi(srt, 'snr')
+                    snrs = var(obj.C, 0, 2)./var(obj.C_raw-obj.C, 0, 2);
+                    [~, srt] = sort(snrs, 'descend');
+                elseif strcmpi(srt, 'decay_time')
+                    % time constant
+                    K = size(obj.C, 1);
+                    if K<0
+                        disp('Are you kidding? You extracted 0 neurons!');
+                        return;
+                    else
+                        taud = zeros(K, 1);
+                        for m=1:K
+                            temp = ar2exp(obj.P.kernel_pars(m));
+                            taud(m) = temp(1);
+                        end
+                        [~, srt] = sort(taud);
+                    end
+                elseif strcmp(srt, 'mean')
+                    [~, srt] = sort(mean(obj.C,2), 'descend'); 
+                else
+                    srt = [];
+                end
+            end
             [obj.A, obj.C, obj.S, obj.P, srt] = order_ROIs(obj.A, obj.C,...
                 obj.S, obj.P, srt);
-            
+            obj.P.kernel_pars = obj.P.kernel_pars(srt, :);
             if ~isempty(obj.C_raw)
                 if isempty(srt)
                     obj.C_raw = spdiags(nA(:),0,nr,nr)*obj.C_raw;
@@ -674,14 +699,23 @@ classdef Sources2D < handle
             if nargin<3
                 ratio = 0.3;
             end
-            %             AA = bsxfun(@times, AA, 1./max(AA,1));
+            
+            %             v_max = max(max(AA,1));
+            v_max = 1;
+            AA = bsxfun(@times, AA, v_max./max(AA,[],1));
             AA(bsxfun(@lt, AA, max(AA, [], 1)*ratio)) = 0;
             [d, K] = size(AA);
             
-            col = randi(6, 1, K);
+            if K==2
+                col = [4, 2];
+            elseif K==3
+                col = [4, 2, 1];
+            else
+                col = randi(6, 1, K);
+            end
             col0 = col;
             img = zeros(d, 3);
-            for m=1:3
+            for m=3:-1:1
                 img(:, m) = sum(bsxfun(@times, AA, mod(col, 2)), 2);
                 col = floor(col/2);
             end
@@ -737,16 +771,21 @@ classdef Sources2D < handle
         
         %% find neurons from the residual
         % you can do it in either manual or automatic way
-        function [center, Cn, pnr] = pickNeurons(obj, Y, patch_par, seed_method)
+        function [center, Cn, pnr] = pickNeurons(obj, Y, patch_par, seed_method, debug_on)
             if ~exist('patch_par', 'var')||isempty(patch_par)
-                seed_method = [3,3];
+                patch_par = [3,3];
             end
             if ~exist('seed_method', 'var')||isempty(seed_method)
                 seed_method = 'auto';
             end
+            if ~exist('debug_on', 'var')||isempty(debug_on)
+                debug_on = false; 
+            end 
             neuron = obj.copy();
             neuron.options.seed_method = seed_method;
-            [center, Cn, pnr] = neuron.initComponents_endoscope(Y, [], patch_par, false, false);
+            neuron.options.gSig = 1;
+            neuron.options.center_psf = 0;
+            [center, Cn, pnr] = neuron.initComponents_endoscope(Y, [], patch_par, debug_on, false);
             obj.A = [obj.A, neuron.A];
             obj.C = [obj.C; neuron.C];
             obj.C_raw = [obj.C_raw; neuron.C_raw];

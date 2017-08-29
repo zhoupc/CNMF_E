@@ -229,6 +229,9 @@ while searching_flag
         ind_p = ind_localmax(mcell);
         %         max_v = max_vs(mcell);
         max_v = v_search(ind_p);
+        if mcell==1
+            img_clim = [0, max_v]; 
+        end 
         ind_search(ind_p) = true; % indicating that this pixel has been searched.
         if max_v<min_v_search; % all pixels have been tried for initialization
             continue;
@@ -268,7 +271,7 @@ while searching_flag
         %% show temporal trace in the center
         if debug_on
             axes(ax_pnr_cn); cla;
-            imagesc(reshape(v_search, d1, d2), [0, max_v]);
+            imagesc(reshape(v_search, d1, d2), img_clim); % [0, max_v]);
             title(sprintf('neuron %d', k+1));
             axis equal off tight; hold on;
             plot(c_peak(mcell:end), r_peak(mcell:end), '.r');
@@ -313,7 +316,7 @@ while searching_flag
                 Ain(ind_nhood, k) = ai;
                 Cin(k, :) = ci;
                 Sin(k, :) = si;
-                Cin_raw(k, :) = ci_raw;
+                Cin_raw(k, :) = ci_raw-deconv_options.b;
                 %                 kernel_pars(k, :) = kernel.pars;
                 kernel_pars{k} = reshape(deconv_options.pars, 1, []);
             else
@@ -325,8 +328,8 @@ while searching_flag
             ci = reshape(ci, 1,[]);
             center(k, :) = [r, c];
             
-            % avoid searching nearby pixels that are highly correlated with this one
-            ind_search(ind_nhood(ai>max(ai)*options.merge_thr)) = true;
+            % avoid searching nearby pixels 
+            ind_search(ind_nhood(ai>max(ai)*0.5)) = true;
             
             % update the raw data
             Y(ind_nhood, :) = Y_box - ai*ci;

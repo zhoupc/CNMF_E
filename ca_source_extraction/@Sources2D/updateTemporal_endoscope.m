@@ -68,6 +68,7 @@ for miter=1:maxIter
             [ck, sk, deconv_options]= deconvolveCa(temp, deconv_options_0, 'maxIter', 2);
             smin(k) = deconv_options.smin;
             kernel_pars{k} = reshape(deconv_options.pars, 1, []);
+            temp = temp - deconv_options.b; 
         else
             ck = max(0, temp);
         end

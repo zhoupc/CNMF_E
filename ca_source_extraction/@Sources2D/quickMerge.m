@@ -50,10 +50,18 @@ end
 S_corr = corr(S') - eye(K);
 C_corr = corr(C')-eye(K);
 
-
 %% using merging criterion to detect paired neurons
 flag_merge = (A_overlap>A_thr)&(C_corr>C_thr)&(S_corr>S_thr);
-
+if length(merge_thr)>3
+    max_decay_diff = merge_thr(4); 
+     taud = zeros(K, 1);
+     for m=1:K
+         temp = ar2exp(obj.P.kernel_pars(m));
+         taud(m) = temp(1);
+     end
+     decay_diff = abs(bsxfun(@minus, taud, taud'));
+     flag_merge = flag_merge & (decay_diff<max_decay_diff); 
+end
 [l,c] = graph_connected_comp(sparse(flag_merge));     % extract connected components
 
 MC = bsxfun(@eq, reshape(l, [],1), 1:c);
