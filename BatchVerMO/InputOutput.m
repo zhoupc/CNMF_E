@@ -2,11 +2,7 @@ function [datadir,sampledir,outputdir,filelist,samplelist]=InputOutput(varargin)
 %  [datadir,sampledir,outputdir,filelist,samplelist]=InputOutput(varargin)
 %  Example: [datadir,sampledir,outputdir,filelist,samplelist]=
 %           InputOutput('datadir','/Volumes/data0-shared/elm/ProcessedCalciumData/7030FirstFewDaysForBatch/JustAFewToTest/',
-%                       'sampledir','[]'
-%                       'outputdir','/Users/gushijie/Documents/Fee/',
 %                       'datakind','*CaELM*',
-%                       'samplekind','*CaELM*',
-%                       'SamplingMethod','manual'
 %                       'DataMethod','manual');
 %  Input: 1-data directory, 2-sample directory, which can be empty. If
 %         'SamplingMethod' is 'auto', the sample directory will be the same as data directory
@@ -30,9 +26,9 @@ addParameter(p,'outputdir',[]);
 kinddefault='*'; %read in everything in the folder.
 addParameter(p,'datakind',kinddefault);    
 addParameter(p,'samplekind',kinddefault);
-addParameter(p,'every_file_num',1);
+addParameter(p,'every_file_num',1); % left-over from previous design, do not change this parameter.
 expectedmethod = {'auto','manual'};
-addParameter(p,'SamplingMethod','auto', @(x) any(validatestring(x,expectedmethod)));
+addParameter(p,'SamplingMethod','auto', @(x) any(validatestring(x,expectedmethod))); % left-over from previous design, do not change this parameter.
 addParameter(p,'DataMethod','auto', @(x) any(validatestring(x,expectedmethod)));
 
 parse(p, varargin{:});

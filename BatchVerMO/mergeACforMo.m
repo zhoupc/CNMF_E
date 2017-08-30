@@ -1,25 +1,37 @@
-function  [Afinal_alldays,MC,newIDs_alldays,merged_ROIs_alldays,close_ind] = mergeACforMo(A,C,merge_thr,M,dmin,d1,d2)
-%% merge neurons based on simple spatial and temporal correlation
+function  [Afinal_alldays,MC,newIDs,merged_ROIs,close_ind] = mergeACforMo(A,C,merge_thr,M,dmin,d1,d2)
+% General Description: Merge neurons based on
+%   spatial, temporal correlation, and their distance. Afinal will be
+%   different for each day so that they are put into cell array where each day,
+%   has its own cell. Yet, each day's A is merged from the exact neurons using the
+%   exact weight matrix: max(diff(C,1,2))./STD, see 'C' in input. This
+%   function is key in tracking neuron.
+%   This function is very similar to mergeAC, but this one does not
+%   eliminate neurons with low signal. It also requires C as opposed to
+%   ACS. Its emphasis is on the handling of multi-day data in the same way.
 % input:
-%   A: concatnated Amask from neurons from one or many files.
-%   ACS:  structure, having fields of Ain, Cin (concatnated A and C from
-%         neurons from all files), and std of Cin(STD).
+%   A:    concatenated A from neurons from many files registered towards
+%           one day. That day should be the most confidently registered A.
+%   C:    BigC(in ReadMe) of each file concatenated in time.
 %   merge_thr: 1X2 vector, threshold for two metrics {'A', 'C'}. it merge neurons based
 %         on correlations of spatial shapes ('A'),  calcium traces ('C').
+%   M:    cell array of length number of days. Within each day's cell, it
+%           is As registered towards that day. More detailed in ReadMe for MoBatchVer.
+%   dmin: min distance for two neurons to be called different.
+%   d1 and d2: row and column of the FOV, for calculating center of each
+%         neuron.
 % output:
-%   Afinal: merged As.
+%   Afinal_alldays: merged As for each day. Each day's cell array is put
+%       into a seperate cell. For the following output variables, it is essentially
+%       the same as MergeAC. For ForMo version, each result becomes a cell
+%       array, with ex
+%   MC:  see 'help merge_detail'.
 %   newIDs: cell array, dim: 1*(number of neurons after merging). Each
 %       cell element has the orginal neuron number it has merged from (the
 %       nueron number is cumsum across the second dim of A0s).
-%   Other outputs are the same as the original quickMerge().
-
-%%%%%%%%Older version
-%(%   Merged-component reduced ACS. For those neurons that are merged, they all have the same A as well
-%       as STD in each file's ACS. For example, if neuron 1,3,5 are merged,
-%       neuron 1 in each file's ACS's A and STD will be the same while neuron 3,5 are
-%       deleted in all files's ACS's A and STD. Since C is not used in
-%       later steps, C in ACS is not updated.)
-%%%%%%%%
+%   merged_ROIs: essentially the same as newIDs. Left over from previous
+%       version. Keep if for now.
+%   close_ind: ind of neurons for output (that are merged) just because some neurons are
+%       close together.
 
 % Author: Shijie Gu, techel@live.cn, modified from quickMerge() by Pengcheng Zhou
 %  The basic idea is proposed by Eftychios A. Pnevmatikakis: high temporal
@@ -35,11 +47,6 @@ C_thr = merge_thr(2);
 
 STD=std(C,1,2);
 STD=max(diff(C,1,2))./STD;
-% qt=quantile(STD,10); %pick the last 10 percent to waste.
-% real_ind=STD>qt(1);  %%
-% A(:,real_ind)=0;
-% C(real_ind,:)=0;
-% STD(real_ind)=0;
 
 K = size(C,1);   % number of neurons
 %% find neuron pairs to merge
@@ -70,9 +77,9 @@ MC1=merge_detail(flag_merge1);
 clear A_overlap C_corr C flag_merge1 flag_merge2 flag_merge;
 display('Deleted some big variables.')
 
-numofcells=max(sum(MC,1));
+
 merge_Bool=sum(MC,2)>0;
-Aunique_Bool=~merge_Bool;
+Aunique_Bool=~merge_Bool; %keep it here for now, future versions may need this.
 
 %%%%
 % [l,c] = graph_connected_comp(sparse(flag_merge));     % extract connected components
@@ -88,40 +95,40 @@ else
 end
 
 [nr, n2merge] = size(MC);
-merged_ROIs_alldays=cell(1,numel(M));
-newIDs_alldays=cell(1,numel(M));
+%merged_ROIs_alldays=cell(1,numel(M));
+%newIDs_alldays=cell(1,numel(M));
 Afinal_alldays=cell(1,numel(M));
 
 for i=1:numel(M)
-    merged_ROIs = cell(n2merge,1);
-    newIDs=cell(1,nr);
-    ind_del=true(nr,1);
     Afinal=zeros(size(A));
+    ind_del=true(nr,1);
+    if i==1
+        merged_ROIs = cell(n2merge,1);
+        newIDs=cell(1,nr);        
+    end
 
     A=cat(2,M{i}{:}); %This day's As.
 
-    for m=1:n2merge   %merge A's by their STD deviation.
+    for m=1:n2merge   %merge A's by their STD deviation. 
         IDs = find(MC(:, m));
-        merged_ROIs{m} = IDs;
+        ind_del(IDs(1))= false;
         
         A_temp=A(:,MC(:,m));
         STD_temp=STD(MC(:,m));
         catSTD=STD_temp./sum(STD_temp);
 
         weightedA=A_temp*catSTD;
-
-        ind_del(IDs(1))= false;
-        newIDs{IDs(1)} = IDs;
+        
         Afinal(:,IDs(1))=weightedA;
-    end
-    Afinal(:,ind_del)=[];
-    newIDs(ind_del) = [];
-    
-    merged_ROIs_alldays{i}=merged_ROIs;
-    newIDs_alldays{i}=newIDs;
+        Afinal(:,ind_del)=[];
+        
+        if i==1            
+            merged_ROIs{m} = IDs;            
+            newIDs{IDs(1)} = IDs;
+            newIDs(ind_del) = [];
+        end
+
     Afinal_alldays{i}=Afinal;
-
-end
-
+    end    
 end
 

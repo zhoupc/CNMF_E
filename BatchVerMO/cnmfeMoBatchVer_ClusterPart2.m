@@ -9,6 +9,7 @@
 % % load motion corrected A's
 % load(fullfile(cnmfefolder,'cnmfe_BatchVer_PartII_MotionCorrection.mat'))
 M=M_GUI;
+cnmfefolder=outputdir;
 %--------------------------No need to read below-------------------------------
 %% 0. Get cluster ready
 if running_on_cluster % some procedures making cluster use robust

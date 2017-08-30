@@ -22,7 +22,7 @@ function making_video_batch(cnmfefolder,datadir,d1,d2)
 
     Filesignal_list=dir(fullfile(cnmfefolder,'*PartI_File*'));
     samplelist_list=dir(fullfile(cnmfefolder,'*PartI_Afinalsam*'));
-    load(fullfile(cnmfefolder,'neuron_batchMO'))
+    load(fullfile(cnmfefolder,'CNMFE_moBatchVer.mat'))
     
     str_p=0; % current day's data's starting point in the neuron_batchMO structure;
     for i=1:numel(Filesignal_list) %go through days
