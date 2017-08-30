@@ -51,7 +51,7 @@ if strcmp(Version,'MoBatchVer')
     fprintf('Variable ''File'', which includes fields of ''options'' ''Ysignal'' ''neuron'' ''Ybg'' saved.');
 elseif strcmp(Version,'BatchVer')
     Vars = {'File'}; Vars=Vars';
-    eval(sprintf('save %s%0.f_cnmfe_BatchVer_ClusterPartI.mat %s -v7.3', Aoutputdir, daynum, strjoin(Vars)));
+    eval(sprintf('save %s%0.f_cnmfe_BatchVer_ClusterPartI.mat %s -v7.3', outputdir, daynum, strjoin(Vars)));
 end
 File = rmfield(File,{'Ybg','neuron'});
 
@@ -106,7 +106,7 @@ if strcmp(Version,'MoBatchVer')
 elseif strcmp(Version,'BatchVer')
     ColorAllNeurons(Afinal,File(1).options.d1,File(1).options.d2,Apicname,outputdir);
     Vars = {'Afinal';'samplelist'}; Vars=Vars';
-    eval(sprintf('save %s%0.f_cnmfe_BatchVer_ClusterPartI.mat %s -append', Aoutputdir, daynum, strjoin(Vars)));
+    eval(sprintf('save %s%0.f_cnmfe_BatchVer_ClusterPartI.mat %s -append', outputdir, daynum, strjoin(Vars)));
 end
 
 % The following will be executed for cnmf_e(BatchVer), without motion
