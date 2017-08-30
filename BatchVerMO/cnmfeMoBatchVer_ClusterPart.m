@@ -1,13 +1,13 @@
 %% C Run All below on cluster!
 if strcmp(Version,'MoBatchVer')
     fprintf('Running BatchVer with Motion Correction Later.')
-    if ~exist(outputdirDetails,'dir')
-        mkdir(outputdirDetails)
-    end
-    cd(outputdirDetails)
 elseif strcmp(Version,'BatchVer')
-    fprintf('Simple BatchVer')
+    fprintf('Simple BatchVer')    
 end
+if ~exist(outputdirDetails,'dir')
+    mkdir(outputdirDetails)
+end
+cd(outputdirDetails)
 
 %% 0. Get cluster ready
 if running_on_cluster % some procedures making cluster use robust
