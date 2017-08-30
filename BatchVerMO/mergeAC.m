@@ -9,8 +9,10 @@ function  [Afinal,MC,newIDs,merged_ROIs,close_ind,real_ind] = mergeAC(A,ACS,merg
 %   merge_thr: 1X2 vector, threshold for two metrics {'A', 'C'}. it merge neurons based
 %         on correlations of spatial shapes ('A'),  calcium traces ('C').
 %   dmin: min distance for two neurons to be called different.
+%   d1 and d2: row and column of the FOV, for calculating center of each
+%         neuron.
 % output:
-%   Afinal: merged As.
+%   Afinal: merged As. As are merged using sum of weighted As, weight is max(diff(C,1,2))./STD;
 %   newIDs: cell array, dim: 1*(number of neurons after merging). Each
 %       cell element has the orginal neuron number it has merged from (the
 %       nueron number is cumsum across the second dim of A0s).
