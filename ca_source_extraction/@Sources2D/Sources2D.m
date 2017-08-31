@@ -904,6 +904,18 @@ classdef Sources2D < handle
             end
         end
         
+        %% convert Sources2D object to a struct variable 
+        function neuron = obj2struct(obj)
+            neuron.A = obj.A; 
+            neuron.C = obj.C; 
+            neuron.C_raw = obj.C_raw; 
+            neuron.S = obj.S; 
+            neuron.options = obj.options; 
+            neuron.P = obj.P; 
+            neuron.b = obj.b; 
+            neuron.f = obj.f; 
+        end
+               
         %% get contours of the all neurons
         function Coor = get_contours(obj, thr, ind)
             A_ = obj.A;

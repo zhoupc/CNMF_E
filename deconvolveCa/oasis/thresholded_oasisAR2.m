@@ -275,8 +275,12 @@ tau_r0 = tau_r;
 bnd_d = tau_d0 * [1/4, 4];
 bnd_r = tau_r0 * [1/4, 4];
 for m=1:10
-    tau_r = fminbnd(@rss_taur, bnd_r(1), bnd_r(2));
-    tau_d = fminbnd(@rss_taud, bnd_d(1), bnd_d(2));
+    try
+        tau_r = fminbnd(@rss_taur, bnd_r(1), bnd_r(2));
+        tau_d = fminbnd(@rss_taud, bnd_d(1), bnd_d(2));
+    catch
+        break;
+    end
     if and(abs(tau_d-tau_d0)/tau_d0 < 1e-4, abs(tau_r-tau_r0)/tau_r0 < 1e-4)
         break;
     else

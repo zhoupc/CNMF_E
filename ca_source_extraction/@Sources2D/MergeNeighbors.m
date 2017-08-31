@@ -39,7 +39,7 @@ end
 dist_v = sqrt(bsxfun(@minus, xx, xx').^2 + bsxfun(@minus, yy, yy').^2); 
 
 %% using merging criterion to detect paired neurons
-flag_merge = (dist_v<=dmin);
+flag_merge = (dist_v<=dmin(1));
 
 % neurons should have similar decaying time constant if we want to merge
 % them. 

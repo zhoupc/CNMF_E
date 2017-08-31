@@ -187,6 +187,8 @@ for m=1:2
 end
 fprintf('Time cost in updating spatial & temporal components:     %.2f seconds\n', toc);
 
+b0 = mean(Y,2)-neuron.A*mean(neuron.C,2); 
+Ybg = bsxfun(@plus, Ybg, b0-mean(Ybg, 2)); 
 %% display neurons
 dir_neurons = sprintf('%s%s%s_neurons%s', dir_nm, filesep, file_nm, filesep);
 if exist('dir_neurons', 'dir')
@@ -230,5 +232,5 @@ center_ac = median(max(neuron.A,[],1)'.*max(neuron.C,[],2)); % the denoised vide
 cnmfe_save_video;
 
 %% save results
-globalVars = who('global');
-eval(sprintf('save %s%s%s_results.mat %s', dir_nm, filesep, file_nm, strjoin(globalVars)));
+results = neuron.obj2struct(); 
+eval(sprintf('save %s%s%s_results.mat results', dir_nm, filesep, file_nm));
