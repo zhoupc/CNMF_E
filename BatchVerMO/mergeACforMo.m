@@ -110,6 +110,7 @@ for i=1:numel(M)
     A=cat(2,M{i}{:}); %This day's As.
 
     for m=1:n2merge   %merge A's by their STD deviation. 
+        display(m)
         IDs = find(MC(:, m));
         ind_del(IDs(1))= false;
         
@@ -120,15 +121,16 @@ for i=1:numel(M)
         weightedA=A_temp*catSTD;
         
         Afinal(:,IDs(1))=weightedA;
-        Afinal(:,ind_del)=[];
         
         if i==1            
             merged_ROIs{m} = IDs;            
             newIDs{IDs(1)} = IDs;
-            newIDs(ind_del) = [];
         end
-
+    end  
+    Afinal(:,ind_del)=[];
     Afinal_alldays{i}=Afinal;
-    end    
+    if i==1
+        newIDs(ind_del) = [];
+    end
 end
 
