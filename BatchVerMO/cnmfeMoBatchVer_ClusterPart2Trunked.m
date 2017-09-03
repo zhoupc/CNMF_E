@@ -1,9 +1,5 @@
 %% C-2 Run All below on cluster!
 
-% load one of the logistics and overwrite some folders
-cnmfefolder='/net/feevault/data0/shared/EmilyShijieShared_old/6922_moBatchVerNYVersion/';
-load(fullfile(cnmfefolder,'LogisticscnmfeBatchVer20170713.mat'));
-
 %% 0. Get cluster ready
 if running_on_cluster % some procedures making cluster use robust
     [~, ~, ~] = maybe_spawn_workers(workersnum); 
