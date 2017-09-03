@@ -105,7 +105,9 @@ for c=1:numel(M2)
     % Just in case some all zero A's got passed to this stage.
     nz_ind=any(Afinal);
     Afinal=Afinal(:,nz_ind);
-    newIDs{c}=newIDs{c}(nz_ind);
+    if c==1
+        newIDs=newIDs(nz_ind);
+    end
     Apicname=sprintf('Day%.0fAFinal',num2str(totaldays(c)));
     ColorAllNeurons(Afinal,d1,d2,Apicname,[outputdir, num2str(totaldays(c)), '/']);
     M3{c}=Afinal;
