@@ -34,7 +34,9 @@ The best way to get started is running a demo script for analyzing an example da
 
 Questions
 =======
-You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. 
+You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. You can send me an email for requiring an invitation to the slack channel or ask your collegues who joined the slack channel already for invitation. 
+
+We are also slowly updating the CNMF-E [wiki](https://github.com/zhoupc/CNMF_E/wiki). 
 
 Reference
 =======
