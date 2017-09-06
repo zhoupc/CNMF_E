@@ -59,7 +59,7 @@ cnmfe_show_corr_pnr;    % this step is not necessary, but it can give you some..
 debug_on = true;   % visualize the initialization procedue. 
 save_avi = false;   %save the initialization procedure as an avi movie. 
 patch_par = [1,1]*1; %1;  % divide the optical field into m X n patches and do initialization patch by patch. It can be used when the data is too large 
-K = 10; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
+K = []; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
 
 min_corr = 0.8;     % minimum local correlation for a seeding pixel
 min_pnr = 10;       % minimum peak-to-noise ratio for a seeding pixel
