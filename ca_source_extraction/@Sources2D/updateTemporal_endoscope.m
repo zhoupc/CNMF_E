@@ -46,26 +46,22 @@ for miter=1:maxIter
         end
         temp = C(k, :) + (U(k, :)-V(k, :)*C)/aa(k);
         %remove baseline and estimate noise level
-        if range(temp)/std(temp)>10
-            [b, tmp_sn] = estimate_baseline_noise(temp);
+        [b_hist, sn_hist] = estimate_baseline_noise(temp);
+        b = mean(temp(temp<median(temp)));
+        sn_psd = GetSn(temp);
+        if sn_psd<sn_hist
+            tmp_sn = sn_psd;
         else
-            b = mean(temp(temp<median(temp)));
-            tmp_sn = GetSn(temp);
+            tmp_sn = sn_hist;
+            b = b_hist;
         end
-        % we use two methods for estimating the noise level
-        %         psd_sn = GetSn(temp);
-        %         if tmp_sn>psd_sn
-        %             tmp_sn =psd_sn;
-        %             [temp, ~] = remove_baseline(temp, tmp_sn);
-        %         else
-        %             temp = temp - b;
-        %         end
+        
         temp = temp -b;
         sn(k) = tmp_sn;
         
         % deconvolution
         if obj.options.deconv_flag
-            [ck, sk, deconv_options]= deconvolveCa(temp, deconv_options_0, 'maxIter', 2);
+            [ck, sk, deconv_options]= deconvolveCa(temp, deconv_options_0, 'maxIter', 2, 'sn', tmp_sn);
             smin(k) = deconv_options.smin;
             kernel_pars{k} = reshape(deconv_options.pars, 1, []);
             temp = temp - deconv_options.b; 

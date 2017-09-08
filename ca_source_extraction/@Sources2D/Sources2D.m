@@ -200,7 +200,9 @@ classdef Sources2D < handle
             end
             [obj.A, obj.C, obj.S, obj.P, srt] = order_ROIs(obj.A, obj.C,...
                 obj.S, obj.P, srt);
-            obj.P.kernel_pars = obj.P.kernel_pars(srt, :);
+            try
+                obj.P.kernel_pars = obj.P.kernel_pars(srt, :);
+            end
             if ~isempty(obj.C_raw)
                 if isempty(srt)
                     obj.C_raw = spdiags(nA(:),0,nr,nr)*obj.C_raw;

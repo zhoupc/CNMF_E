@@ -137,7 +137,7 @@ while and(m>=1, m<=length(ind))
             break;
         elseif ~isnan(str2double(temp))
             m = m + floor(str2double(temp)); 
-            fprintf('jump to neuron %d / %d', m, length(ind)); 
+            fprintf('jump to neuron %d / %d\n', m, length(ind)); 
         else
             m = m+1;
         end
