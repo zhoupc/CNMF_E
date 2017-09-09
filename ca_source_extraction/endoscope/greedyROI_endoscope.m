@@ -291,40 +291,47 @@ while searching_flag
         end
         
         %% extract ai, ci
+        % normalize ci to have a noise level of 1
+        ci_raw = y0; 
+        [b, sn] = estimate_baseline_noise(ci_raw);
+        psd_sn = GetSn(ci_raw);
+        if sn>psd_sn
+            sn =psd_sn;
+            [ci_raw, ~] = remove_baseline(ci_raw, sn);
+        else
+            ci_raw = ci_raw - b;
+        end
+        ci_raw = ci_raw/sn;
+        
+        if deconv_flag
+            % deconv the temporal trace
+            [ci, si, deconv_options] = deconvolveCa(ci_raw, deconv_options_0, 'sn', 1);  % sn is 1 because i normalized c_raw already
+            ci_raw = ci_raw - deconv_options.b; 
+        else
+            ci = ci_raw;
+        end
+        
         sz = [nr, nc];
         if options.center_psf
-            [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
+            [ai, ~, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz, ci);
         else
-            [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
+            [ai, ~, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz, ci);
             if options.gaussian_shape && ind_success
-                ai = spatial_constraints(reshape(ai, sz)); 
-                ai = ai(:); 
+                ai = spatial_constraints(reshape(ai, sz));
+                ai = ai(:);
             end
         end
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
-        %         if max(ci_raw)<min_pnr;
-        %             ind_success=false;
-        %         end
         if sum(ai(:)>0)<min_pixel; ind_success=false; end
         if ind_success
             k = k+1;
             
-            if deconv_flag
-                % deconv the temporal trace
-                [ci, si, deconv_options] = deconvolveCa(ci_raw, deconv_options_0, 'sn', 1);  % sn is 1 because i normalized c_raw already
-                % save this initialization
-                Ain(ind_nhood, k) = ai;
-                Cin(k, :) = ci;
-                Sin(k, :) = si;
-                Cin_raw(k, :) = ci_raw-deconv_options.b;
-                %                 kernel_pars(k, :) = kernel.pars;
-                kernel_pars{k} = reshape(deconv_options.pars, 1, []);
-            else
-                ci = ci_raw;
-                Ain(ind_nhood, k) = ai;
-                Cin(k, :) = ci_raw;
-                Cin_raw(k, :) = ci_raw;
-            end
+            Ain(ind_nhood, k) = ai;
+            Cin(k, :) = ci;
+            Sin(k, :) = si;
+            Cin_raw(k, :) = ci_raw;
+            % kernel_pars(k, :) = kernel.pars;
+            kernel_pars{k} = reshape(deconv_options.pars, 1, []);
             ci = reshape(ci, 1,[]);
             center(k, :) = [r, c];
             

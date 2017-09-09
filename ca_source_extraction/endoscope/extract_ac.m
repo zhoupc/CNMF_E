@@ -1,4 +1,4 @@
-function [ai, ci, ind_success, sn] = extract_ac(HY, Y, ind_ctr, sz)
+function [ai, ci, ind_success, sn] = extract_ac(HY, Y, ind_ctr, sz, y0)
 %% given a patch of raw & high-pass filtered calcium imaging data, extract
 % spatial and temporal component of one neuron (ai, ci). if succeed, then
 % return an indicator ind_succes with value 1; otherwise, 0.
@@ -7,7 +7,7 @@ function [ai, ci, ind_success, sn] = extract_ac(HY, Y, ind_ctr, sz)
 %       Y:      d X T matrix, raw data
 %       ind_ctr:        scalar, location of the center
 %       sz:         2 X 1 vector, size of the patch
-
+%       ci:    1XT vector the desired temporal trace 
 %% Author: Pengcheng Zhou, Carnegie Mellon University.
 
 %% parameters 
@@ -18,18 +18,34 @@ min_pixels = 5;
 
 %% find pixels highly correlated with the center
 % HY(HY<0) = 0;       % remove some negative signals from nearby neurons
-y0 = HY(ind_ctr, :);
-tmp_corr = reshape(corr(y0', HY'), nr, nc);
-data = HY(tmp_corr>min_corr, :);
-
-
-%% estimate ci with the mean or rank-1 NMF
-ci = mean(data, 1);
-
-if norm(ci)==0  % avoid empty results 
-    ai=[];
-    ind_success=false;
-    return;
+if ~exist('ci', 'var')
+    y0 = HY(ind_ctr, :);
+    
+    tmp_corr = reshape(corr(y0', HY'), nr, nc);
+    data = HY(tmp_corr>min_corr, :);
+       
+    %% estimate ci with the mean or rank-1 NMF
+    ci = mean(data, 1);
+    
+    if norm(ci)==0  % avoid empty results
+        ai=[];
+        ind_success=false;
+        return;
+    end
+    
+    % normalize ci to have a noise level of 1
+    [b, sn] = estimate_baseline_noise(ci);
+    psd_sn = GetSn(ci);
+    if sn>psd_sn
+        sn =psd_sn;
+        [ci, ~] = remove_baseline(ci, sn);
+    else
+        ci = ci - b;
+    end
+    
+    ci = ci/sn;
+else
+    tmp_corr = reshape(corr(reshape(ci, [], 1), HY'), nr, nc); 
 end
 
 %% extract spatial component
@@ -54,7 +70,8 @@ y_bg = median(Y(tmp_corr(:)<0.3, :), 1); % using the median of the whole field (
 %% estimate ai 
 T = length(ci); 
 X = [ones(T,1), y_bg', ci']; 
-temp = (X'*X)\(X'*Y'); 
+XX = (X'*X); 
+temp = (XX+ sum(diag(XX))* eye(3)*(1e-10))\(X'*Y'); 
 ai = max(0, temp(3,:)'); 
 ai = spatial_constraints(reshape(ai, nr, nc)); % assume neuron shapes are spatially convex 
 ai = ai(:); 
@@ -76,18 +93,6 @@ end
 % ci0 = (ai-ai_mask)'*ai\((ai-ai_mask)'*Y);
 % plot(ci, 'r'); 
 % pause; 
-
-% we use two methods for estimating the noise level 
-[b, sn] = estimate_baseline_noise(ci); 
-psd_sn = GetSn(ci); 
-if sn>psd_sn
-    sn =psd_sn; 
-    [ci, ~] = remove_baseline(ci, sn); 
-else
-    ci = ci - b; 
-end 
-% ind_neg = (ci<-4*sn); 
-% ci(ind_neg) = rand(sum(ind_neg), 1)*sn; 
 
 % normalize the result
 ci = ci / sn;
