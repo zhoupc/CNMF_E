@@ -218,7 +218,9 @@ else
 end
 %% parse all input arguments
 while k<=nargin
-    
+    if isempty(varargin{k})
+        k = k+1; 
+    end 
     switch lower(varargin{k})
         case {'ar1', 'ar2', 'exp2', 'kernel'}
             % convolution kernel type

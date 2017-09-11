@@ -141,15 +141,21 @@ if debug_on
         avi_file.FrameRate = 1;
         avi_file.open();
     elseif save_avi
-        avi_file = VideoWriter('temp.avi');
+        avi_file = VideoWriter('initialization.avi');
         avi_file.FrameRate = 1;
         avi_file.open();
     end
-    
+    if isfield(options, 'visible_off')
+        set(gcf, 'visible', 'off'); 
+        set(ax_cn, 'visible', 'off'); 
+        set(ax_pnr_cn, 'visible', 'off'); 
+        set(ax_cn_box, 'visible', 'off');
+        set(ax_trace, 'visible', 'off'); 
+    end 
 end
 
 %% start initialization
-if ~exist('K', 'var')||isempty(K); 
+if ~exist('K', 'var')||isempty(K);
     K = floor(sum(v_search(:)>0)/10);
 else
     K = min(floor(sum(v_search(:)>0)/10), K);
@@ -165,11 +171,14 @@ center = zeros(K, 2);   % center of the initialized components
 searching_flag = true;
 k = 0;      %number of found components
 % set boundary to be 0
+if length(bd) == 1
+    bd = ones(1, 4)*bg; 
+end 
 ind_bd = false(size(v_search));
-ind_bd(1:bd, :) = true;
-ind_bd((end-bd+1):end, :) = true;
-ind_bd(:, 1:bd) = true;
-ind_bd(:, (end-bd):end) = true;
+ind_bd(1:bd(1), :) = true;
+ind_bd((end-bd(2)+1):end, :) = true;
+ind_bd(:, 1:bd(3)) = true;
+ind_bd(:, (end-bd(4)+1):end) = true;
 while searching_flag
     %% find local maximum as initialization point
     %find all local maximum as initialization point
@@ -230,8 +239,8 @@ while searching_flag
         %         max_v = max_vs(mcell);
         max_v = v_search(ind_p);
         if mcell==1
-            img_clim = [0, max_v]; 
-        end 
+            img_clim = [0, max_v];
+        end
         ind_search(ind_p) = true; % indicating that this pixel has been searched.
         if max_v<min_v_search; % all pixels have been tried for initialization
             continue;
@@ -242,9 +251,9 @@ while searching_flag
         y0 = HY(ind_p, :);
         y0_std = std(diff(y0));
         %         y0(y0<median(y0)) = 0;
-%         if (k>=1) && any(corr(Cin(1:k, :)', y0')>0.9) %already found similar temporal traces
-%             continue;
-%         end
+        %         if (k>=1) && any(corr(Cin(1:k, :)', y0')>0.9) %already found similar temporal traces
+        %             continue;
+        %         end
         if max(diff(y0))< 3*y0_std % signal is weak
             continue;
         end
@@ -292,7 +301,7 @@ while searching_flag
         
         %% extract ai, ci
         % normalize ci to have a noise level of 1
-        ci_raw = y0; 
+        ci_raw = y0;
         [b, sn] = estimate_baseline_noise(ci_raw);
         psd_sn = GetSn(ci_raw);
         if sn>psd_sn
@@ -306,7 +315,7 @@ while searching_flag
         if deconv_flag
             % deconv the temporal trace
             [ci, si, deconv_options] = deconvolveCa(ci_raw, deconv_options_0, 'sn', 1);  % sn is 1 because i normalized c_raw already
-            ci_raw = ci_raw - deconv_options.b; 
+            ci_raw = ci_raw - deconv_options.b;
         else
             ci = ci_raw;
         end
@@ -335,7 +344,7 @@ while searching_flag
             ci = reshape(ci, 1,[]);
             center(k, :) = [r, c];
             
-            % avoid searching nearby pixels 
+            % avoid searching nearby pixels
             ind_search(ind_nhood(ai>max(ai)*0.5)) = true;
             
             % update the raw data
@@ -423,5 +432,6 @@ Cn = Cn0;
 PNR = PNR0;
 if exist('avi_file', 'var');
     avi_file.close();
+    close(gcf); 
 end
 end

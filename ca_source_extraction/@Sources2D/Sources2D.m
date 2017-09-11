@@ -11,6 +11,8 @@ classdef Sources2D < handle
         b;          % spatial components of backgrounds
         f;          % temporal components of backgrounds
         S;          % spike counts
+        W;          % a sparse weight matrix matrix 
+        b0;         % constant baseline 
         C_raw;      % raw traces of temporal components
         Cn;         % correlation image
         Coor;       % neuron contours
@@ -23,6 +25,7 @@ classdef Sources2D < handle
         indicator = 'GCaMP6f';
         kernel;
         file = '';
+        mat_data = ''; 
     end
     
     %% methods
@@ -53,6 +56,9 @@ classdef Sources2D < handle
             [obj.A, obj.C, obj.b, obj.f, center] = initialize_components(Y, K, tau, obj.options);
         end
         
+        %% initialize neurons using patch method
+        [center, Cn, PNR] = initComponents_parallel(obj, K, frame_range, save_avi)
+
         %% fast initialization for microendoscopic data
         [center, Cn, pnr] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi);
         
@@ -391,6 +397,7 @@ classdef Sources2D < handle
         end
         %% play movie
         function playMovie(obj, Y, min_max, col_map, avi_nm, t_pause)
+            Y = double(Y); 
             d1 = obj.options.d1;
             d2 = obj.options.d2;
             % play movies

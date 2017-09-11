@@ -18,6 +18,7 @@ users.html
 demos/data_endoscope_neurons/
 
 .DS_Store
+.*
 
 deconvolveCa/examples/Paper/fig/*
 
@@ -26,3 +27,5 @@ CNMF-E_users.xls
 demos/demos_backup/*
 
 NoRMCorre/
+
+demos/data_endoscope_source_extraction
