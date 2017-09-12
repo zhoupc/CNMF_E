@@ -42,6 +42,9 @@ elseif strcmpi(ext, '.avi')
     sizx = obj.Width;
     sizy = obj.Height;
     dims = [sizy, sizx, numFrames];
+elseif strcmpi(ext, '.mat')
+    data = matfile(file_to_file); 
+    dims = data.Ysiz; 
 else
     error('Unknown file extension. Only .tiff and .hdf5 files are currently supported');
     dims = [];

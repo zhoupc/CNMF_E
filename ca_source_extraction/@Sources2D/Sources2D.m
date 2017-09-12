@@ -11,8 +11,8 @@ classdef Sources2D < handle
         b;          % spatial components of backgrounds
         f;          % temporal components of backgrounds
         S;          % spike counts
-        W;          % a sparse weight matrix matrix 
-        b0;         % constant baseline 
+        W;          % a sparse weight matrix matrix
+        b0;         % constant baseline
         C_raw;      % raw traces of temporal components
         Cn;         % correlation image
         Coor;       % neuron contours
@@ -20,12 +20,11 @@ classdef Sources2D < handle
         C_df;       % temporal components of neurons and background normalized by Df
         S_df;       % spike counts of neurons normalized by Df
         options;    % options for model fitting
-        P;          % some estimated parameters
+        P;          % some estimated parameters or parameters relating to data
         Fs = nan;    % frame rate
-        indicator = 'GCaMP6f';
         kernel;
         file = '';
-        mat_data = ''; 
+        frame_range;  % frame range of the data 
     end
     
     %% methods
@@ -33,7 +32,9 @@ classdef Sources2D < handle
         %% constructor and options setting
         function obj = Sources2D(varargin)
             obj.options = CNMFSetParms();
-            obj.P = struct('p', 2, 'sn', []);
+            obj.P =struct('mat_file', [], 'mat_data', [], 'indicator', '', 'k_options', 0, ...
+                'k_snapshot', 0, 'k_del', 0, 'k_merge', 0, 'k_trim', 0, 'sn', [], ...
+                'kernel_pars',[]);
             if nargin>0
                 obj.options = CNMFSetParms(obj.options, varargin{:});
             end
@@ -50,6 +51,61 @@ classdef Sources2D < handle
             [obj.P,Y] = preprocess_data(Y,p,obj.options);
         end
         
+        %% select data
+        function nam = select_data(obj, nam)
+            %% select file
+            if ~exist('nam', 'var') || isempty(nam) || ~exist(nam, 'file')
+                % choose files using graphical interfaces
+                try
+                    load .dir.mat;          %load previous path
+                catch
+                    dir_nm = [cd(), filesep];   %use the current path
+                end
+                [file_nm, dir_nm] = uigetfile(fullfile(dir_nm, '*.tif;*.mat;*.h5;*.avi'));
+                nam = [dir_nm, file_nm];        % full name of the data file
+            else
+                % file has been selected
+                nam =  get_fullname(nam);
+                [dir_nm, ~, ~] = fileparts(nam);
+            end
+            
+            
+            if dir_nm~=0
+                save .dir.mat dir_nm;
+            else
+                fprintf('no file was selected. STOP!\n');
+                return;
+            end
+            obj.file = nam;
+        end
+        
+        %% distribute data and be ready to run source extraction
+        function getReady(obj, pars_envs)
+            % data and its extension
+            nam = obj.file;
+            
+            % parameters for scaling things
+            if ~exist('pars_envs', 'var') || isempty(pars_envs)
+                memory_size_to_use = 16.0;  %GB
+                memory_size_per_patch = 1.0;  % GB;
+                patch_dims = [64, 64];
+            else
+                memory_size_to_use = pars_envs.memory_size_to_use;
+                memory_size_per_patch = pars_envs.memory_size_per_patch;
+                patch_dims = pars_envs.patch_dims;
+            end
+            
+            % overlapping area
+            w_overlap = obj.options.ring_radius;
+            
+            % distribute data
+            [data, dims, obj.P.folder_analysis] = distribute_data(nam, patch_dims, w_overlap, memory_size_per_patch, memory_size_to_use);
+            obj.P.mat_data = data;
+            obj.P.mat_file = data.Properties.Source;
+            obj.updateParams('d1', dims(1), 'd2', dims(2));
+            obj.P.numFrames = dims(3);
+        end
+        
         %% fast initialization
         function [center] = initComponents(obj, Y, K, tau)
             if nargin<4 ;    tau = [];             end
@@ -58,7 +114,7 @@ classdef Sources2D < handle
         
         %% initialize neurons using patch method
         [center, Cn, PNR] = initComponents_parallel(obj, K, frame_range, save_avi)
-
+        
         %% fast initialization for microendoscopic data
         [center, Cn, pnr] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi);
         
@@ -199,7 +255,7 @@ classdef Sources2D < handle
                         [~, srt] = sort(taud);
                     end
                 elseif strcmp(srt, 'mean')
-                    [~, srt] = sort(mean(obj.C,2), 'descend'); 
+                    [~, srt] = sort(mean(obj.C,2), 'descend');
                 else
                     srt = [];
                 end
@@ -397,7 +453,7 @@ classdef Sources2D < handle
         end
         %% play movie
         function playMovie(obj, Y, min_max, col_map, avi_nm, t_pause)
-            Y = double(Y); 
+            Y = double(Y);
             d1 = obj.options.d1;
             d2 = obj.options.d2;
             % play movies
@@ -788,8 +844,8 @@ classdef Sources2D < handle
                 seed_method = 'auto';
             end
             if ~exist('debug_on', 'var')||isempty(debug_on)
-                debug_on = false; 
-            end 
+                debug_on = false;
+            end
             neuron = obj.copy();
             neuron.options.seed_method = seed_method;
             neuron.options.gSig = 1;
@@ -892,6 +948,26 @@ classdef Sources2D < handle
             end
         end
         
+        %% save results 
+        function file_path = save_workspace(obj) 
+            obj.compress_results(); 
+            file_path = [obj.P.folder_analysis, datestr(datetime(), 'mmm-ddHHPM_MM_SS'), '.mat']; 
+            file_path = strrep(file_path, ' ', '_'); 
+            evalin('base', sprintf('save(''%s''); ', file_path));
+            
+            try
+                fp = fopen(obj.P.log_file, 'a');
+                fprintf(fp, '\n%s\t %s\Save the current workspace into file \n%sn', get_date(), get_minute(), file_path); 
+            end
+        end 
+        
+        %% compress A, S and W 
+        function neuron = compress_results(obj)
+            obj.A = sparse(obj.A);
+            obj.S = sparse(obj.S);
+            obj.W = sparse(obj.W);
+        end
+        
         %% compute correlation image and peak to noise ratio for endoscopic
         % data. unlike the correlation image for two-photon data,
         % correlation image of the microendoscopic data needs to be
@@ -913,18 +989,24 @@ classdef Sources2D < handle
             end
         end
         
-        %% convert Sources2D object to a struct variable 
+        %% convert Sources2D object to a struct variable
         function neuron = obj2struct(obj)
-            neuron.A = obj.A; 
-            neuron.C = obj.C; 
-            neuron.C_raw = obj.C_raw; 
-            neuron.S = obj.S; 
-            neuron.options = obj.options; 
-            neuron.P = obj.P; 
-            neuron.b = obj.b; 
-            neuron.f = obj.f; 
+            neuron.A = sparse(obj.A);
+            neuron.C = obj.C;
+            neuron.C_raw = obj.C_raw;
+            neuron.S = sparse(obj.S);
+            neuron.options = obj.options;
+            neuron.P = obj.P;
+            neuron.b = obj.b;
+            neuron.f = obj.f;
+            neuron.W = sparse(obj.W);
+            neuron.b0 = obj.b0;
+            neuron.Fs = obj.Fs;
+            neuron.kernel = obj.kernel;
+            neuron.file = obj.kernel;
+            neuron.Cn = obj.Cn;
         end
-               
+        
         %% get contours of the all neurons
         function Coor = get_contours(obj, thr, ind)
             A_ = obj.A;

@@ -1,4 +1,4 @@
-function [mat_data, dims] = distribute_data(nam, patch_dims, w_overlap, memory_size_per_patch, memory_size_to_use)
+function [mat_data, dims, folder_analysis] = distribute_data(nam, patch_dims, w_overlap, memory_size_per_patch, memory_size_to_use)
 % divide the field of view into multiple small patches and save the data
 % into these small patches individually. There are overlaps between these
 % patches.
@@ -44,22 +44,25 @@ else
     end
 end
 
-patch_nums = ceil([d1/patch_dims(1), d2/patch_dims(2)]);   % number of patches for one bolumn and one row.
-if patch_nums(1) < 2
+patch_dims = reshape(patch_dims, 1, []); 
+nr_patch = floor(d1/patch_dims(1)); 
+nc_patch = floor(d2/patch_dims(2)); 
+if nr_patch < 1
     patch_idx_r = [1, d1];
+    nr_patch = 1; 
 else
-    patch_idx_r = round(linspace(1, d1, patch_nums(1)));
+    patch_idx_r = [1, 1+(1:(nr_patch-1))*patch_dims(1), d1]; 
+    patch_idx_r(end) = d1; 
 end
-if patch_nums(2) < 2
+if nc_patch < 1
     patch_idx_c = [1, d2];
+    nc_patch = 1; 
 else
-    patch_idx_c = round(linspace(1, d2, patch_nums(2)));
+    patch_idx_c = [1, 1+(1:(nc_patch-1))*patch_dims(2), d2]; 
 end
-nr_patch = patch_nums(1) - 1;
-nc_patch = patch_nums(1) - 1;
 
-fprintf('The FOV is divided into %d X %d patches. \nEach patch has around %d X %d pixels. \n',...
-    nr_patch, nc_patch, patch_dims(1), patch_dims(2));
+fprintf('The FOV is divided into %d X %d patches. \nEach patch has %d X %d pixels. \n',...
+    nr_patch, nc_patch, diff(patch_idx_r(1:2))+1, diff(patch_idx_c(1:2))+1);
 fprintf('It requires %.3f GB RAM for loading data related to each patch. \n\n', prod(patch_dims+2*w_overlap)*T/(2^27));
 
 %% indices for dividing the FOV into multiple blocks.
@@ -88,8 +91,10 @@ end
 % check whether the mat data has been created
 if exist(mat_file, 'file')
     mat_data = matfile(mat_file);
-    fprintf('The data has been saved into \n%s\n\n', mat_file); 
-    return;
+    if all(patch_dims==mat_data.patch_dims) && (w_overlap==mat_data.w_overlap)
+        fprintf('The data has been divided into multiple patches and saved into \n%s\n\n', mat_file);
+        return;
+    end
 end
 
 % create a mat file and save data info into it. 
@@ -104,6 +109,7 @@ mat_data.block_idx_c = block_idx_c;
 mat_data.nr_block = nr_block; 
 mat_data.nc_block = nc_block; 
 mat_data.w_overlap = w_overlap;
+mat_data.patch_dims = patch_dims; 
 mat_data.dims = dims;
 
 % pre-allocate matrices for saving the video data 
