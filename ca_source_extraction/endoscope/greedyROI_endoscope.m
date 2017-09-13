@@ -145,17 +145,11 @@ if debug_on
         avi_file.FrameRate = 1;
         avi_file.open();
     end
-    if isfield(options, 'visible_off')
-        set(gcf, 'visible', 'off'); 
-        set(ax_cn, 'visible', 'off'); 
-        set(ax_pnr_cn, 'visible', 'off'); 
-        set(ax_cn_box, 'visible', 'off');
-        set(ax_trace, 'visible', 'off'); 
-    end 
+    
 end
 
 %% start initialization
-if ~exist('K', 'var')||isempty(K);
+if ~exist('K', 'var')||isempty(K); 
     K = floor(sum(v_search(:)>0)/10);
 else
     K = min(floor(sum(v_search(:)>0)/10), K);
@@ -171,9 +165,9 @@ center = zeros(K, 2);   % center of the initialized components
 searching_flag = true;
 k = 0;      %number of found components
 % set boundary to be 0
-if length(bd) == 1
-    bd = ones(1, 4)*bg; 
-end 
+if length(bd) ==1
+    bd = ones(1,4)*bd; 
+end
 ind_bd = false(size(v_search));
 ind_bd(1:bd(1), :) = true;
 ind_bd((end-bd(2)+1):end, :) = true;
@@ -239,8 +233,8 @@ while searching_flag
         %         max_v = max_vs(mcell);
         max_v = v_search(ind_p);
         if mcell==1
-            img_clim = [0, max_v];
-        end
+            img_clim = [0, max_v]; 
+        end 
         ind_search(ind_p) = true; % indicating that this pixel has been searched.
         if max_v<min_v_search; % all pixels have been tried for initialization
             continue;
@@ -251,9 +245,9 @@ while searching_flag
         y0 = HY(ind_p, :);
         y0_std = std(diff(y0));
         %         y0(y0<median(y0)) = 0;
-        %         if (k>=1) && any(corr(Cin(1:k, :)', y0')>0.9) %already found similar temporal traces
-        %             continue;
-        %         end
+%         if (k>=1) && any(corr(Cin(1:k, :)', y0')>0.9) %already found similar temporal traces
+%             continue;
+%         end
         if max(diff(y0))< 3*y0_std % signal is weak
             continue;
         end
@@ -300,51 +294,44 @@ while searching_flag
         end
         
         %% extract ai, ci
-        % normalize ci to have a noise level of 1
-        ci_raw = y0;
-        [b, sn] = estimate_baseline_noise(ci_raw);
-        psd_sn = GetSn(ci_raw);
-        if sn>psd_sn
-            sn =psd_sn;
-            [ci_raw, ~] = remove_baseline(ci_raw, sn);
-        else
-            ci_raw = ci_raw - b;
-        end
-        ci_raw = ci_raw/sn;
-        
-        if deconv_flag
-            % deconv the temporal trace
-            [ci, si, deconv_options] = deconvolveCa(ci_raw, deconv_options_0, 'sn', 1);  % sn is 1 because i normalized c_raw already
-            ci_raw = ci_raw - deconv_options.b;
-        else
-            ci = ci_raw;
-        end
-        
         sz = [nr, nc];
         if options.center_psf
-            [ai, ~, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz, ci);
+            [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
         else
-            [ai, ~, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz, ci);
+            [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
             if options.gaussian_shape && ind_success
-                ai = spatial_constraints(reshape(ai, sz));
-                ai = ai(:);
+                ai = spatial_constraints(reshape(ai, sz)); 
+                ai = ai(:); 
             end
         end
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
+        %         if max(ci_raw)<min_pnr;
+        %             ind_success=false;
+        %         end
         if sum(ai(:)>0)<min_pixel; ind_success=false; end
         if ind_success
             k = k+1;
             
-            Ain(ind_nhood, k) = ai;
-            Cin(k, :) = ci;
-            Sin(k, :) = si;
-            Cin_raw(k, :) = ci_raw;
-            % kernel_pars(k, :) = kernel.pars;
-            kernel_pars{k} = reshape(deconv_options.pars, 1, []);
+            if deconv_flag
+                % deconv the temporal trace
+                [ci, si, deconv_options] = deconvolveCa(ci_raw, deconv_options_0, 'sn', 1);  % sn is 1 because i normalized c_raw already
+                % save this initialization
+                Ain(ind_nhood, k) = ai;
+                Cin(k, :) = ci;
+                Sin(k, :) = si;
+                Cin_raw(k, :) = ci_raw-deconv_options.b;
+                %                 kernel_pars(k, :) = kernel.pars;
+                kernel_pars{k} = reshape(deconv_options.pars, 1, []);
+            else
+                ci = ci_raw;
+                Ain(ind_nhood, k) = ai;
+                Cin(k, :) = ci_raw;
+                Cin_raw(k, :) = ci_raw;
+            end
             ci = reshape(ci, 1,[]);
             center(k, :) = [r, c];
             
-            % avoid searching nearby pixels
+            % avoid searching nearby pixels 
             ind_search(ind_nhood(ai>max(ai)*0.5)) = true;
             
             % update the raw data
@@ -432,6 +419,5 @@ Cn = Cn0;
 PNR = PNR0;
 if exist('avi_file', 'var');
     avi_file.close();
-    close(gcf); 
 end
 end
