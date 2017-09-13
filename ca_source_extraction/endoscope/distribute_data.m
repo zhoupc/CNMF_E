@@ -143,6 +143,7 @@ for m=1:nr_patch
 end 
 mat_data.patch_pos = patch_pos; 
 mat_data.block_pos = block_pos; 
+
 %% load and distribute data 
 Tchunk = floor(memory_size_to_use * (500^3) / (d1*d2));
 t_start= 0;

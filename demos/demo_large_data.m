@@ -3,8 +3,9 @@ clear; clc; close all;
 
 %% choose data 
 neuron = Sources2D(); 
-nam = []; 
+% nam = []; 
 % nam = './data_endoscope.tif'; 
+nam = './msCam1.avi'; 
 nam = neuron.select_data(nam);  
 
 %% parameters  
@@ -16,8 +17,6 @@ pars_envs = struct('memory_size_to_use', 4, ...   % GB, memory space you allow t
 % -------------------------      SPATIAL      -------------------------  %
 gSig = 4;           % pixel, gaussian width of a gaussian kernel that approximating a typical neuron 
 gSiz = 17;          % pixel, neuron diameter 
-bg_neuron_factor = 1.5;  
-ring_radius = round(bg_neuron_factor * gSiz);  % radius of the ring used in the background model 
 ssub = 1;           % spatial downsampling factor
 with_dendrites = false;   % with dendrites or not 
 if with_dendrites
@@ -41,6 +40,12 @@ deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1'
     'optimize_b', true, ... % optimize the baseline
     'optimize_smin', false);  % optimize the threshold 
 
+% -------------------------     BACKGROUND    -------------------------  %
+bg_model = 'ring';  % model of the background {'ring', 'svd'(default), 'nmf'}
+nb = 1;             % number of background sources for each patch (only be used in SVD and NMF model)
+bg_neuron_factor = 1.5;  
+ring_radius = round(bg_neuron_factor * gSiz);  % radius of the ring used in the background model 
+
 % -------------------------      MERGING      -------------------------  %
 merge_thr = [1e-1, 0.85, 0];     % thresholds for merging neurons; [spatial overlap ratio, temporal correlation of calcium traces, spike correlation]
 method_dist = 'mean';   % method for computing neuron distances 
@@ -48,7 +53,7 @@ dmin = 1;  % minimum distances between two neurons
 
 % -------------------------  INITIALIZATION   -------------------------  %
 K = [];             % maximum number of neurons per patch. when K=[], take as many as possible 
-min_corr = 0.8;     % minimum local correlation for a seeding pixel
+min_corr = 0.7;     % minimum local correlation for a seeding pixel
 min_pnr = 5;       % minimum peak-to-noise ratio for a seeding pixel
 min_pixel = 3^2;      % minimum number of nonzero pixels for each neuron
 bd = 1;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
@@ -64,7 +69,10 @@ neuron.updateParams('gSig', gSig, ...       % -------- spatial --------
     'bSiz', updateA_bSiz, ...
     'dist', updateA_bSiz, ...
     'tsub', tsub, ...                       % -------- temporal -------- 
-    'deconv_options', deconv_options, ...
+    'deconv_options', deconv_options, ...    
+    'background_model', bg_model, ...       % -------- background -------- 
+    'nb', nb, ...
+    'ring_radius', ring_radius, ...
     'merge_thr', merge_thr, ...             % -------- merging ---------
     'dmin', dmin, ...
     'method_dist', method_dist, ...
