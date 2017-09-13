@@ -45,7 +45,7 @@ try
     % manually check whether to re-use the previous results
     
     if k > 0
-        fprintf('You have %d previous result(s). \n', k);
+        fprintf('You have ran %d initialization(s). \n', k);
         for m=1:k
             fprintf('* %2d:\t %s\n', m, previous_folder{m});
         end
@@ -59,24 +59,32 @@ try
             choice = input('* make your choice:    ');
             if (choice>0) && (choice<=k)
                 % reuse this folder and stop the initialization
-                data = matfile(fullfile(tmp_dir, previous_folder{1}, 'intermediate_results.mat'));
-                copyfile(fullfile(tmp_dir, previous_folder{choice}, 'logs.txt'), log_file);
-                log_data.initialization = data.initialization;
-                log_data.options_0 = data.options_0;
-                previous_init = data.initialization;
-                center = previous_init.center;
-                Cn = previous_init.Cn;
-                PNR = previous_init.PNR;
-                neuron = previous_init.neuron;
-                obj.A = neuron.A;
-                obj.C = neuron.C;
-                obj.C_raw = neuron.C_raw;
-                obj.S = neuron.S;
-                obj.P = neuron.P;
-                obj.Cn = neuron.Cn;
-                obj.P.log_folder = log_folder;
-                obj.P.log_file = log_file;
-                obj.P.log_data = log_data_file;
+                try
+                    data = matfile(fullfile(tmp_dir, previous_folder{1}, 'intermediate_results.mat'));
+                    copyfile(fullfile(tmp_dir, previous_folder{choice}, 'logs.txt'), log_file);
+                    log_data.initialization = data.initialization;
+                    log_data.options_0 = data.options_0;
+                    previous_init = data.initialization;
+                    center = previous_init.center;
+                    Cn = previous_init.Cn;
+                    PNR = previous_init.PNR;
+                    neuron = previous_init.neuron;
+                    obj.A = neuron.A;
+                    obj.C = neuron.C;
+                    obj.C_raw = neuron.C_raw;
+                    obj.S = neuron.S;
+                    obj.P = neuron.P;
+                    obj.Cn = neuron.Cn;
+                    obj.W = neuron.W;
+                    obj.b0 = neuron.b0;
+                    obj.b = neuron.b;
+                    obj.f = neuron.f;
+                    obj.P.log_folder = log_folder;
+                    obj.P.log_file = log_file;
+                    obj.P.log_data = log_data_file;
+                catch
+                    continue;
+                end
                 try
                     obj.frame_range = neuron.frame_range;
                 catch
@@ -92,7 +100,7 @@ try
             elseif (choice<0) && (choice>=-k)
                 % delete the folder
                 try
-                    rmdir(previous_folder{choice*(-1)}, 's');
+                    rmdir(fullfile(tmp_dir, previous_folder{-choice}), 's');
                 catch
                     break;
                 end
@@ -102,8 +110,7 @@ try
         end
         
     end
-    %%
-    
+    %
     % dimension of data
     dims = mat_data.dims;
     d1 = dims(1);
@@ -156,6 +163,71 @@ if ~isfield(options, 'bd') || isempty(options.bd')
     options.bd = options.gSiz;   % boundary pixesl to be ignored during the process of detecting seed pixels
 end
 bd = options.bd;
+
+%% preallocate spaces for saving model variables relating to background components
+bg_model = obj.options.background_model;
+if strcmpi(bg_model, 'ring')   
+    rr = obj.options.ring_radius;    % radius of the ring 
+    [r_shift, c_shift] = get_nhood(rr);    % shifts used for acquiring the neighboring pixels on the ring 
+    W = cell(nr_patch, nc_patch);    % matrix for saving the weight matrix within each block 
+    b0 = cell(nr_patch, nc_patch);   % constant baselines for all pixels 
+    
+    parfor mpatch=1:(nr_patch*nc_patch)
+        tmp_patch = patch_pos{mpatch};    % patch position 
+        tmp_block = block_pos{mpatch};    % block position 
+        nr = diff(tmp_patch(1:2)) + 1; 
+        nc = diff(tmp_patch(3:4)) + 1; 
+        nr_block = diff(tmp_block(1:2))+1; 
+        nc_block = diff(tmp_block(3:4))+1; 
+        [csub, rsub] = meshgrid(tmp_patch(3):tmp_patch(4), tmp_patch(1):tmp_patch(2));
+        csub = reshape(csub, [], 1);
+        rsub = reshape(rsub, [], 1);
+        ii = repmat((1:numel(csub))', [1, length(r_shift)]);
+        csub = bsxfun(@plus, csub, c_shift);
+        rsub = bsxfun(@plus, rsub, r_shift);       
+        ind = and(and(csub>=1, csub<=d2), and(rsub>=1, rsub<=d1)); 
+        jj = (csub-tmp_block(3)) * (diff(tmp_block(1:2))+1) + (rsub-tmp_block(1)+1);
+        
+        temp = sparse(ii(ind), jj(ind), 1, nr*nc, nr_block*nc_block); 
+        W{mpatch} = bsxfun(@times, temp, 1./sum(temp, 2)); 
+        b0{mpatch} = zeros(nr*nc, 1); 
+    end
+    obj.W = W; 
+    obj.b0 = b0; 
+    clear W b0; 
+elseif strcmpi(bg_model, 'nmf')
+    b = cell(nr_patch, nc_patch);
+    f = cell(nr_patch, nc_patch);
+    nb = obj.options.nb;
+    for mpatch=1:(nr_patch*nc_patch)
+        [r, c] = ind2sub([nr_patch, nc_patch], mpatch);   % patch ind
+        tmp_patch = patch_pos{r, c};    % patch position
+        nr = diff(tmp_patch(1:2)) + 1;
+        nc = diff(tmp_patch(3:4)) + 1;
+        b{r, c} = zeros(nr*nc, nb);
+        f{r, c} = zeros(nb, T);
+    end
+    obj.b = b; 
+    obj.f = f; 
+else
+    %default, SVD model
+    b = cell(nr_patch, nc_patch);
+    f = cell(nr_patch, nc_patch);
+    b0 = cell(nr_patch, nc_patch); 
+    nb = obj.options.nb;
+    for mpatch=1:(nr_patch*nc_patch)
+        [r, c] = ind2sub([nr_patch, nc_patch], mpatch);   % patch ind
+        tmp_patch = patch_pos{r, c};    % patch position
+        nr = diff(tmp_patch(1:2)) + 1;
+        nc = diff(tmp_patch(3:4)) + 1;
+        b{r, c} = zeros(nr*nc, nb);
+        f{r, c} = zeros(nb, T);
+        b0{r, c} = zeros(nr*nc, 1); 
+    end
+    obj.b = b; 
+    obj.f = f; 
+    obj.b0 = b0; 
+end
 
 %% start initialization
 % save the log infomation
@@ -338,6 +410,7 @@ else
     obj.S = zeros(size(obj.C));
 end
 obj.Cn = Cn;
+
 
 %% save the results to log
 initialization.neuron = obj.obj2struct();
