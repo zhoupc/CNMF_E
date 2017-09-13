@@ -108,6 +108,7 @@ Names = [
     'method_dist        ' % method for computing distances of two neurons 
     'thresh_outlier     ' % threshod for detecting outliers in the estimation of background 
     'background_model   ' % model for estimating the the background {'ring', 'svd', 'nmf'}
+    'nk                 ' % number of knots for detrending data 
     ];
 
 [m,n] = size(Names);
@@ -288,6 +289,7 @@ Values = [
     {'max'}
     {10} 
     {'svd'}
+    {1}
     ];
 
 for j = 1:m

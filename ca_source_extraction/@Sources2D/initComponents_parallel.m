@@ -1,9 +1,12 @@
-function [center, Cn, PNR] = initComponents_parallel(obj, K, frame_range, save_avi)
+function [center, Cn, PNR] = initComponents_parallel(obj, K, frame_range, save_avi, use_parallel)
 %% initializing spatial/temporal components for miceoendoscopic data
 %% input:
 %   K:  scalar, maximum number of neurons
 %   frame_range: 1 X 2 vector indicating the starting and ending frames
 %   save_avi: save the video of initialization procedure
+%   use_parallel: boolean, do initialization in patch mode or not.
+%       default(true); we recommend you to set it false only when you want to debug the code. 
+
 %% Output:
 %   center: d*2 matrix, centers of all initialized neurons.
 %   Cn:     correlation image
@@ -148,9 +151,16 @@ end
 % exporting initialization procedures as a video
 if ~exist('save_avi', 'var')||isempty(save_avi)
     save_avi = false; %don't save initialization procedure
+else
+    use_parallel = false; 
 end
 
-% parameters for detrending the data first.
+% use parallel or not 
+if ~exist('use_parallel', 'var')||isempty(use_parallel)
+    use_parallel = true; %don't save initialization procedure
+end
+
+% parameters for detrending the data before the initialization.
 if isfield(obj.options, 'nk') % number of knots for creating spline basis
     nk = obj.options.nk;
 else
@@ -254,13 +264,11 @@ PNR = zeros(d1, d2);
 default_kernel = obj.kernel;
 
 results = cell(nr_patch*nc_patch, 1);
-use_parallel = true;   % set the value as false when you want to debug.
 if use_parallel
     parfor mpatch=1:(nr_patch*nc_patch)
         % get the indices corresponding to the selected patch
-        [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
-        tmp_patch = patch_pos{r, c};  %#ok<PFBNS>
-        tmp_block = block_pos{r, c};  %#ok<PFBNS>
+        tmp_patch = patch_pos{mpatch}; 
+        tmp_block = block_pos{mpatch}; 
         
         % boundaries pixels to be avoided for detecting seed pixels
         tmp_options = options;
@@ -299,14 +307,14 @@ if use_parallel
         results{mpatch} = tmp_results;
         %     eval(sprintf('results_patch_%d=tmp_results;', mpatch));  %#ok<PFBFN>
         % display initialization progress
+        [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
 else
     for mpatch=1:(nr_patch*nc_patch) %#ok<*UNRCH>
         % get the indices corresponding to the selected patch
-        [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
-        tmp_patch = patch_pos{r, c};
-        tmp_block = block_pos{r, c};
+        tmp_patch = patch_pos{mpatch};
+        tmp_block = block_pos{mpatch};
         
         % boundaries pixels to be avoided for detecting seed pixels
         tmp_options = options;
@@ -345,6 +353,7 @@ else
         results{mpatch} = tmp_results;
         %     eval(sprintf('results_patch_%d=tmp_results;', mpatch));  %#ok<PFBFN>
         % display initialization progress
+        [r, c] = ind2sub([nr_patch, nc_patch], mpatch); 
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
 end

@@ -4,19 +4,19 @@ clear; clc; close all;
 %% choose data 
 neuron = Sources2D(); 
 % nam = []; 
-% nam = './data_endoscope.tif'; 
-nam = './msCam1.avi'; 
+nam = './data_endoscope.tif'; 
+% nam = './msCam1.avi'; 
 nam = neuron.select_data(nam);  
 
 %% parameters  
 % -------------------------    COMPUTATION    -------------------------  %
-pars_envs = struct('memory_size_to_use', 4, ...   % GB, memory space you allow to use in MATLAB 
-    'memory_size_per_patch', 0.5, ...   % GB, space for loading data within one patch 
+pars_envs = struct('memory_size_to_use', 0.2, ...   % GB, memory space you allow to use in MATLAB 
+    'memory_size_per_patch', 0.05, ...   % GB, space for loading data within one patch 
     'patch_dims', [45, 45]);  %GB, patch size 
    
 % -------------------------      SPATIAL      -------------------------  %
-gSig = 4;           % pixel, gaussian width of a gaussian kernel that approximating a typical neuron 
-gSiz = 17;          % pixel, neuron diameter 
+gSig = 3;           % pixel, gaussian width of a gaussian kernel that approximating a typical neuron 
+gSiz = 13;          % pixel, neuron diameter 
 ssub = 1;           % spatial downsampling factor
 with_dendrites = false;   % with dendrites or not 
 if with_dendrites
@@ -39,6 +39,7 @@ deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1'
     'optimize_pars', true, ...  % optimize AR coefficients
     'optimize_b', true, ... % optimize the baseline
     'optimize_smin', false);  % optimize the threshold 
+nk = 6;             % detrending the slow fluctuation. rule of guidance: total_frame/(Fs*30) 
 
 % -------------------------     BACKGROUND    -------------------------  %
 bg_model = 'ring';  % model of the background {'ring', 'svd'(default), 'nmf'}
@@ -53,13 +54,16 @@ dmin = 1;  % minimum distances between two neurons
 
 % -------------------------  INITIALIZATION   -------------------------  %
 K = [];             % maximum number of neurons per patch. when K=[], take as many as possible 
-min_corr = 0.7;     % minimum local correlation for a seeding pixel
-min_pnr = 5;       % minimum peak-to-noise ratio for a seeding pixel
+min_corr = 0.85;     % minimum local correlation for a seeding pixel
+min_pnr = 10;       % minimum peak-to-noise ratio for a seeding pixel
 min_pixel = 3^2;      % minimum number of nonzero pixels for each neuron
 bd = 1;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
 frame_range = [];   % when [], uses all frames 
 save_initialization = false;    % save the initialization procedure as a video. 
+use_parallel = true;    % use parallel computation for parallel computing 
 show_init = true;   % show initialization results 
+choose_params = true; % manually choose parameters 
+
 % -------------------------    UPDATE ALL    -------------------------  %
 neuron.updateParams('gSig', gSig, ...       % -------- spatial -------- 
     'gSiz', gSiz, ...
@@ -69,7 +73,8 @@ neuron.updateParams('gSig', gSig, ...       % -------- spatial --------
     'bSiz', updateA_bSiz, ...
     'dist', updateA_bSiz, ...
     'tsub', tsub, ...                       % -------- temporal -------- 
-    'deconv_options', deconv_options, ...    
+    'deconv_options', deconv_options, ...    '
+    'nk', nk, ...
     'background_model', bg_model, ...       % -------- background -------- 
     'nb', nb, ...
     'ring_radius', ring_radius, ...
@@ -84,9 +89,13 @@ neuron.updateParams('gSig', gSig, ...       % -------- spatial --------
 %% distribute data and be ready to run source extraction 
 neuron.getReady(pars_envs); 
 
-
 %% initialize neurons from the video data within a selected temporal range 
-[center, Cn, PNR] = neuron.initComponents_parallel(K, frame_range, save_initialization); 
+if choose_params
+    % change parameters for optimized initialization
+    [gSig, gSiz, ring_radius, min_corr, min_pnr] = neuron.set_parameters();
+end
+
+[center, Cn, PNR] = neuron.initComponents_parallel(K, frame_range, save_initialization, use_parallel); 
 if show_init
     figure;
     imagesc(Cn, [0, 1]); colormap gray;

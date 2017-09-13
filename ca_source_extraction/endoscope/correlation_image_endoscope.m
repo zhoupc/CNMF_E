@@ -36,7 +36,12 @@ if options.center_psf
 end
 
 % divide data into multiple patches
-patch_sz = [3, 3];
+if numel(Y) < 500^3
+    patch_sz = [1, 1];
+else
+    x = sqrt(numel(Y)/(500^3));
+    patch_sz = ceil(d1/x, d2/x);
+end
 r0_patch = round(linspace(1, d1, 1+patch_sz(1)));
 c0_patch = round(linspace(1, d2, 1+patch_sz(2)));
 nr_patch = length(r0_patch)-1; 

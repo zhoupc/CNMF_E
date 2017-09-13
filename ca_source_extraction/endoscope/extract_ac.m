@@ -56,7 +56,7 @@ T = length(ci);
 X = [ones(T,1), y_bg', ci']; 
 temp = (X'*X)\(X'*Y'); 
 ai = max(0, temp(3,:)'); 
-ai = spatial_constraints(reshape(ai, nr, nc)); % assume neuron shapes are spatially convex 
+ai = circular_constraints(reshape(ai, nr, nc)); % assume neuron shapes are spatially convex 
 ai = ai(:); 
 
 % %% threshold the spatial shape and remove outliers 
@@ -90,9 +90,9 @@ end
 % ci(ind_neg) = rand(sum(ind_neg), 1)*sn; 
 
 % normalize the result
-ci = ci / sn;
-ai = ai * sn;
-% return results
+% ci = ci / sn;
+% ai = ai * sn;
+% % return results
 if norm(ai)==0
     ind_success= false;
 else

@@ -122,6 +122,16 @@ v_search(or(Cn<min_corr, PNR<min_pnr)) = 0;
 ind_search = false(d1*d2,1);  % showing whether this pixel has been searched before
 ind_search(v_search==0) = true; % ignore pixels with small correlations or low peak-noise-ratio
 
+% ignore boundaries pixels when determinging seed pixels 
+if length(bd) ==1
+    bd = ones(1,4)*bd;
+end
+ind_bd = false(size(v_search));
+ind_bd(1:bd(1), :) = true;
+ind_bd((end-bd(2)+1):end, :) = true;
+ind_bd(:, 1:bd(3)) = true;
+ind_bd(:, (end-bd(4)+1):end) = true;
+
 % show local correlation
 if debug_on
     figure('position', [100, 100, 1200, 800], 'color', [1,1,1]*0.9); %#ok<*UNRCH>
@@ -133,7 +143,8 @@ if debug_on
     axes(ax_cn);
     imagesc(Cn0);
     %     imagesc(Cn.*PNR, quantile(Cn(:).*PNR(:), [0.5, 0.99]));
-    axis equal off tight; hold on;
+    axis equal off; hold on;
+    axis([bd(3), d2-bd(4), bd(1), d1-bd(2)]); 
     %     title('Cn * PNR');
     title('Cn');
     if exist('avi_name', 'var')
@@ -149,7 +160,7 @@ if debug_on
 end
 
 %% start initialization
-if ~exist('K', 'var')||isempty(K); 
+if ~exist('K', 'var')||isempty(K);
     K = floor(sum(v_search(:)>0)/10);
 else
     K = min(floor(sum(v_search(:)>0)/10), K);
@@ -164,19 +175,11 @@ center = zeros(K, 2);   % center of the initialized components
 %% do initialization in a greedy way
 searching_flag = true;
 k = 0;      %number of found components
-% set boundary to be 0
-if length(bd) ==1
-    bd = ones(1,4)*bd; 
-end
-ind_bd = false(size(v_search));
-ind_bd(1:bd(1), :) = true;
-ind_bd((end-bd(2)+1):end, :) = true;
-ind_bd(:, 1:bd(3)) = true;
-ind_bd(:, (end-bd(4)+1):end) = true;
+
 while searching_flag
     %% find local maximum as initialization point
     %find all local maximum as initialization point
-    tmp_d = 2*round(gSiz/4)+1;
+    tmp_d = round(gSiz/4);
     v_search = medfilt2(v_search, round(gSiz/4)*[1, 1]); %+randn(size(v_search))*(1e-100);
     v_search(ind_search) = 0;
     v_max = ordfilt2(v_search, tmp_d^2, true(tmp_d));
@@ -189,11 +192,15 @@ while searching_flag
         imagesc(Cn0.*PNR0);  hold on;
         title('Cn*PNR');
         plot(center(1:k, 2), center(1:k, 1), '*r');
-        axis equal off tight;
+        axis equal off;
+            axis([bd(3), d2-bd(4), bd(1), d1-bd(2)]); 
+
         subplot(122);
         imagesc(v_search.*Cn0.*PNR0); %, [0, max(max(min_v_search(:)*0.99), min_v_search)]);
         hold on;
-        axis equal tight;  drawnow;
+        axis equal; 
+            axis([bd(3), d2-bd(4), bd(1), d1-bd(2)]); 
+        drawnow;
         set(gca, 'xtick', []);
         set(gca, 'ytick', []);
         title('click neuron centers for initialziation');
@@ -233,8 +240,8 @@ while searching_flag
         %         max_v = max_vs(mcell);
         max_v = v_search(ind_p);
         if mcell==1
-            img_clim = [0, max_v]; 
-        end 
+            img_clim = [0, max_v];
+        end
         ind_search(ind_p) = true; % indicating that this pixel has been searched.
         if max_v<min_v_search; % all pixels have been tried for initialization
             continue;
@@ -245,9 +252,9 @@ while searching_flag
         y0 = HY(ind_p, :);
         y0_std = std(diff(y0));
         %         y0(y0<median(y0)) = 0;
-%         if (k>=1) && any(corr(Cin(1:k, :)', y0')>0.9) %already found similar temporal traces
-%             continue;
-%         end
+        %         if (k>=1) && any(corr(Cin(1:k, :)', y0')>0.9) %already found similar temporal traces
+        %             continue;
+        %         end
         if max(diff(y0))< 3*y0_std % signal is weak
             continue;
         end
@@ -276,7 +283,8 @@ while searching_flag
             axes(ax_pnr_cn); cla;
             imagesc(reshape(v_search, d1, d2), img_clim); % [0, max_v]);
             title(sprintf('neuron %d', k+1));
-            axis equal off tight; hold on;
+            axis equal off; hold on;
+                axis([bd(3), d2-bd(4), bd(1), d1-bd(2)]); 
             plot(c_peak(mcell:end), r_peak(mcell:end), '.r');
             plot(c,r, 'or', 'markerfacecolor', 'r', 'markersize', 10);
             axes(ax_cn_box);
@@ -300,8 +308,8 @@ while searching_flag
         else
             [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
             if options.gaussian_shape && ind_success
-                ai = spatial_constraints(reshape(ai, sz)); 
-                ai = ai(:); 
+                ai = spatial_constraints(reshape(ai, sz));
+                ai = ai(:);
             end
         end
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
@@ -314,7 +322,7 @@ while searching_flag
             
             if deconv_flag
                 % deconv the temporal trace
-                [ci, si, deconv_options] = deconvolveCa(ci_raw, deconv_options_0, 'sn', 1);  % sn is 1 because i normalized c_raw already
+                [ci, si, deconv_options] = deconvolveCa(ci_raw, deconv_options_0);  % sn is 1 because i normalized c_raw already
                 % save this initialization
                 Ain(ind_nhood, k) = ai;
                 Cin(k, :) = ci;
@@ -331,7 +339,7 @@ while searching_flag
             ci = reshape(ci, 1,[]);
             center(k, :) = [r, c];
             
-            % avoid searching nearby pixels 
+            % avoid searching nearby pixels
             ind_search(ind_nhood(ai>max(ai)*0.5)) = true;
             
             % update the raw data
@@ -418,6 +426,13 @@ end
 Cn = Cn0;
 PNR = PNR0;
 if exist('avi_file', 'var');
-    avi_file.close();
+    close(gcf); 
+    if avi_file.Duration==0
+        warning('off', 'MATLAB:audiovideo:VideoWriter:noFramesWritten')
+        avi_file.close();
+        delete(avi_name);
+    else
+        avi_file.close();
+    end
 end
 end

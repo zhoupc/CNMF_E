@@ -1,29 +1,29 @@
 classdef Sources2D < handle
     
     % This class is a wrapper of Constrained NMF for standard 2D data. It
-    % Both CNMF and CNMF-E model can be used. 
+    % Both CNMF and CNMF-E model can be used.
     
-    % Author: Pengcheng Zhou, Columbia University, 2017 
-    % zhoupc1988@gmail.com 
+    % Author: Pengcheng Zhou, Columbia University, 2017
+    % zhoupc1988@gmail.com
     
     %% properties
     properties
-        % spatial 
+        % spatial
         A;          % spatial components of neurons
         % temporal
         C;          % temporal components of neurons
         C_raw;      % raw traces of temporal components
         S;          % spike counts
-        kernel;     % calcium dynamics. this one is less used these days. 
+        kernel;     % calcium dynamics. this one is less used these days.
         % background
         b;          % spatial components of backgrounds
         f;          % temporal components of backgrounds
         W;          % a sparse weight matrix matrix
         b0;         % constant baselines for each pixel
-        % optiosn 
+        % optiosn
         options;    % options for model fitting
         P;          % some estimated parameters or parameters relating to data
-        % data info 
+        % data info
         Fs = nan;    % frame rate
         file = '';
         frame_range;  % frame range of the data
@@ -33,7 +33,7 @@ classdef Sources2D < handle
         Df;         % background for each component to normalize the filtered raw data
         C_df;       % temporal components of neurons and background normalized by Df
         S_df;       % spike counts of neurons normalized by Df
-       
+        
     end
     
     %% methods
@@ -118,6 +118,8 @@ classdef Sources2D < handle
             obj.P.numFrames = dims(3);
         end
         
+        %% pick parameters
+        [gSig, gSiz, ring_radius, min_corr, min_pnr] = set_parameters(obj)
         %------------------------------------------------------------------INITIALIZATION-----------%
         %% fast initialization, for 2P data, CNMF
         function [center] = initComponents(obj, Y, K, tau)
@@ -127,13 +129,13 @@ classdef Sources2D < handle
         
         %% initialize neurons using patch method
         % for 1P and 2P data, CNMF and CNMF-E
-        [center, Cn, PNR] = initComponents_parallel(obj, K, frame_range, save_avi)
+        [center, Cn, PNR] = initComponents_parallel(obj, K, frame_range, save_avi, use_parallel)
         
         %% fast initialization for microendoscopic data
         [center, Cn, pnr] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi);
         
         [center] = initComponents_2p(obj,Y, K, options, sn, debug_on, save_avi);
-                
+        
         %------------------------------------------------------------------UPDATE MODEL VARIABLES---%
         %% update spatial components, 2P data, CNMF
         function updateSpatial(obj, Y)
@@ -178,7 +180,7 @@ classdef Sources2D < handle
             [obj.A, obj.C, nr, merged_ROIs, obj.P, obj.S] = merge_components(...
                 Y,obj.A, [], obj.C, [], obj.P,obj.S, obj.options);
         end
-                
+        
         %% quick merge neurons based on spatial and temporal correlation
         [merged_ROIs, newIDs] = quickMerge(obj, merge_thr)
         
@@ -349,7 +351,7 @@ classdef Sources2D < handle
                 obj_new.(p{i}) = obj.(p{i});
             end
         end
-
+        
         %% quick view
         viewNeurons(obj, ind, C2, folder_nm);
         displayNeurons(obj, ind, C2, folder_nm);
@@ -916,21 +918,21 @@ classdef Sources2D < handle
             end
         end
         
-        %% save results 
-        function file_path = save_workspace(obj) 
-            obj.compress_results(); 
-            file_path = [obj.P.folder_analysis, filesep, get_date(), '.mat']; 
-            file_path = strrep(file_path, ' ', '_'); 
+        %% save results
+        function file_path = save_workspace(obj)
+            obj.compress_results();
+            file_path = [obj.P.folder_analysis, filesep, get_date(), '.mat'];
+            file_path = strrep(file_path, ' ', '_');
             evalin('base', sprintf('save(''%s''); ', file_path));
             
             try
                 fp = fopen(obj.P.log_file, 'a');
-                fprintf(fp, '\n%s\t %s\nSave the current workspace into file \n%sn', get_date(), get_minute(), file_path); 
-                fp.close(); 
+                fprintf(fp, '\n%s\t %s\nSave the current workspace into file \n%sn', get_date(), get_minute(), file_path);
+                fp.close();
             end
-        end 
+        end
         
-        %% compress A, S and W 
+        %% compress A, S and W
         function compress_results(obj)
             obj.A = sparse(obj.A);
             obj.S = sparse(obj.S);
@@ -946,9 +948,10 @@ classdef Sources2D < handle
         % overlapped.
         function [Cn, PNR] = correlation_pnr(obj, Y)
             [Cn, PNR] = correlation_image_endoscope(Y, obj.options);
-            %             obj.Cn = Cn;
-            %             obj.PNR = PNR;
         end
+        
+        %% compute correlation image and peak to noise ratio in parallel
+        [Cn, PNR] = correlation_pnr_parallel(obj, frame_range)
         
         %% convert struct data to Sources2D object
         function obj = struct2obj(obj, var_struct)
@@ -970,7 +973,7 @@ classdef Sources2D < handle
             neuron.P = obj.P;
             neuron.b = obj.b;
             neuron.f = obj.f;
-            neuron.W = obj.W; 
+            neuron.W = obj.W;
             neuron.b0 = obj.b0;
             neuron.Fs = obj.Fs;
             neuron.kernel = obj.kernel;
@@ -1101,56 +1104,56 @@ classdef Sources2D < handle
         %             end
         %
         %         end
-              
-%         %% update background
-%         function [Y, ind_bg, bg] = linearBG(obj, Y)
-%             d1 = obj.options.d1;
-%             d2 = obj.options.d2;
-%             % model the background as linear function
-%             if ndims(Y)==3; Y = neuron.reshape(Y,1); end
-%             T = size(Y,2);
-%             % find background area
-%             ind_frame = round(linspace(1, T, min(T, 500)));
-%             tmp_C1 = correlation_image(Y(:, ind_frame), [1, 2], d1, d2);
-%             tmp_C2 = correlation_image(Y(:, ind_frame), [0,1]+ obj.options.gSiz, d1, d2);
-%             tmp_Cn = tmp_C1(:)-tmp_C2(:);
-%             ind = (tmp_Cn>0);
-%             ind_bg = and(ind, tmp_Cn<quantile(tmp_Cn(ind), 0.1));
-%             % get the mean activity within the selected area
-%             Ybg = mean(Y(ind_bg(:), :), 1);
-%             f1 = (Ybg-mean(Ybg))/std(Ybg);
-%             
-%             % regress DY over df to remove the trend
-%             df = diff(f1,1);
-%             b1 = diff(Y, 1,2)*df'/(df*df');
-%             
-%             Yres = Y-b1*f1;
-%             b0 = median(Yres, 2);
-%             %             b0 = quantile(Yres, 0.05,2);
-%             Y = bsxfun(@minus, Yres, b0);
-%             bg.b = [b1, b0];
-%             bg.f = [f1; ones(1,T)];
-%         end
-%         
-%         %% select background pixels
-%         function [f1, ind_bg] = findBG(obj, Y, q)
-%             d1 = obj.options.d1;
-%             d2 = obj.options.d2;
-%             if nargin<3;    q = 0.1; end;   %quantiles for selecting background pixels
-%             % model the background as linear function
-%             if ndims(Y)==3; Y = neuron.reshape(Y,1); end
-%             T = size(Y,2);
-%             % find background area
-%             ind_frame = round(linspace(1, T, min(T, 500)));
-%             tmp_C1 = correlation_image(Y(:, ind_frame), [1, 2], d1, d2);
-%             tmp_C2 = correlation_image(Y(:, ind_frame), [0,1]+ obj.options.gSiz, d1, d2);
-%             tmp_Cn = tmp_C1(:)-tmp_C2(:);
-%             ind = (tmp_Cn>0);
-%             ind_bg = and(ind, tmp_Cn<quantile(tmp_Cn(ind), q));
-%             % get the mean activity within the selected area
-%             Ybg = mean(Y(ind_bg(:), :), 1);
-%             f1 = (Ybg-mean(Ybg))/std(Ybg);
-%         end
+        
+        %         %% update background
+        %         function [Y, ind_bg, bg] = linearBG(obj, Y)
+        %             d1 = obj.options.d1;
+        %             d2 = obj.options.d2;
+        %             % model the background as linear function
+        %             if ndims(Y)==3; Y = neuron.reshape(Y,1); end
+        %             T = size(Y,2);
+        %             % find background area
+        %             ind_frame = round(linspace(1, T, min(T, 500)));
+        %             tmp_C1 = correlation_image(Y(:, ind_frame), [1, 2], d1, d2);
+        %             tmp_C2 = correlation_image(Y(:, ind_frame), [0,1]+ obj.options.gSiz, d1, d2);
+        %             tmp_Cn = tmp_C1(:)-tmp_C2(:);
+        %             ind = (tmp_Cn>0);
+        %             ind_bg = and(ind, tmp_Cn<quantile(tmp_Cn(ind), 0.1));
+        %             % get the mean activity within the selected area
+        %             Ybg = mean(Y(ind_bg(:), :), 1);
+        %             f1 = (Ybg-mean(Ybg))/std(Ybg);
+        %
+        %             % regress DY over df to remove the trend
+        %             df = diff(f1,1);
+        %             b1 = diff(Y, 1,2)*df'/(df*df');
+        %
+        %             Yres = Y-b1*f1;
+        %             b0 = median(Yres, 2);
+        %             %             b0 = quantile(Yres, 0.05,2);
+        %             Y = bsxfun(@minus, Yres, b0);
+        %             bg.b = [b1, b0];
+        %             bg.f = [f1; ones(1,T)];
+        %         end
+        %
+        %         %% select background pixels
+        %         function [f1, ind_bg] = findBG(obj, Y, q)
+        %             d1 = obj.options.d1;
+        %             d2 = obj.options.d2;
+        %             if nargin<3;    q = 0.1; end;   %quantiles for selecting background pixels
+        %             % model the background as linear function
+        %             if ndims(Y)==3; Y = neuron.reshape(Y,1); end
+        %             T = size(Y,2);
+        %             % find background area
+        %             ind_frame = round(linspace(1, T, min(T, 500)));
+        %             tmp_C1 = correlation_image(Y(:, ind_frame), [1, 2], d1, d2);
+        %             tmp_C2 = correlation_image(Y(:, ind_frame), [0,1]+ obj.options.gSiz, d1, d2);
+        %             tmp_Cn = tmp_C1(:)-tmp_C2(:);
+        %             ind = (tmp_Cn>0);
+        %             ind_bg = and(ind, tmp_Cn<quantile(tmp_Cn(ind), q));
+        %             % get the mean activity within the selected area
+        %             Ybg = mean(Y(ind_bg(:), :), 1);
+        %             f1 = (Ybg-mean(Ybg))/std(Ybg);
+        %         end
     end
     
 end
