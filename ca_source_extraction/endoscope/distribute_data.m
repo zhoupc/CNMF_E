@@ -13,7 +13,7 @@ if ~exist('patch_dims', 'var')
     patch_dims = [];
 end
 if ~exist('w_overlap', 'var') || isempty(w_overlap)
-    w_overlap = 7;
+    w_overlap = 10;
 end
 if ~exist('memory_size_per_patch', 'var') || isempty(memory_size_per_patch)
     memory_size_per_patch = 10;

@@ -116,6 +116,33 @@ classdef Sources2D < handle
             obj.P.mat_file = data.Properties.Source;
             obj.updateParams('d1', dims(1), 'd2', dims(2));
             obj.P.numFrames = dims(3);
+            
+            % estimate the noise level for each pixel 
+            dims = data.dims; 
+            T = dims(3); 
+            block_idx_r = data.block_idx_r; 
+            block_idx_c = data.block_idx_c; 
+            nr_block = length(block_idx_r) - 1; 
+            nc_block = length(block_idx_c) - 1; 
+            sn = cell(nr_block, nc_block); 
+            parfor mblock=1:(nr_block*nc_block)
+                [m, n] = ind2sub([nr_block, nc_block], mblock);
+                r0 = block_idx_r(m); %#ok<PFBNS>
+                r1 = block_idx_r(m+1);
+                c0 = block_idx_c(n); %#ok<PFBNS>
+                c1 = block_idx_c(n+1);
+                Ypatch = get_patch_data(data, [r0, r1, c0, c1], [1,T], false);
+                Ypatch = double(reshape(Ypatch, [], T));
+                tmp_sn = reshape(GetSn(Ypatch), r1-r0+1, c1-c0+1);
+                if m~=nr_block
+                    tmp_sn(end-1, :) = []; 
+                end 
+                if n~=nc_block
+                    tmp_sn(:, end-1) = []; 
+                end
+                sn{mblock} = tmp_sn;
+            end
+            obj.P.sn = cell2mat(sn); 
         end
         
         %% pick parameters
@@ -137,6 +164,11 @@ classdef Sources2D < handle
         [center] = initComponents_2p(obj,Y, K, options, sn, debug_on, save_avi);
         
         %------------------------------------------------------------------UPDATE MODEL VARIABLES---%
+                
+        %% update background components in parallel 
+        % for 1P and 2P data, CNMF and CNMF-E
+        update_background_parallel(obj, use_parallel)
+        
         %% update spatial components, 2P data, CNMF
         function updateSpatial(obj, Y)
             [obj.A, obj.b, obj.C] = update_spatial_components(Y, ...

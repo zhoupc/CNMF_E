@@ -14,5 +14,4 @@ deconvolveCa/examples/Paper/fig/*
 CNMF-E_users.xls
 demos/demos_backup/*
 NoRMCorre/
-demos/data_endoscope_source_extraction
-demos/msCam1_source_extraction/*
+demos/*_source_extraction/*

@@ -28,10 +28,16 @@ Other required MATLAB toolboxes are listed below.
 
 Example
 =======
-The best way to get started is running a demo script for analyzing an example data. 
+The best way to get started is running a demo script for analyzing an example data. We included two demo scripts for you to try. 
 
-`>> run demos/demo_endoscope.m ` 
+1. demo_endoscope.m : this demo is good for exploratory analysis of your data. It gives you a good sence of different stages of CNMF-E pipeline and how different parameter selections influce your final results. 
 
+	`>> run demos/demo_endoscope.m ` 
+
+2. demo_large_data.m : this demo is good for processing large scale dataset with the minimal manual intervention. It's made for processing large amount of data. 
+
+	`>> run demos/demo_large_data.m`
+	
 Questions
 =======
 You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. You can send me an email for requiring an invitation to the slack channel or ask your collegues who joined the slack channel already for invitation. 

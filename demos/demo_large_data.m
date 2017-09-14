@@ -100,10 +100,11 @@ if show_init
     figure;
     imagesc(Cn, [0, 1]); colormap gray;
     hold on;
-    plot(center(:, 2), center(:, 1), '.r', 'markersize', 5);
+    plot(center(:, 2), center(:, 1), '.r', 'markersize', 10);
 end
 
 %% estimation of background components 
+neuron.update_background_parallel(); 
 
 
 
