@@ -48,7 +48,7 @@ try
     % manually check whether to re-use the previous results
     
     if k > 0
-        fprintf('You have ran %d initialization(s). \n', k);
+        fprintf('\nYou have ran %d initialization(s). \n', k);
         for m=1:k
             fprintf('* %2d:\t %s\n', m, previous_folder{m});
         end
@@ -151,7 +151,7 @@ end
 % exporting initialization procedures as a video
 if ~exist('save_avi', 'var')||isempty(save_avi)
     save_avi = false; %don't save initialization procedure
-else
+elseif save_avi
     use_parallel = false; 
 end
 
@@ -166,6 +166,7 @@ if isfield(obj.options, 'nk') % number of knots for creating spline basis
 else
     nk = 1;
 end
+detrend_method = obj.options.detrend_method; 
 
 % parameter for avoiding using boundaries pixels as seed pixels
 options = obj.options;
@@ -294,7 +295,7 @@ if use_parallel
         Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, true);
         Ypatch = double(reshape(Ypatch, [], T));
         if nk>1
-            Ypatch_dt = detrend_data(Ypatch, nk); % detrend data
+            Ypatch_dt = detrend_data(Ypatch, nk, detrend_method); % detrend data
             [tmp_results, tmp_center, tmp_Cn, tmp_PNR, ~] = greedyROI_endoscope(Ypatch_dt, K, tmp_options, [], tmp_save_avi);
         else
             [tmp_results, tmp_center, tmp_Cn, tmp_PNR, ~] = greedyROI_endoscope(Ypatch, K, tmp_options, [], tmp_save_avi);
@@ -376,14 +377,16 @@ for mpatch=1:(nr_patch*nc_patch)
     %     eval(sprintf('tmp_results=results_patch_%d;', mpatch));
     tmp_Ain = tmp_results.Ain;
     tmp_Ain(ind_patch, :) = 0;
-    tmp_Cin = tmp_results.Cin;
-    tmp_Cin_raw = tmp_results.Cin_raw;
-    tmp_center = tmp_results.center ;
+    tmp_ind = (sum(tmp_Ain, 1)>0); 
+    tmp_Ain = tmp_Ain(:, tmp_ind); 
+    tmp_Cin = tmp_results.Cin(tmp_ind,:);
+    tmp_Cin_raw = tmp_results.Cin_raw(tmp_ind,:);
+    tmp_center = tmp_results.center(tmp_ind,:) ;
     tmp_Cn = tmp_results.Cn;
     tmp_PNR = tmp_results.PNR;
     if options.deconv_flag
-        tmp_Sin = tmp_results.Sin;
-        tmp_kernel_pars = tmp_results.kernel_pars;
+        tmp_Sin = tmp_results.Sin(tmp_ind,:);
+        tmp_kernel_pars = tmp_results.kernel_pars(tmp_ind,:);
     end
     tmp_K = size(tmp_Ain, 2);   % number of neurons within the selected patch
     [tmp_d1, tmp_d2] = size(tmp_Cn);

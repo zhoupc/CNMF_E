@@ -42,6 +42,8 @@ logy = log(y);
 y2logy = y2.*logy;
 vec1 = ones(1, length(y));
 
+warning('off','MATLAB:nearlySingularMatrix'); 
+warning('off','MATLAB:SingularMatrix'); 
 %% fit the curve
 if mu_fix % fix the mu to be 0 
     for miter=1:maxIter
@@ -65,7 +67,7 @@ else
             x'*y2, x2'*y2, x3'*y2; ...
             x2'*y2, x3'*y2, x4'*y2];
         b = [vec1*y2logy; x'*y2logy; x2'*y2logy];
-        p = M\b;
+        p = (M)\b;
         
         logy = p(1)*vec1' + p(2)*x + p(3)*x2;
         y = exp(logy);
@@ -76,3 +78,6 @@ else
     sig = abs(sqrt(-0.5/p(3)));
     A = exp(p(1)-0.25*p(2)^2/p(3));
 end
+
+warning('on','MATLAB:nearlySingularMatrix'); 
+warning('on','MATLAB:SingularMatrix'); 

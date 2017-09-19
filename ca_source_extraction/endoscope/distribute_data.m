@@ -29,14 +29,15 @@ d1 = dims(1); d2 = dims(2); T = dims(3);
 fprintf('\nThe data has %d X %d pixels X %d frames. \nLoading all data (double precision) requires %.3f GB RAM\n\n', d1, d2, T, prod(dims)/(2^27));
 
 max_elements = memory_size_per_patch* (500^3); % x GB data can save x*1000^3/8 dobule numbers.
-min_patch_width = 2*w_overlap+1;
+min_patch_width = 2*w_overlap+3;
+max_patch_width = max(round(sqrt(double(round(max_elements/T))))-w_overlap*2, min_patch_width);
 
 if isempty(patch_dims)
     % find the optimial batch size
-    patch_width = max(round(sqrt(double(round(max_elements/T))))-w_overlap*2, min_patch_width);
     patch_dims = [1, 1] * patch_width;
 else
     patch_dims(patch_dims< min_patch_width) = min_patch_width;
+    patch_dims(patch_dims>max_patch_width) = max_patch_width; 
     if length(patch_dims)==1
         patch_dims = patch_dims * [1,1];
     else
@@ -62,12 +63,12 @@ else
 end
 
 fprintf('The FOV is divided into %d X %d patches. \nEach patch has %d X %d pixels. \n',...
-    nr_patch, nc_patch, diff(patch_idx_r(1:2))+1, diff(patch_idx_c(1:2))+1);
+    nr_patch, nc_patch, diff(patch_idx_r(1:2)), diff(patch_idx_c(1:2)));
 fprintf('It requires %.3f GB RAM for loading data related to each patch. \n\n', prod(patch_dims+2*w_overlap)*T/(2^27));
 
 %% indices for dividing the FOV into multiple blocks.
-block_idx_r = bsxfun(@plus, patch_idx_r, w_overlap*[-1; 1]);
-block_idx_c = bsxfun(@plus, patch_idx_c, w_overlap*[-1; 1]);
+block_idx_r = bsxfun(@plus, patch_idx_r, [-1-w_overlap; w_overlap]);
+block_idx_c = bsxfun(@plus, patch_idx_c, [-1-w_overlap; w_overlap]);
 block_idx_r = block_idx_r(:);
 block_idx_c = block_idx_c(:);
 block_idx_r(block_idx_r<1) = 1; block_idx_r(block_idx_r>d1) = d1;
@@ -136,9 +137,9 @@ patch_pos = cell(nr_patch, nc_patch);
 block_pos = cell(nr_patch, nc_patch); 
 for m=1:nr_patch 
     for n=1:nc_patch 
-        patch_pos{m, n} = [patch_idx_r(m:(m+1)), patch_idx_c(n:(n+1))]; 
-        block_pos{m, n} = [max(1, patch_idx_r(m)-w_overlap), min(d1, patch_idx_r(m+1)+w_overlap), ...
-            max(1, patch_idx_c(n)-w_overlap), min(d2, patch_idx_c(n+1)+w_overlap)]; 
+        patch_pos{m, n} = [patch_idx_r(m:(m+1))+[0, -1*(m~=nr_patch)], patch_idx_c(n:(n+1))+[0, -1*(n~=nr_patch)]]; 
+        block_pos{m, n} = [max(1, patch_idx_r(m)-w_overlap-1), min(d1, patch_idx_r(m+1)+w_overlap), ...
+            max(1, patch_idx_c(n)-w_overlap-1), min(d2, patch_idx_c(n+1)+w_overlap)]; 
     end 
 end 
 mat_data.patch_pos = patch_pos; 

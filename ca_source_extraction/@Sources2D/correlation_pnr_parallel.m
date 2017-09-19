@@ -46,6 +46,7 @@ if isfield(obj.options, 'nk') % number of knots for creating spline basis
 else
     nk = 1;
 end
+detrend_method = obj.options.detrend_method; 
 
 % parameter for avoiding using boundaries pixels as seed pixels
 options = obj.options;
@@ -72,7 +73,7 @@ parfor mpatch=1:(nr_patch*nc_patch)
     Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, true);
     Ypatch = double(reshape(Ypatch, [], T));
     if nk>1
-        Ypatch_dt = detrend_data(Ypatch, nk); % detrend data
+        Ypatch_dt = detrend_data(Ypatch, nk, detrend_method); % detrend data
         [tmp_Cn, tmp_PNR] = correlation_image_endoscope(Ypatch_dt, tmp_options);
     else
         [tmp_Cn, tmp_PNR] = correlation_image_endoscope(Ypatch, tmp_options);

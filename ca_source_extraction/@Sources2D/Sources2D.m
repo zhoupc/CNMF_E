@@ -29,6 +29,7 @@ classdef Sources2D < handle
         frame_range;  % frame range of the data
         %others
         Cn;         % correlation image
+        PNR;        % peak-to-noise ratio image.
         Coor;       % neuron contours
         Df;         % background for each component to normalize the filtered raw data
         C_df;       % temporal components of neurons and background normalized by Df
@@ -91,6 +92,22 @@ classdef Sources2D < handle
             obj.file = nam;
         end
         
+        function Ypatch = load_patch_data(obj, patch_pos, frame_range)
+            %% load data within selected patch position and selected frames 
+            mat_data = obj.P.mat_data; 
+            
+            dims = mat_data.dims;
+            d1 = dims(1);
+            d2 = dims(2);
+            T = dims(3);
+            if ~exist('patch_pos', 'var') || isempty(patch_pos)
+                patch_pos = [1, d1, 1, d2];
+            end
+            if ~exist('frame_range', 'var') || isempty(frame_range)
+                frame_range = [1, T];
+            end
+            Ypatch = get_patch_data(mat_data, patch_pos, frame_range, false); 
+        end 
         %% distribute data and be ready to run source extraction
         function getReady(obj, pars_envs)
             % data and its extension
@@ -117,33 +134,70 @@ classdef Sources2D < handle
             obj.updateParams('d1', dims(1), 'd2', dims(2));
             obj.P.numFrames = dims(3);
             
-            % estimate the noise level for each pixel 
-            dims = data.dims; 
-            T = dims(3); 
-            block_idx_r = data.block_idx_r; 
-            block_idx_c = data.block_idx_c; 
-            nr_block = length(block_idx_r) - 1; 
-            nc_block = length(block_idx_c) - 1; 
-            sn = cell(nr_block, nc_block); 
+            % estimate the noise level for each pixel
+            try 
+                obj.P.sn = obj.P.mat_data.sn;
+            catch
+                obj.P.sn = obj.estimate_noise();
+                mat_data = obj.P.mat_data;
+                mat_data.Properties.Writable = true;
+                mat_data.sn = obj.P.sn;
+                mat_data.Properties.Writable = false;
+            end
+        end
+        
+        %% estimate noise
+        function sn = estimate_noise(obj, frame_range, method)
+            mat_data = obj.P.mat_data; 
+            dims = mat_data.dims;
+            T = dims(3);
+            if ~exist('frame_range', 'var') || isempty(frame_range)
+                frame_range = [1, T]; 
+            end 
+            if ~exist('method', 'var') || isempty(method)
+                method = 'psd'; 
+            end
+            if strcmpi(method, 'hist')
+                % fit the histogram of with a parametric gaussian shape. 
+                % it works badly when the
+                % most frames are involved in calcium transients. 
+                foo = @(Y) GetSn_hist(Y, false); 
+            elseif strcmpi(method, 'std')
+                % simly use the standard deviation. works badly when
+                % neurons have large calcium transients 
+                foo = @(Y) std(Y, 0, 2); 
+            else
+                % default options is using the power spectrum method. 
+                % works badly when noises have temporal correlations 
+                foo = @GetSn;
+            end
+            block_idx_r = mat_data.block_idx_r;
+            block_idx_c = mat_data.block_idx_c;
+            nr_block = length(block_idx_r) - 1;
+            nc_block = length(block_idx_c) - 1;
+            sn = cell(nr_block, nc_block);
+            fprintf('estimating the nosie level for every pixel.......\n');
+            tic;
             parfor mblock=1:(nr_block*nc_block)
                 [m, n] = ind2sub([nr_block, nc_block], mblock);
                 r0 = block_idx_r(m); %#ok<PFBNS>
                 r1 = block_idx_r(m+1);
                 c0 = block_idx_c(n); %#ok<PFBNS>
                 c1 = block_idx_c(n+1);
-                Ypatch = get_patch_data(data, [r0, r1, c0, c1], [1,T], false);
+                Ypatch = get_patch_data(mat_data, [r0, r1, c0, c1], frame_range, false);
                 Ypatch = double(reshape(Ypatch, [], T));
-                tmp_sn = reshape(GetSn(Ypatch), r1-r0+1, c1-c0+1);
+                tmp_sn = reshape(foo(Ypatch), r1-r0+1, c1-c0+1);
                 if m~=nr_block
-                    tmp_sn(end-1, :) = []; 
-                end 
+                    tmp_sn(end-1, :) = [];
+                end
                 if n~=nc_block
-                    tmp_sn(:, end-1) = []; 
+                    tmp_sn(:, end-1) = [];
                 end
                 sn{mblock} = tmp_sn;
             end
-            obj.P.sn = cell2mat(sn); 
-        end
+            fprintf('Time cost for estimating the nosie levels:  %.3f \n\n', toc);
+            sn = cell2mat(sn);
+        end 
         
         %% pick parameters
         [gSig, gSiz, ring_radius, min_corr, min_pnr] = set_parameters(obj)
@@ -168,6 +222,14 @@ classdef Sources2D < handle
         %% update background components in parallel 
         % for 1P and 2P data, CNMF and CNMF-E
         update_background_parallel(obj, use_parallel)
+                        
+        %% update spatial components in parallel 
+        % for 1P and 2P data, CNMF and CNMF-E
+        update_spatial_parallel(obj, use_parallel)
+        
+        %% update spatial components in parallel
+        % for 1P and 2P data, CNMF and CNMF-E
+        update_temporal_parallel(obj, use_parallel)
         
         %% update spatial components, 2P data, CNMF
         function updateSpatial(obj, Y)
@@ -433,24 +495,64 @@ classdef Sources2D < handle
         function C_ = deconvTemporal(obj)
             C_raw_ = obj.C_raw;
             K = size(C_raw_, 1);
-            C_ = zeros(size(C_raw_));
+            C_raw_ = mat2cell(C_raw_, ones(K,1), size(C_raw_,2)); 
+            C_ = cell(K,1);
             S_ = C_;
             kernel_pars = cell(K, 1);
+            sn = cell(K,1); 
             for m=1:K
                 fprintf('|');
+                if mod(m, 100)==0
+                    fprintf('\n'); 
+                end
             end
             fprintf('\n');
-            for m=1:size(C_raw_,1)
-                [b_, sn] = estimate_baseline_noise(C_raw_(m, :));
-                [C_(m, :), S_(m,:), temp_options] = deconvolveCa(C_raw_(m, :)-b_, obj.options.deconv_options);
-                kernel_pars{m} = temp_options.pars;
-                obj.C_raw(m, :) = obj.C_raw(m, :)-b_;
+            deconv_options = obj.options.deconv_options; 
+            for k=1:size(C_raw_,1)
+                ck_raw = C_raw_{k};
+                
+                %remove baseline and estimate noise level. estiamte the noise
+                %using two methods: psd and histogram. choose the one with
+                %smaller value.
+                try 
+                [b_hist, sn_hist] = estimate_baseline_noise(ck_raw);
+                catch 
+                    pause; 
+                end
+                baseline_ = mean(ck_raw(ck_raw<median(ck_raw)));
+                sn_psd = GetSn(ck_raw);
+                if sn_psd<sn_hist
+                    tmp_sn = sn_psd;
+                else
+                    tmp_sn = sn_hist;
+                    baseline_ = b_hist;
+                end
+                
+                % subtract the baseline
+                ck_raw = ck_raw -baseline_;
+                sn{k} = tmp_sn;
+                
+                % deconvolution
+                try
+                    [ck, sk, tmp_options]= deconvolveCa(ck_raw, deconv_options, 'maxIter', 2, 'sn', tmp_sn);
+                catch
+                    pause;
+                end
+                if sum(abs(ck))==0
+                    ck = ck_raw;
+                end
+                C_{k} = reshape(ck, 1, []);
+                S_{k} = reshape(sk, 1, []);
+                kernel_pars{k} = reshape(tmp_options.pars, 1, []);
+                C_raw_{k} = ck_raw - tmp_options.b;
                 fprintf('.');
             end
             fprintf('\n');
+            C_ = cell2mat(C_); 
             obj.C = C_;
-            obj.S = S_;
-            obj.P.kernel_pars = kernel_pars;
+            obj.S = cell2mat(S_);
+            obj.P.kernel_pars = cell2mat(kernel_pars);
+            obj.P.neuron_sn = cell2mat(sn); 
         end
         
         %% play movie
@@ -755,6 +857,129 @@ classdef Sources2D < handle
             obj.P.sn = sn(:);
             fprintf('  done \n');
         end
+        
+        %% reconstruct background 
+        function Ybg = reconstruct_background(obj)
+            %%reconstruct background using the saved data
+            % input:
+            %   use_parallel: boolean, do initialization in patch mode or not.
+            %       default(true); we recommend you to set it false only when you want to debug the code.
+            
+            %% Author: Pengcheng Zhou, Columbia University, 2017
+            %% email: zhoupc1988@gmail.com
+            
+            %% process parameters
+            
+            try
+                % map data
+                mat_data = obj.P.mat_data;
+                
+                % dimension of data
+                dims = mat_data.dims;
+                d1 = dims(1);
+                d2 = dims(2);
+                T = dims(3);
+                obj.options.d1 = d1;
+                obj.options.d2 = d2;
+                
+                % parameters for patching information
+                patch_pos = mat_data.patch_pos;
+                block_pos = mat_data.block_pos;
+                
+                % number of patches
+                [nr_patch, nc_patch] = size(patch_pos);
+            catch
+                error('No data file selected');
+            end
+            
+            % frames to be loaded for initialization
+            frame_range = obj.frame_range;
+            T = diff(frame_range) + 1;
+            
+            % threshold for detecting large residuals
+            thresh_outlier = obj.options.thresh_outlier;
+            
+            % options
+            %% start updating the background
+            bg_model = obj.options.background_model;
+            Ybg = zeros(d1, d2, T);
+            for mpatch=1:(nr_patch*nc_patch)
+                tmp_patch = patch_pos{mpatch};
+                
+                if strcmpi(bg_model, 'ring')
+                    % extract the old (W, b)
+                    W_old = obj.W{mpatch};
+                    b0_old = obj.b0{mpatch};
+                    
+                    % run regression to get A, C, and W, b0
+                    [obj.W{match}, obj.b0{match}, ~] = fit_ring_model(Ypatch, A_patch, C_patch, W_old, b0_old, thresh_outlier, ind_patch);
+                elseif strcmpi(bg_model, 'nmf')
+                    pause;
+                else
+                    b_svd = obj.b{mpatch};
+                    f_svd = obj.f{mpatch};
+                    b0_svd = obj.b0{mpatch};
+                    Ybg(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4),:) = reshape(bsxfun(@plus, b_svd*f_svd, b0_svd), diff(tmp_patch(1:2))+1, [], T);
+                end
+                
+            end
+            
+        end
+        
+        
+        
+        %% concateneate b, f, b0, W
+        %         function Ybg = concatenate_var(obj)
+        %             %% concatenate a signle variable for divided version of b, f, b0, W
+%             % input:
+%             %    nam: {'b', 'f', 'b0'}          
+%             %% Author: Pengcheng Zhou, Columbia University, 2017
+%             %% email: zhoupc1988@gmail.com
+%             
+%             %% process parameters
+%             
+%             try
+%                 % map data
+%                 mat_data = obj.P.mat_data;
+%                 mat_file = mat_data.Properties.Source;
+%                 tmp_dir = fileparts(mat_file);
+%                 
+%                 % dimension of data
+%                 dims = mat_data.dims;
+%                 d1 = dims(1);
+%                 d2 = dims(2);
+%                 T = dims(3);
+%                 obj.options.d1 = d1;
+%                 obj.options.d2 = d2;
+%                 
+%                 % parameters for patching information
+%                 patch_pos = mat_data.patch_pos;
+%                 block_pos = mat_data.block_pos;
+%                 
+%                 % number of patches
+%                 [nr_patch, nc_patch] = size(patch_pos);
+%             catch
+%                 error('No data file selected');
+%             end
+%             
+%             % frames to be loaded for initialization
+%             frame_range = obj.frame_range;
+%             T = diff(frame_range) + 1;
+%             
+%             % threshold for detecting large residuals
+%             thresh_outlier = obj.options.thresh_outlier;
+% 
+%             % options
+%             %% start updating the background
+%             bg_model = obj.options.background_model;
+%             Ybg = zeros(d1, d2, T); 
+%             for mpatch=1:(nr_patch*nc_patch)
+%   
+%                 
+%             end
+%             
+%         end
+
         %% merge neurons
         function [img, col0, AA] = overlapA(obj, ind, ratio)
             %merge all neurons' spatial components into one singal image
@@ -867,8 +1092,33 @@ classdef Sources2D < handle
             if ~exist('A_', 'var');
                 A_ = obj.A;
             end
-            A_ = threshold_components(A_, obj.options);
-            obj.A = A_;
+            %             A_ = threshold_components(A_, obj.options);
+            spatial_constraints = obj.options.spatial_constraints;
+            circular_shape = spatial_constraints.circular; 
+            connected_shape = spatial_constraints.connected;
+            if ismatrix(A_)
+                d1 = obj.options.d1;
+                d2 = obj.options.d2;
+                d = d1*d2; 
+                K = size(A_,2); 
+            else
+                [d1, d2, K] = size(A_); 
+                d = d1*d2; 
+                A_ = reshape(A_, d, K); 
+            end
+            A_ = mat2cell(A_, d, ones(1,K));
+            parfor m=1:K
+                ai = reshape(full(A_{m}), d1, d2); 
+                if circular_shape
+                    ai = circular_constraints(ai); % assume neuron shapes are spatially convex
+                end
+                
+                if connected_shape
+                    ai = connectivity_constraint(ai);
+                end
+                A_{m} = ai(:);               
+            end
+            A_ = sparse(cell2mat(A_));
         end
         
         %% estimate local background
@@ -1008,6 +1258,7 @@ classdef Sources2D < handle
             neuron.W = obj.W;
             neuron.b0 = obj.b0;
             neuron.Fs = obj.Fs;
+            neuron.frame_range = obj.frame_range; 
             neuron.kernel = obj.kernel;
             neuron.file = obj.kernel;
             neuron.Cn = obj.Cn;
@@ -1084,6 +1335,8 @@ classdef Sources2D < handle
                 plot(y);
             end
         end
+        %% determine nonzero pixels 
+        
         %         function Coor = get_contours(obj, thr, ind)
         %             A_ = obj.A;
         %             if exist('ind', 'var')

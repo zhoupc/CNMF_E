@@ -28,11 +28,15 @@ T = size(Y, 3);
 
 %% preprocessing data
 % create a spatial filter for removing background
-psf = fspecial('gaussian', round(gSiz), gSig);
-if options.center_psf
-    ind_nonzero = (psf(:)>=max(psf(:,1)));
-    psf = psf-mean(psf(ind_nonzero));
-    psf(~ind_nonzero) = 0;
+if gSig>0
+    psf = fspecial('gaussian', round(gSiz), gSig);
+    if options.center_psf
+        ind_nonzero = (psf(:)>=max(psf(:,1)));
+        psf = psf-mean(psf(ind_nonzero));
+        psf(~ind_nonzero) = 0;
+    end
+else
+    psf = [];
 end
 
 % divide data into multiple patches
@@ -44,8 +48,8 @@ else
 end
 r0_patch = round(linspace(1, d1, 1+patch_sz(1)));
 c0_patch = round(linspace(1, d2, 1+patch_sz(2)));
-nr_patch = length(r0_patch)-1; 
-nc_patch = length(c0_patch)-1; 
+nr_patch = length(r0_patch)-1;
+nc_patch = length(c0_patch)-1;
 Cn = zeros(d1, d2);
 PNR = zeros(d1,d2);
 
@@ -64,8 +68,11 @@ for mr = 1:nr_patch
         Ypatch = double(Y(r0:r1, c0:c1, :));
         
         % spatially filter the data
-        HY = imfilter(Ypatch, psf, 'replicate');
-        
+        if ~isempty(psf)
+            HY = imfilter(Ypatch, psf, 'replicate');
+        else
+            HY = Ypatch;
+        end
         % copute signal to noise ratio
         HY = reshape(HY, [], T);
         HY = bsxfun(@minus, HY, median(HY, 2));

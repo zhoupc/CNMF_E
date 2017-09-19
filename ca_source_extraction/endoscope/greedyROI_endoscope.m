@@ -83,22 +83,31 @@ T = size(Y, 2);
 
 %% preprocessing data
 % create a spatial filter for removing background
+if gSig>0
 psf = fspecial('gaussian', round(gSiz), gSig);
 if options.center_psf
     ind_nonzero = (psf(:)>=max(psf(:,1)));
     psf = psf-mean(psf(ind_nonzero));
     psf(~ind_nonzero) = 0;
 end
+else
+    psf = []; 
+end
 
 % filter the data
-HY = imfilter(reshape(Y, d1,d2,[]), psf, 'replicate');
+if isempty(psf)
+    % no filtering 
+    HY = Y;
+else
+    HY = imfilter(reshape(Y, d1,d2,[]), psf, 'replicate');
+end
 
 HY = reshape(HY, d1*d2, []);
 % HY_med = median(HY, 2);
 % HY_max = max(HY, [], 2)-HY_med;    % maximum projection
 HY = bsxfun(@minus, HY, median(HY, 2));
 HY_max = max(HY, [], 2);
-Ysig = get_noise_fft(HY, options);
+Ysig = GetSn(HY);
 PNR = reshape(HY_max./Ysig, d1, d2);
 PNR0 = PNR;
 PNR(PNR<min_pnr) = 0;
@@ -179,8 +188,9 @@ k = 0;      %number of found components
 while searching_flag
     %% find local maximum as initialization point
     %find all local maximum as initialization point
+
     tmp_d = round(gSiz/4);
-    v_search = medfilt2(v_search, round(gSiz/4)*[1, 1]); %+randn(size(v_search))*(1e-100);
+    v_search = medfilt2(v_search,2*[1, 1]); %+randn(size(v_search))*(1e-100);
     v_search(ind_search) = 0;
     v_max = ordfilt2(v_search, tmp_d^2, true(tmp_d));
     % set boundary to be 0
@@ -304,15 +314,12 @@ while searching_flag
         %% extract ai, ci
         sz = [nr, nc];
         if options.center_psf
-            [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
+            [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz, options.spatial_constraints);
         else
-            [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz);
-            if options.gaussian_shape && ind_success
-                ai = spatial_constraints(reshape(ai, sz));
-                ai = ai(:);
-            end
+            [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz, options.spatial_constraints);
         end
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
+        if sum(ai)<=min_pixel; ind_succwss = false; end 
         %         if max(ci_raw)<min_pnr;
         %             ind_success=false;
         %         end
@@ -345,7 +352,11 @@ while searching_flag
             % update the raw data
             Y(ind_nhood, :) = Y_box - ai*ci;
             % update filtered data
-            Hai = imfilter(reshape(Ain(ind_nhood_HY, k), nr2, nc2), psf, 'replicate');
+            if isempty(psf)
+                Hai = reshape(Ain(ind_nhood_HY, k), nr2, nc2); 
+            else
+                Hai = imfilter(reshape(Ain(ind_nhood_HY, k), nr2, nc2), psf, 'replicate');
+            end
             HY_box = HY(ind_nhood_HY, :) - Hai(:)*ci;
             %             HY_box = bsxfun(@minus, HY_box, median(HY_box, 2));
             HY(ind_nhood_HY, :) = HY_box;

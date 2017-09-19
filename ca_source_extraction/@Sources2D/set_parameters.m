@@ -11,7 +11,7 @@ min_corr = obj.options.min_corr;
 min_pnr = obj.options.min_pnr;
 
 %% choose gSiz, which is the neuron diameter
-fprintf('\n* 1. Determine the neuron diameter (gSiz) and the gaussian width (gSig) of the filtering kernel.\n');
+fprintf('\n*** Determine the neuron diameter (gSiz) and the gaussian width (gSig) of the filtering kernel.\n');
 fprintf('\t-------------------------- GUIDE --------------------------\n');
 fprintf('\tgSiz is usually slightly larger than a neuron;\n');
 fprintf('\tgSig is usually selected as 1/4 of gSiz\n');
@@ -29,6 +29,7 @@ else
     Y = get_patch_data(obj.P.mat_data, [], [1,100]);
     [d1,d2, T] = size(Y);
     Y = reshape(Y, d2*d2, T);
+    fprintf('Wait for a few second ....\n');
     [u, v] = nnmf(double(Y),1);
     img = reshape(max(double(Y)-u*v, [], 2), d1,d2);
     fig_1 = figure;
@@ -48,40 +49,44 @@ else
             continue;
         end
     end
+    try
+        close(fig_1);
+    end
 end
 
 %%
 %% choose the radius of the ring
-fprintf('\n* 2. Determine the ring radius for estimating background fluctuations.\n');
-fprintf('\t-------------------------- GUIDE --------------------------\n');
-fprintf('\tThe ring radius is selected to be larger than neuron diameters. \n');
-fprintf('\tThus pixels in the center only shares the common background fluctuations with pixels on the ring.\n');
-fprintf('\tA usual ratio between ring radius and neuron diameter is between 1 to 3. 1.5 is the default value.\n');
-fprintf('\tSmall values have a change of being smaller than neuron size.\n');
-fprintf('\tLarge values increase the computation cost.\n');
-fprintf('\t--------------------------  END  --------------------------\n\n');
-
-fprintf('You current selection of ring_radius is %d pixels.\n', ring_radius);
-temp = input('Do you want to make a change? (y/n)    ', 's');
-if strcmpi(temp, 'n')
-    fprintf('Your values for ring_radius will stay the same\n');
-else
-    while true
-        temp = input('type new values for ring_radius:  ', 's');
-        try
-            ring_radius = str2double(temp);
-            obj.options.ring_radius = ring_radius;
-            fprintf('Good! You current selection of parameters ring_radius is %2d.\n', ring_radius);
-            break;
-        catch
-            warning('values are bad. try again');
-            continue;
+if strcmpi('obj.options.background_model', 'ring')
+    fprintf('\n*** Determine the ring radius for estimating background fluctuations.\n');
+    fprintf('\t-------------------------- GUIDE --------------------------\n');
+    fprintf('\tThe ring radius is selected to be larger than neuron diameters. \n');
+    fprintf('\tThus pixels in the center only shares the common background fluctuations with pixels on the ring.\n');
+    fprintf('\tA usual ratio between ring radius and neuron diameter is between 1 to 3. 1.5 is the default value.\n');
+    fprintf('\tSmall values have a change of being smaller than neuron size.\n');
+    fprintf('\tLarge values increase the computation cost.\n');
+    fprintf('\t--------------------------  END  --------------------------\n\n');
+    
+    fprintf('You current selection of ring_radius is %d pixels.\n', ring_radius);
+    temp = input('Do you want to make a change? (y/n)    ', 's');
+    if strcmpi(temp, 'n')
+        fprintf('Your values for ring_radius will stay the same\n');
+    else
+        while true
+            temp = input('type new values for ring_radius:  ', 's');
+            try
+                ring_radius = str2double(temp);
+                obj.options.ring_radius = ring_radius;
+                fprintf('Good! You current selection of parameters ring_radius is %2d.\n', ring_radius);
+                break;
+            catch
+                warning('values are bad. try again');
+                continue;
+            end
         end
     end
 end
-
 %% choose parameters for min_corr and min_pnr
-fprintf('\n* 3. Determine min_corr and min_pnr for screening seed pixels.\n');
+fprintf('\n*** Determine min_corr and min_pnr for screening seed pixels.\n');
 fprintf('\t-------------------------- GUIDE --------------------------\n');
 fprintf('\tA seed pixel is used for initializing one neuron.\n');
 fprintf('\tSeed pixel usually locates at the center of each neuron.\n');
@@ -101,7 +106,17 @@ temp = input('Do you want to make a change? (y/n)    ', 's');
 if strcmpi(temp, 'n')
     fprintf('Your values for (min_corr, min_pnr) will stay the same\n');
 else
-    [cn, pnr] = obj.correlation_pnr_parallel([1, 5000]);
+    
+    if isempty(obj.Cn) || isempty(obj.PNR)
+        fprintf('computing the correlation image and the peak-to-noise ratio image....\n');
+        [cn, pnr] = obj.correlation_pnr_parallel([1, 5000]);
+        obj.Cn = cn;
+        obj.PNR = pnr;
+        fprintf('Done\n');
+    else
+        cn = obj.Cn;
+        pnr = obj.PNR;
+    end
     
     %find all local maximum as initialization point
     tmp_d = round(gSiz/4);
@@ -142,6 +157,7 @@ else
             tmp_ind = ind & (cn>=min_corr) & (pnr>=min_pnr);
             [r, c] = find(tmp_ind);
             delete(ax_seeds);
+            subplot(133); 
             ax_seeds = plot(c, r, '.m', 'markersize', 10);
             
             temp = input('Is this good? (y/n)   ', 's');

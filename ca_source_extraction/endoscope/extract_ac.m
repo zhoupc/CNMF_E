@@ -1,4 +1,4 @@
-function [ai, ci, ind_success, sn] = extract_ac(HY, Y, ind_ctr, sz)
+function [ai, ci, ind_success, sn] = extract_ac(HY, Y, ind_ctr, sz, spatial_constraints)
 %% given a patch of raw & high-pass filtered calcium imaging data, extract
 % spatial and temporal component of one neuron (ai, ci). if succeed, then
 % return an indicator ind_succes with value 1; otherwise, 0.
@@ -7,7 +7,7 @@ function [ai, ci, ind_success, sn] = extract_ac(HY, Y, ind_ctr, sz)
 %       Y:      d X T matrix, raw data
 %       ind_ctr:        scalar, location of the center
 %       sz:         2 X 1 vector, size of the patch
-
+%       spatial_constraints: cell 
 %% Author: Pengcheng Zhou, Carnegie Mellon University.
 
 %% parameters 
@@ -56,7 +56,14 @@ T = length(ci);
 X = [ones(T,1), y_bg', ci']; 
 temp = (X'*X)\(X'*Y'); 
 ai = max(0, temp(3,:)'); 
-ai = circular_constraints(reshape(ai, nr, nc)); % assume neuron shapes are spatially convex 
+
+if spatial_constraints.circular
+    ai = circular_constraints(reshape(ai, nr, nc)); % assume neuron shapes are spatially convex
+end
+
+if spatial_constraints.connected
+    ai = connectivity_constraint(reshape(ai, nr, nc)); 
+end
 ai = ai(:); 
 
 % %% threshold the spatial shape and remove outliers 
