@@ -166,7 +166,7 @@ tmp_str = get_date();
 tmp_str=strrep(tmp_str, '-', '_');
 eval(sprintf('log_data.bg_%s = bg;', tmp_str));
 
-fprintf(flog, '%s\b', get_minute());
+fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, 'Finished updating background using %s model.\n', bg_model);
-fprintf(flog, 'The results were saved as intermediate_results.bg_%s\n\n', tmp_str);
+fprintf(flog, '\tThe results were saved as intermediate_results.bg_%s\n\n', tmp_str);
 fclose(flog);

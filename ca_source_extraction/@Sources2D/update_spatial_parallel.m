@@ -65,7 +65,7 @@ C = cell(nr_patch, nc_patch);
 sn = cell(nr_patch, nc_patch);
 ind_neurons = cell(nr_patch, nc_patch);
 IND_search = cell(nr_patch, nc_patch);
-tic;
+
 for mpatch=1:(nr_patch*nc_patch)
     tmp_patch = patch_pos{mpatch};
     tmp_block = block_pos{mpatch};
@@ -85,7 +85,6 @@ for mpatch=1:(nr_patch*nc_patch)
     end
     
 end
-toc;
 
 %% prepare for the variables for computing the background.
 if strcmpi(bg_model, 'ring')
@@ -103,6 +102,8 @@ end
 %% start updating temporal components
 A_new = A;
 if use_parallel
+    tmp_obj = Sources2D();
+    tmp_obj.options = obj.options; 
     parfor mpatch=1:(nr_patch*nc_patch)
         % no neurons within the patch
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
@@ -140,7 +141,7 @@ if use_parallel
         
         % using HALS to update spatial components
         temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);
-        A_new{mpatch} = obj.post_process_spatial(reshape(full(temp), nr, nc, []));
+        A_new{mpatch} = tmp_obj.post_process_spatial(reshape(full(temp), nr, nc, [])); %#ok<PFBNS>
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
 else
@@ -203,6 +204,8 @@ for mpatch=1:(nr_patch*nc_patch)
 end
 A_old = sparse(obj.A);
 A_new = sparse(obj.reshape(A_, 1));
+
+%% post-process results 
 fprintf('Post-process spatial components of all neurons...\n');
 obj.A = obj.post_process_spatial(A_new);
 fprintf('Done!\n');
@@ -229,7 +232,7 @@ tmp_str = get_date();
 tmp_str=strrep(tmp_str, '-', '_');
 eval(sprintf('log_data.spatial_%s = spatial;', tmp_str));
 
-fprintf(flog, '%s\b', get_minute());
+fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, 'Finished updating spatial components.\n');
-fprintf(flog, 'The results were saved as intermediate_results.spatial_%s\n\n', tmp_str);
+fprintf(flog, '\tThe results were saved as intermediate_results.spatial_%s\n\n', tmp_str);
 fclose(flog);

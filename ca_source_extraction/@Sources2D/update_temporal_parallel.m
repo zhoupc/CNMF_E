@@ -219,7 +219,7 @@ tmp_str = get_date();
 tmp_str=strrep(tmp_str, '-', '_');
 eval(sprintf('log_data.temporal_%s = temporal;', tmp_str));
 
-fprintf(flog, '%s\b', get_minute());
+fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, 'Finished updating temporal components.\n');
-fprintf(flog, 'The results were saved as intermediate_results.temporal_%s\n\n', tmp_str);
+fprintf(flog, '\tThe results were saved as intermediate_results.temporal_%s\n\n', tmp_str);
 fclose(flog);
