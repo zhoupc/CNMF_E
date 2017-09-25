@@ -69,7 +69,7 @@ try
                         temp = fgets(log_old); 
                         flog = fopen(log_file, 'a'); 
                         fprintf(flog, '%s',temp);
-                        if contains(temp, 'Finished the initialization procedure.')
+                        if strfind(temp, 'Finished the initialization procedure.')
                             fclose(log_old); 
                             break; 
                         end

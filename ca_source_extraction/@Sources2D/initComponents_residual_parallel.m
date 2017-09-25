@@ -78,17 +78,10 @@ options.center_psf = false;
 
 %% prepare for the variables for computing the background.
 bg_model = obj.options.background_model;
-if strcmpi(bg_model, 'ring')
-    W = obj.W;
-    b0 = obj.b0;
-elseif strcmpi(bg_model, 'nmf')
-    b = obj.b;
-    f = obj.f;
-else
-    b = obj.b;
-    f = obj.f;
-    b0 = obj.b0;
-end
+W = obj.W;
+b0 = obj.b0;
+b = obj.b;
+f = obj.f;
 
 %% the extracted neurons' signals
 A = cell(nr_patch, nc_patch);
@@ -190,7 +183,9 @@ if use_parallel
         if strcmpi(bg_model, 'ring')
             pause;
         elseif strcmpi(bg_model, 'nmf')
-            pause;
+            b_nmf = b{mpatch};
+            f_nmf = f{mpatch}; 
+            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf; 
         else
             b_svd = b{mpatch};
             f_svd = f{mpatch};
@@ -266,15 +261,15 @@ else
         if strcmpi(bg_model, 'ring')
             pause;
         elseif strcmpi(bg_model, 'nmf')
-            pause;
+            b_nmf = b{mpatch};
+            f_nmf = f{mpatch}; 
+            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf; 
         else
             b_svd = b{mpatch};
             f_svd = f{mpatch};
             b0_svd = b0{mpatch};
             Ypatch = Ypatch - bsxfun(@plus, b_svd*f_svd, b0_svd);
         end
-        
-        
         
         [tmp_results, tmp_center, tmp_Cn, tmp_PNR, ~] = greedyROI_endoscope(Ypatch, K, tmp_options, [], tmp_save_avi);
         

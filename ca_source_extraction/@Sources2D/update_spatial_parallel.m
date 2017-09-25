@@ -87,17 +87,11 @@ for mpatch=1:(nr_patch*nc_patch)
 end
 
 %% prepare for the variables for computing the background.
-if strcmpi(bg_model, 'ring')
-    W = obj.W;
-    b0 = obj.b0;
-elseif strcmpi(bg_model, 'nmf')
-    b = obj.b;
-    f = obj.f;
-else
-    b = obj.b;
-    f = obj.f;
-    b0 = obj.b0;
-end
+bg_model = obj.options.background_model;
+W = obj.W;
+b0 = obj.b0;
+b = obj.b;
+f = obj.f;
 
 %% start updating temporal components
 A_new = A;
@@ -131,7 +125,9 @@ if use_parallel
         if strcmpi(bg_model, 'ring')
             pause;
         elseif strcmpi(bg_model, 'nmf')
-            pause;
+            b_nmf = b{mpatch};
+            f_nmf = f{mpatch}; 
+            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf; 
         else
             b_svd = b{mpatch};
             f_svd = f{mpatch};
@@ -172,7 +168,9 @@ else
         if strcmpi(bg_model, 'ring')
             pause;
         elseif strcmpi(bg_model, 'nmf')
-            pause;
+            b_nmf = b{mpatch};
+            f_nmf = f{mpatch}; 
+            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf; 
         else
             b_svd = b{mpatch};
             f_svd = f{mpatch};
