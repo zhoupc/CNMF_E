@@ -45,11 +45,11 @@ if use_parallel
         sn{k} = tmp_sn;
         
         % deconvolution
-        try
+%         try
             [ck, sk, tmp_options]= deconvolveCa(ck_raw, deconv_options, 'maxIter', 2, 'sn', tmp_sn);
-        catch
-            pause;
-        end
+%         catch
+%             pause;
+%         end
         if sum(abs(ck))==0
             ck = ck_raw;
         end
@@ -85,11 +85,11 @@ else
         sn{k} = tmp_sn;
         
         % deconvolution
-        try
+%         try
             [ck, sk, tmp_options]= deconvolveCa(ck_raw, deconv_options, 'maxIter', 2, 'sn', tmp_sn);
-        catch
-            pause;
-        end
+%         catch
+%             pause;
+%         end
         if sum(abs(ck))==0
             ck = ck_raw;
         end

@@ -183,6 +183,7 @@ else
         % using HALS to update spatial components
         temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);
         A_new{mpatch} = obj.post_process_spatial(reshape(full(temp), nr, nc, []));
+
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
 end
@@ -207,7 +208,7 @@ A_new = sparse(obj.reshape(A_, 1));
 
 %% post-process results 
 fprintf('Post-process spatial components of all neurons...\n');
-obj.A = obj.post_process_spatial(A_new);
+obj.A = obj.post_process_spatial(obj.reshape(A_new, 2));
 fprintf('Done!\n');
 fprintf('Done!\n');
 

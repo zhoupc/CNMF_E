@@ -30,7 +30,7 @@ if ~exist('range_ac', 'var') || isempty(range_ac)
 end
 if ~exist('range_Y', 'var') || isempty(range_Y)
     if ~exist('multi_factor', 'var') || isempty(multiple_factor)
-        temp = double(quantile(Y(randi(numel(Y), 10000,1)), [0.01, 0.98]));
+        temp = quantile(double(Y(randi(numel(Y), 10000,1))), [0.01, 0.98]);
         multi_factor = ceil(diff(temp)/diff(range_ac));
     else
         temp = quantile(Y(randi(numel(Y), 10000,1)), 0.01); 

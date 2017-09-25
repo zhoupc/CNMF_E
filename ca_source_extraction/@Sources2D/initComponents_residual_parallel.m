@@ -42,7 +42,7 @@ try
 catch
     error('No data file selected');
 end
-fprintf('\n---------------PICK NEURONS FROM THE RESIDUAL----------------\n'); 
+fprintf('\n---------------PICK NEURONS FROM THE RESIDUAL----------------\n');
 
 % frames to be loaded for initialization
 frame_range = obj.frame_range;
@@ -146,14 +146,16 @@ if use_parallel
         else
             tmp_block = tmp_patch;
         end
+        [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         
         % get the neural activity
         C_patch = C{mpatch};                % previous estimation of neural activity
         if isempty(C_patch)
-            fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
-            continue;
+            C_patch = 0; 
+            A_patch = 0; 
+        else
+                    A_patch = A{mpatch};
         end
-        A_patch = A{mpatch};
         
         % boundaries pixels to be avoided for detecting seed pixels
         tmp_options = options;
@@ -207,7 +209,6 @@ if use_parallel
         results{mpatch} = tmp_results;
         %     eval(sprintf('results_patch_%d=tmp_results;', mpatch));  %#ok<PFBFN>
         % display initialization progress
-        [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
 else
@@ -220,14 +221,17 @@ else
         else
             tmp_block = tmp_patch;
         end
-        
+        [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
+                 
         % get the neural activity
         C_patch = C{mpatch};                % previous estimation of neural activity
         if isempty(C_patch)
-            fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
-            continue;
+            C_patch = 0; 
+            A_patch = 0; 
+        else
+                    A_patch = A{mpatch};
         end
-        A_patch = A{mpatch};
+        
         
         % boundaries pixels to be avoided for detecting seed pixels
         tmp_options = options;
@@ -281,7 +285,6 @@ else
         results{mpatch} = tmp_results;
         %     eval(sprintf('results_patch_%d=tmp_results;', mpatch));  %#ok<PFBFN>
         % display initialization progress
-        [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
 end
@@ -296,11 +299,15 @@ for mpatch=1:(nr_patch*nc_patch)
     r1 = tmp_block(2);
     c0 = tmp_block(3);
     c1 = tmp_block(4);
-%         ind_patch = true(r1-r0+1, c1-c0+1);
-%         ind_patch((tmp_patch(1):tmp_patch(2))-r0+1, (tmp_patch(3):tmp_patch(4))-c0+1) = false;
+    %         ind_patch = true(r1-r0+1, c1-c0+1);
+    %         ind_patch((tmp_patch(1):tmp_patch(2))-r0+1, (tmp_patch(3):tmp_patch(4))-c0+1) = false;
     %
     % unpack results
     tmp_results = results{mpatch};
+    if isempty(tmp_results)
+        continue;
+    end
+    
     %     eval(sprintf('tmp_results=results_patch_%d;', mpatch));
     tmp_Ain = tmp_results.Ain;
     %     tmp_Ain(ind_patch, :) = 0;

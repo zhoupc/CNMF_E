@@ -14,7 +14,8 @@ min_pnr = obj.options.min_pnr;
 fprintf('\n*** Determine the neuron diameter (gSiz) and the gaussian width (gSig) of the filtering kernel.\n');
 fprintf('\t-------------------------- GUIDE --------------------------\n');
 fprintf('\tgSiz is usually slightly larger than a neuron;\n');
-fprintf('\tgSig is usually selected as 1/4 of gSiz\n');
+fprintf('\tgSig is usually selected as 1/4 of gSiz when the data is 1p\n');
+fprintf('\tgSig is usually selected as 1 when the data is 2p.\n');
 fprintf('\tBoth numbers are integers\n');
 fprintf('\tOdd number is preferred for gSiz. \n');
 fprintf('\tWhen you want to make a change, an image will be shown.\n');
@@ -119,7 +120,7 @@ else
     end
     
     %find all local maximum as initialization point
-    tmp_d = round(gSiz/4);
+    tmp_d = max(1,round(gSiz/4));
     v_max = ordfilt2(cn.*pnr, tmp_d^2, true(tmp_d));
     ind = (v_max==cn.*pnr);
     
