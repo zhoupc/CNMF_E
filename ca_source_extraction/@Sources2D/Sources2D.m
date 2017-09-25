@@ -926,7 +926,9 @@ classdef Sources2D < handle
                     % run regression to get A, C, and W, b0
                     [obj.W{match}, obj.b0{match}, ~] = fit_ring_model(Ypatch, A_patch, C_patch, W_old, b0_old, thresh_outlier, ind_patch);
                 elseif strcmpi(bg_model, 'nmf')
-                    pause;
+                    b_nmf = obj.b{mpatch};
+                    f_nmf = obj.f{mpatch};
+                    Ybg(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4),:) = reshape(b_nmf*f_nmf, diff(tmp_patch(1:2))+1, [], T);
                 else
                     b_svd = obj.b{mpatch};
                     f_svd = obj.f{mpatch};
@@ -1210,7 +1212,7 @@ classdef Sources2D < handle
         %% save results
         function file_path = save_workspace(obj)
             obj.compress_results();
-            file_path = [obj.P.folder_analysis, filesep,  strrep(get_date(), ' ', '_'), '.mat'];
+            file_path = [obj.P.log_folder,  strrep(get_date(), ' ', '_'), '.mat'];
             evalin('base', sprintf('save(''%s''); ', file_path));
             
             try

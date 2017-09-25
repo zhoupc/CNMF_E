@@ -100,7 +100,11 @@ if use_parallel
             % run regression to get A, C, and W, b0
             %             [W{match}, b0{match}, ~] = fit_ring_model(Ypatch, A_patch, C_patch, W_old, b0_old, thresh_outlier, ind_patch);
         elseif strcmpi(bg_model, 'nmf')
-            pause;
+            b_old = b{mpatch};
+            f_old = f{mpatch}; 
+            Ypatch = reshape(Ypatch, [], T); 
+            sn_patch = sn_block(ind_patch); 
+            [b{mpatch}, f{mpatch}] = fit_nmf_model(Ypatch, nb, A_block, C_block, b_old, f_old, thresh_outlier, sn_patch, ind_patch); 
         else
             b_old = b{mpatch};
             f_old = f{mpatch};
@@ -139,7 +143,11 @@ else
             % run regression to get A, C, and W, b0
             %             [W{match}, b0{match}, ~] = fit_ring_model(Ypatch, A_patch, C_patch, W_old, b0_old, thresh_outlier, ind_patch);
         elseif strcmpi(bg_model, 'nmf')
-            pause;
+            b_old = b{mpatch};
+            f_old = f{mpatch};
+            Ypatch = reshape(Ypatch, [], T);
+            sn_patch = sn_block(ind_patch);
+            [b{mpatch}, f{mpatch}] = fit_nmf_model(Ypatch, nb, A_block, C_block, b_old, f_old, thresh_outlier, sn_patch, ind_patch);
         else
             b_old = b{mpatch};
             f_old = f{mpatch};
