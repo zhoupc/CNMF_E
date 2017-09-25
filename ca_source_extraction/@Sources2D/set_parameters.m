@@ -14,21 +14,22 @@ min_pnr = obj.options.min_pnr;
 fprintf('\n*** Determine the neuron diameter (gSiz) and the gaussian width (gSig) of the filtering kernel.\n');
 fprintf('\t-------------------------- GUIDE --------------------------\n');
 fprintf('\tgSiz is usually slightly larger than a neuron;\n');
-fprintf('\tgSig is usually selected as 1/4 of gSiz\n');
-fprintf('\tBoth numbers are integers\n');
+fprintf('\tgSig is usually selected as 1/4 of gSiz when the data is 1p\n');
+fprintf('\tgSig is usually selected as 1 when the data is 2p.\n');
+fprintf('\tIntegers are preferred for both values, but not necessary.\n');
 fprintf('\tOdd number is preferred for gSiz. \n');
 fprintf('\tWhen you want to make a change, an image will be shown.\n');
 fprintf('\tYou can zoon in to see the size of a typical neuron.\n');
 fprintf('\t--------------------------  END  --------------------------\n\n');
 
-fprintf('You current selection of parameters (gSiz, gSig) are (%2d, %2d).\n', gSiz, gSig);
+fprintf('You current selection of parameters (gSiz, gSig) are (%.1f, %.1f).\n', gSiz, gSig);
 temp = input('Do you want to make a change? (y/n)    ', 's');
 if strcmpi(temp, 'n')
     fprintf('Your values for (gSiz, gSig) will stay the same\n');
 else
     Y = get_patch_data(obj.P.mat_data, [], [1,100]);
     [d1,d2, T] = size(Y);
-    Y = reshape(Y, d2*d2, T);
+    Y = reshape(Y, d1*d2, T);
     fprintf('Wait for a few second ....\n');
     [u, v] = nnmf(double(Y),1);
     img = reshape(max(double(Y)-u*v, [], 2), d1,d2);
@@ -42,7 +43,7 @@ else
             gSig = new_values(2);
             obj.options.gSig = gSig;
             obj.options.gSiz = gSiz;
-            fprintf('Good! You current selection of parameters (gSiz, gSig) are (%2d, %2d).\n', gSiz, gSig);
+            fprintf('Good! You current selection of parameters (gSiz, gSig) are (%.1f, %.1f).\n', gSiz, gSig);
             break;
         catch
             warning('values are bad. try again');
@@ -119,7 +120,7 @@ else
     end
     
     %find all local maximum as initialization point
-    tmp_d = round(gSiz/4);
+    tmp_d = max(1,round(gSiz/4));
     v_max = ordfilt2(cn.*pnr, tmp_d^2, true(tmp_d));
     ind = (v_max==cn.*pnr);
     

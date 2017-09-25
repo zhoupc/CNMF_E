@@ -19,7 +19,7 @@ d1 = options.d1;        % image height
 d2 = options.d2;        % image width
 gSig = options.gSig;    % width of the gaussian kernel approximating one neuron
 gSiz = options.gSiz;    % average size of neurons
-sig = 5;    % thresholding noise by sig*std()
+sig = 3;    % thresholding noise by sig*std()
 
 if ismatrix(Y); Y = reshape(Y, d1, d2, []); end;  % convert the 3D movie to a matrix
 Y(isnan(Y)) = 0;    % remove nan values
@@ -77,7 +77,7 @@ for mr = 1:nr_patch
         HY = reshape(HY, [], T);
         HY = bsxfun(@minus, HY, median(HY, 2));
         HY_max = max(HY, [], 2);
-        Ysig = get_noise_fft(HY, options);
+        Ysig = GetSn(HY);
         tmp_PNR = reshape(HY_max./Ysig, nrows, ncols);
         PNR(r0:r1, c0:c1) = max(PNR(r0:r1, c0:c1), tmp_PNR);
         

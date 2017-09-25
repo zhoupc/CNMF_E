@@ -1,5 +1,5 @@
 function [center, Cn, PNR] = initComponents_parallel(obj, K, frame_range, save_avi, use_parallel)
-%% initializing spatial/temporal components for miceoendoscopic data
+%% initializing spatial/temporal components for calcium imaging data
 %% input:
 %   K:  scalar, maximum number of neurons
 %   frame_range: 1 X 2 vector indicating the starting and ending frames
@@ -63,8 +63,21 @@ try
             if (choice>0) && (choice<=k)
                 % reuse this folder and stop the initialization
                 try
+                    % copy the previous log file 
+                    log_old = fopen(fullfile(tmp_dir, previous_folder{choice}, 'logs.txt'), 'r'); 
+                    while true
+                        temp = fgets(log_old); 
+                        flog = fopen(log_file, 'a'); 
+                        fprintf(flog, '%s',temp);
+                        if contains(temp, 'Finished the initialization procedure.')
+                            fclose(log_old); 
+                            break; 
+                        end
+                        fclose(flog); 
+                    end
+                    
+                    % copy the previous results 
                     data = matfile(fullfile(tmp_dir, previous_folder{1}, 'intermediate_results.mat'));
-                    copyfile(fullfile(tmp_dir, previous_folder{choice}, 'logs.txt'), log_file);
                     log_data.initialization = data.initialization;
                     log_data.options_0 = data.options_0;
                     previous_init = data.initialization;
@@ -85,6 +98,8 @@ try
                     obj.P.log_folder = log_folder;
                     obj.P.log_file = log_file;
                     obj.P.log_data = log_data_file;
+                    obj.ids = neuron.ids; 
+                    obj.tags = neuron.tags; 
                 catch
                     continue;
                 end
@@ -95,9 +110,11 @@ try
                 end
                 % write this operation to the log file
                 flog = fopen(log_file, 'a');
-                fprintf(flog, '%s\b', get_minute());
-                fprintf(flog, 'Continue the analysis from the previous initialization results:\n %s \n\n', previous_folder{choice});
-                fprintf('Continue the previous initialization  \n\n');
+                
+                fprintf(flog, '\n--------%s--------\n', get_date());
+                fprintf(flog, '[%s]\b', get_minute());
+                fprintf(flog, 'Continue the analysis from the previous initialization results:\n\t%s \n\n', previous_folder{choice});
+                %                 fprintf('\tContinue the previous initialization  \n\n');
                 
                 return;
             elseif (choice<0) && (choice>=-k)
@@ -105,7 +122,7 @@ try
                 try
                     rmdir(fullfile(tmp_dir, previous_folder{-choice}), 's');
                 catch
-                    break;
+                    continue;
                 end
             else
                 break;
@@ -247,11 +264,11 @@ obj.P.k_options = 1;
 obj.P.k_neurons = 0;
 flog = fopen(log_file, 'w');
 fprintf(flog, 'Data: %s\n\n', mat_file);
-
-fprintf(flog, '%s\b', get_minute());
+fprintf(flog, '--------%s--------\n', get_date()); 
+fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, 'Start running source extraction......\nThe collection of options are saved as intermediate_results.options_0\n\n');
 
-fprintf(flog, '%s\b', get_minute());
+fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, 'Start initializing neurons from frame %d to frame %d\n\n', frame_range(1), frame_range(2));
 
 Ain = cell(nr_patch, nc_patch); % save spatial components of neurons in each patch
@@ -422,7 +439,10 @@ else
     obj.S = zeros(size(obj.C));
 end
 obj.Cn = Cn;
-
+K = size(obj.A, 2); 
+obj.P.k_ids = K;
+obj.ids = (1:K); 
+obj.tags = zeros(K,1, 'like', uint16(0)); 
 
 %% save the results to log
 initialization.neuron = obj.obj2struct();
@@ -431,8 +451,8 @@ initialization.Cn = Cn;
 initialization.PNR = PNR;
 log_data.initialization = initialization;
 
-fprintf(flog, '%s\b', get_minute());
+fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, 'Finished the initialization procedure.\n');
-fprintf(flog, 'In total, %d neurons were initialized. \n', size(Ain,2));
-fprintf(flog, 'The initialization results were saved as intermediate_results.initialization\n\n');
+fprintf(flog, '\tIn total, %d neurons were initialized. \n', size(Ain,2));
+fprintf(flog, '\tThe initialization results were saved as intermediate_results.initialization\n\n');
 fclose(flog);

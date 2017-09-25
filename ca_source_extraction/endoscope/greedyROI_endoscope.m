@@ -431,7 +431,7 @@ results.Cin = Cin(1:k, :);
 results.Cin_raw = Cin_raw(1:k, :);
 if deconv_flag
     results.Sin = Sin(1:k, :);
-    results.kernel_pars = cell2mat(kernel_pars(1:k));
+    results.kernel_pars = reshape(cell2mat(kernel_pars(1:k)), k, []);
 end
 % Cin(Cin<0) = 0;
 Cn = Cn0;

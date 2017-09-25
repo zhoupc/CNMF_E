@@ -22,6 +22,7 @@ if ~exist('memory_size_to_use', 'var') || isempty(memory_size_to_use)
     memory_size_to_use = 30;
 end
 
+
 %% get the data dimension and determine the best way of distributing data
 dims = get_data_dimension(file_name);
 d1 = dims(1); d2 = dims(2); T = dims(3);
