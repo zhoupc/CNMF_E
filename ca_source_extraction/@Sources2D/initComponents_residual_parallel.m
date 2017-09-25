@@ -308,9 +308,7 @@ for mpatch=1:(nr_patch*nc_patch)
         continue;
     end
     
-    %     eval(sprintf('tmp_results=results_patch_%d;', mpatch));
     tmp_Ain = tmp_results.Ain;
-    %     tmp_Ain(ind_patch, :) = 0;
     tmp_ind = (sum(tmp_Ain, 1)>0);
     tmp_Ain = tmp_Ain(:, tmp_ind);
     tmp_Cin = tmp_results.Cin(tmp_ind,:);

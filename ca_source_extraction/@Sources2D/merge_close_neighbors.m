@@ -1,5 +1,5 @@
 function [merged_ROIs, newIDs, obj_bk]  = merge_close_neighbors(obj, show_merge, dmin, method_dist)
-%% merge neighboring neurons if they are too close 
+%% merge neighboring neurons if they are too close
 % inputs:
 %   show_merge: boolean scale, manually verify the merging
 %   dmin: scalar, minimum distance (pixel)
@@ -34,7 +34,7 @@ end
 if show_merge
     cols = [0, 0, 1; 0, 1, 0; 0, 1, 1; 1, 0, 0; 1, 0, 1; 1, 1, 0; 1, 1, 1];
     h_fig = figure('position', [1,1, 1200, 600]);
-    stop_show = false; 
+    stop_show = false;
 end
 if ~exist('dmin', 'var') || isempty(dmin)
     dmin = obj.options.dmin;
@@ -44,10 +44,10 @@ deconv_options_0 = obj.options.deconv_options;
 %% find neuron pairs to merge
 % compute spatial correlation
 if ~exist('method_dist', 'var') || isempty(method_dist)
-    method_dist = obj.options.method_dist; 
+    method_dist = obj.options.method_dist;
 end
 if any(strcmpi(method_dist, {'mean', 'center'}))
-    % use the center of mass as neuron centers. 'center' is an old naming.  
+    % use the center of mass as neuron centers. 'center' is an old naming.
     ctr = obj.estCenter();
     yy = ctr(:,1);
     xx = ctr(:,2);
@@ -55,7 +55,7 @@ else
     [~,temp] = max(obj.A, [], 1);
     [yy, xx] = ind2sub([obj.options.d1, obj.options.d2], temp);
 end
-dist_v = sqrt(bsxfun(@minus, xx, xx').^2 + bsxfun(@minus, yy, yy').^2); 
+dist_v = sqrt(bsxfun(@minus, xx, xx').^2 + bsxfun(@minus, yy, yy').^2);
 
 %% using merging criterion to detect paired neurons
 flag_merge = (dist_v<=dmin(1));
@@ -89,15 +89,17 @@ log_data = matfile(obj.P.log_data, 'Writable', true); %#ok<NASGU>
 
 fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, 'Start Merging neurons based on neuron distances:\n ');
-fprintf(flog, '\tOptions:\n'); 
-fprintf(flog, '\t\tMinimum distance: %.3f\n', dmin); 
-fprintf(flog, '\t\tMethod for computing neuron center: %s\n', method_dist); 
+fprintf(flog, '\tOptions:\n');
+fprintf(flog, '\t\tMinimum distance: %.3f\n', dmin);
+fprintf(flog, '\t\tMethod for computing neuron center: %s\n', method_dist);
 
 if isempty(MC)
     fprintf('All pairs of neurons are below the merging criterion!\n\n');
     fprintf(flog, '\tAll pairs of neurons are below the merging criterion!\n\n ');
     fclose(flog);
-    close(h_fig); 
+    try
+        close(h_fig);
+    end
     return;
 else
     fprintf('%d neurons will be merged into %d new neurons\n\n', sum(MC(:)), size(MC,2));
@@ -115,7 +117,7 @@ merged_ROIs = cell(n2merge,1);
 newIDs = zeros(nr, 1);      % indices of the new neurons
 k_merged = 0;
 k_neurons = 0;
-m = 1; 
+m = 1;
 while m <= n2merge
     IDs = find(MC(:, m));   % IDs of neurons within this cluster
     
@@ -123,7 +125,7 @@ while m <= n2merge
     if show_merge && (~stop_show)
         figure(h_fig);
         [tmp_img, col, ~] = obj_bk.overlapA(IDs);
-        subplot(221); 
+        subplot(221);
         imagesc(tmp_img);
         axis equal off tight;
         subplot(222);
@@ -142,19 +144,19 @@ while m <= n2merge
         end
         temp = input('keep this merge? (y(default)/n(cancel)/back(b)/merge&delete(md)/end showing(e): ', 's');
         if strcmpi(temp, 'n')
-            m = m+1; 
+            m = m+1;
             continue;
         elseif strcmpi(temp, 'b')
-            m = m-1; 
+            m = m-1;
         elseif strcmpi(temp, 'e')
-            stop_show = true; 
+            stop_show = true;
         elseif strcmpi(temp, 'md')
-            ind_del(IDs) = true; 
-            continue; 
+            ind_del(IDs) = true;
+            continue;
         end
     end
     k_merged = k_merged+1;
-    k_neurons = k_neurons+length(IDs); 
+    k_neurons = k_neurons+length(IDs);
     merged_ROIs{k_merged} = IDs;
     
     % determine searching area
@@ -180,16 +182,16 @@ while m <= n2merge
     catch
         ind_del(IDs) = true;
     end
-    m = m+1; 
+    m = m+1;
 end
 newIDs(ind_del) = [];
 newIDs = find(newIDs);
 merged_ROIs = merged_ROIs(1:k_merged);
-%% write to the log file 
+%% write to the log file
 if isempty(newIDs)
     fprintf('\tYou manually eliminate all merges\n');
     fprintf(flog,'[%s]\bYou have manually eliminate all merges\n', get_minute());
-    return; 
+    return;
 elseif length(newIDs)==n2merge
     fprintf(flog, '[%s]\bYou approved all merges.\n', get_minute());
 else
@@ -217,7 +219,7 @@ tmp_str = get_date();
 tmp_str=strrep(tmp_str, '-', '_');
 eval(sprintf('log_data.merge_%s = merge_results;', tmp_str));
 fprintf(flog, '\tThe spatial and temporal components of the merged neurons were saved as intermediate_results.spatial_%s\n', tmp_str);
-fprintf(flog, '\tNow the old neurons will be deleted and the merged new ones will replace them.\n\n');  
+fprintf(flog, '\tNow the old neurons will be deleted and the merged new ones will replace them.\n\n');
 fclose(flog);
 
 % remove merged neurons and update obj
