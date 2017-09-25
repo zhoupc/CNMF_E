@@ -50,9 +50,9 @@ ring_radius = round(bg_neuron_factor * gSiz);  % when the ring model used, it is
                     %otherwise, it's just the width of the overlapping area 
 
 % -------------------------      MERGING      -------------------------  %
-show_merge = false;  % if true, manually verify the merging step 
+show_merge = true;  % if true, manually verify the merging step 
 merge_thr = 0.7;     % thresholds for merging neurons; [spatial overlap ratio, temporal correlation of calcium traces, spike correlation]
-method_dist = 'mean';   % method for computing neuron distances {'mean', 'max'}
+method_dist = 'max';   % method for computing neuron distances {'mean', 'max'}
 dmin = 10;       % minimum distances between two neurons. it is used together with merge_thr
 dmin_only = 2;  % merge neurons if their distances are smaller than dmin_only. 
 
@@ -61,7 +61,7 @@ K = [];             % maximum number of neurons per patch. when K=[], take as ma
 min_corr = 0.7;     % minimum local correlation for a seeding pixel
 min_pnr =10;       % minimum peak-to-noise ratio for a seeding pixel
 min_pixel = 2^2;      % minimum number of nonzero pixels for each neuron
-bd = 1;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
+bd = 0;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
 frame_range = [];   % when [], uses all frames 
 save_initialization = false;    % save the initialization procedure as a video. 
 use_parallel = true;    % use parallel computation for parallel computing 
@@ -71,7 +71,7 @@ center_psf = false;  % set the value as true when the background fluctuation is 
                     % set the value as false when the background fluctuation is small (2p)
 
 % ----------------------  WITH MANUAL INTERVENTION  --------------------  %
-with_manual_intervention = false; 
+with_manual_intervention = true; 
 
 % -------------------------  FINAL RESULTS   -------------------------  %
 save_demixed = true;    % save the demixed file or not 
@@ -150,13 +150,17 @@ end
 neuron.update_background_parallel(use_parallel); 
 neuron.update_temporal_parallel(use_parallel); 
 neuron.update_spatial_parallel(use_parallel); 
+
+K = size(neuron.A,2); 
 tags = neuron.tag_neurons_parallel();  % find neurons with fewer nonzero pixels than min_pixel and silent calcium transients
-neuron.delete(tags>0); 
-neuron.merge_neurons_dist_corr(show_merge); 
-neuron.merge_close_neighbors(show_merge, dmin_only); 
-neuron.update_temporal_parallel(use_parallel); 
-neuron.update_spatial_parallel(use_parallel); 
-neuron.update_background_parallel(use_parallel); 
+neuron.delete(tags>0);
+neuron.merge_neurons_dist_corr(show_merge);
+neuron.merge_close_neighbors(show_merge, dmin_only);
+if K~=size(neuron.A,2)
+    neuron.update_temporal_parallel(use_parallel);
+    neuron.update_spatial_parallel(use_parallel);
+    neuron.update_background_parallel(use_parallel);
+end
 
 %% save the workspace for future analysis 
 neuron.save_workspace(); 
@@ -170,6 +174,8 @@ neuron.show_demixed_video(save_demixed, kt);
 %% save neurons shapes 
 neuron.save_neurons(); 
 
+%% save neurons shapes 
+neuron.save_neurons(); 
 
 
 

@@ -1347,8 +1347,9 @@ classdef Sources2D < handle
                     pvpairs = { 'LevelList' , [0,0]+A_temp(ind(ff)), 'ZData', obj.reshape(A_temp,2)};
                     h = matlab.graphics.chart.primitive.Contour(pvpairs{:});
                     temp = h.ContourMatrix;
-                    temp = medfilt1(temp')';
-                    Coor{m} = temp(:, 3:end);
+                    %temp = medfilt1(temp')';
+                    temp = medfilt1(temp(:, 2:end)')';
+                    Coor{m} = [temp, temp(:, 1)]; 
                 end
                 
             end
