@@ -1,5 +1,5 @@
 # CNMF_E
-Constrained Nonnegative Matrix Factorization for microEndoscopic data 
+Constrained Nonnegative Matrix Factorization for microEndoscopic data. 
 
 ## Download
 OPTION 1: download the package using this [LINK](https://github.com/zhoupc/CNMF_E/archive/master.zip)
@@ -45,6 +45,7 @@ You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [
 
 **Zhou, P.**, Resendez, S.L., Rodriguez-Romaguera, J., Jimenez, J.C, Neufeld, S.Q., Stuber, G.D., Hen, R., Kheirbek, M.A., Sabatini, B.L., Kass, R.E., Paninski, L. (2016). [Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data](https://arxiv.org/abs/1605.07266). arXiv Prepr, arXiv1605.07266.
 
+Please read more from the [wiki page](https://github.com/zhoupc/CNMF_E/wiki) 
 ## License
 Copyright 2016 Pengcheng Zhou
 

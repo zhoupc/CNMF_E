@@ -6,7 +6,7 @@ function viewNeurons(obj, ind, C2, folder_nm)
 %   ind: vector, indices of components to be displayed, no bigger than the maximum
 %       number of neurons
 %   C2:  K*T matrix, another temporal component to be displayed together
-%       with the esitmated C. usually it is C without deconvolution.        
+%       with the esitmated C. usually it is C without deconvolution.
 
 %% Author: Pengcheng Zhou, Carnegie Mellon University, 2016
 
@@ -51,13 +51,15 @@ end
 
 %% keep the log information
 if ~save_img
-    log_file =  obj.P.log_file;
-    flog = fopen(log_file, 'a');
-    log_data = matfile(obj.P.log_data, 'Writable', true); %#ok<NASGU>
-    manual_intervention.before = obj.obj2struct();
-    
-    fprintf(flog, '[%s]\b', get_minute());
-    fprintf(flog, 'Start manual interventions:\n');
+    try
+        log_file =  obj.P.log_file;
+        flog = fopen(log_file, 'a');
+        log_data = matfile(obj.P.log_data, 'Writable', true); %#ok<NASGU>
+        manual_intervention.before = obj.obj2struct();
+        
+        fprintf(flog, '[%s]\b', get_minute());
+        fprintf(flog, 'Start manual interventions:\n');
+    end
 end
 
 %% start viewing neurons
@@ -65,7 +67,7 @@ figure('position', [100, 100, 1024, 512]);
 m=1;
 while and(m>=1, m<=length(ind))
     %% full-frame view
-    subplot(221); cla; 
+    subplot(221); cla;
     obj.image(obj.A(:, ind(m)).*Amask(:, ind(m))); %
     axis equal; axis off;
     if ind_del(m)
@@ -74,7 +76,7 @@ while and(m>=1, m<=length(ind))
         title(sprintf('Neuron %d', ind(m)));
     end
     %% zoomed-in view
-    subplot(222); cla; 
+    subplot(222); cla;
     obj.image(obj.A(:, ind(m)).*Amask(:, ind(m))); %
     %     imagesc(reshape(obj.A(:, ind(m)).*Amask(:,ind(m))), obj.options.d1, obj.options.d2));
     axis equal; axis off;
@@ -98,7 +100,7 @@ while and(m>=1, m<=length(ind))
     
     %% save images
     if save_img
-        drawnow(); 
+        drawnow();
         saveas(gcf, sprintf('neuron_%d.png', ind(m)));
         m = m+1;
     else
@@ -166,27 +168,32 @@ if save_img
 else
     if ~isempty(ind(ind_trim))
         obj.A(:, ind(ind_trim)) = obj.A(:,ind(ind_trim)).*Amask(:, ind(ind_trim));
-        fprintf(flog, '\n\tFollowing neurons were trimmed:\n');
-        ids_trimmed = ind(ind_trim);
-        for m=1:length(ids_trimmed)
-            fprintf(flog, '%2d, ', ids_trimmed(m));
+        try
+            fprintf(flog, '\n\tFollowing neurons were trimmed:\n');
+            ids_trimmed = ind(ind_trim);
+            for m=1:length(ids_trimmed)
+                fprintf(flog, '%2d, ', ids_trimmed(m));
+            end
+            fprintf(flog, '\n');
         end
-        fprintf(flog, '\n');
     end
     
-    fprintf(flog, '\tDeleting manually selected neurons:\n');
-    obj.delete(ind(ind_del));
-    %     obj.Coor = obj.get_contours(0.9);
-    
-    manual_intervention.after = obj.obj2struct();
-    tmp_str = get_date();
-    tmp_str=strrep(tmp_str, '-', '_');
-    eval(sprintf('log_data.manual_%s = manual_intervention;', tmp_str));
-    
-    fprintf(flog, '[%s]\b', get_minute());
-    fprintf(flog, 'Finished the manual intervention.\n');
-    fprintf(flog, '[%s]\b', get_minute());
-    fprintf(flog, '\tThe results were saved as intermediate_results.manual%s\n\n', tmp_str);
-    fclose(flog);
+    try
+        fprintf(flog, '\tDeleting manually selected neurons:\n');
+        
+        obj.delete(ind(ind_del));
+        %     obj.Coor = obj.get_contours(0.9);
+        
+        manual_intervention.after = obj.obj2struct();
+        tmp_str = get_date();
+        tmp_str=strrep(tmp_str, '-', '_');
+        eval(sprintf('log_data.manual_%s = manual_intervention;', tmp_str));
+        
+        fprintf(flog, '[%s]\b', get_minute());
+        fprintf(flog, 'Finished the manual intervention.\n');
+        fprintf(flog, '[%s]\b', get_minute());
+        fprintf(flog, '\tThe results were saved as intermediate_results.manual%s\n\n', tmp_str);
+        fclose(flog);
+    end
 end
 

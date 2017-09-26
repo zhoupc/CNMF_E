@@ -12,7 +12,7 @@ Fs = 6;             % frame rate
 ssub = 1;           % spatial downsampling factor
 tsub = 1;           % temporal downsampling factor
 gSig = 3;           % width of the gaussian kernel, which can approximates the average neuron shape
-gSiz = 10;          % maximum diameter of neurons in the image plane. larger values are preferred.
+gSiz = 11;          % maximum diameter of neurons in the image plane. larger values are preferred.
 neuron_full = Sources2D('d1',d1,'d2',d2, ... % dimensions of datasets
     'ssub', ssub, 'tsub', tsub, ...  % downsampleing
     'gSig', gSig,...    % sigma of the 2D gaussian that approximates cell bodies
@@ -35,10 +35,10 @@ merge_thr = [1e-1, 0.85, 0];     % thresholds for merging neurons; [spatial over
 dmin = 1;
 %% options for running deconvolution 
 neuron_full.options.deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1', 'ar2'}
-    'method', 'thresholded', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
+    'method', 'foopsi', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
+    'smin', -3, ...         % minimum spike size. When the value is negative, the actual threshold is abs(smin)*noise level 
     'optimize_pars', true, ...  % optimize AR coefficients
-    'optimize_b', true, ... % optimize the baseline
-    'optimize_smin', false);  % optimize the threshold 
+    'optimize_b', true);% optimize the baseline); 
 
 %% downsample data for fast and better initialization
 sframe=1;						% user input: first frame to read (optional, default:1)
@@ -67,7 +67,7 @@ min_pixel = 3^2;      % minimum number of nonzero pixels for each neuron
 bd = 1;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
 neuron.updateParams('min_corr', min_corr, 'min_pnr', min_pnr, ...
     'min_pixel', min_pixel, 'bd', bd);
-neuron.options.nk = 1;  % number of knots for detrending 
+neuron.options.nk = 5;  % number of knots for detrending 
 
 % greedy method for initialization
 tic;
@@ -167,7 +167,7 @@ end
 
 
 %% delete some neurons and run CNMF-E iteration 
-neuron.orderROIs('mean');  % you can also use {'snr', 'mean', 'decay_time'} 
+neuron.orderROIs('decay_time');  % you can also use {'snr', 'mean', 'decay_time'} 
 neuron.viewNeurons([], neuron.C_raw); 
 tic;
 cnmfe_update_BG;

@@ -413,14 +413,15 @@ classdef Sources2D < handle
             end
             obj.A = obj.A(:, srt);
             obj.C = obj.C(srt, :);
-            obj.ids = obj.ids(srt);
-            obj.tags = obj.tags(srt);
             
             try
                 obj.C_raw = obj.C_raw(srt,:);
                 obj.S = obj.S(srt,:);
                 obj.P.kernel_pars = obj.P.kernel_pars(srt, :);
                 obj.P.neuron_sn = obj.P.neuron_sn(srt);
+                
+                obj.ids = obj.ids(srt);
+                obj.tags = obj.tags(srt);
             end
         end
         

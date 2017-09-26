@@ -1,13 +1,10 @@
-
 *.mat
 cvx/
 *.avi
 *.m~
 demos.xml
-oasis/test_trace.txt
 oasis/simAR.m
 users.html
-demos/data_endoscope_neurons/
 .DS_Store
 .*
 deconvolveCa/examples/Paper/fig/*
@@ -15,5 +12,5 @@ CNMF-E_users.xls
 demos/demos_backup/*
 NoRMCorre/
 demos/*_source_extraction/*
-
-deconvolveCa/examples/Paper/fig1.m
+demos/data_endoscope_neurons*
+deconvolveCa/examples/*
