@@ -96,12 +96,17 @@ if use_parallel
         % no neurons within the patch
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         tmp_patch = patch_pos{mpatch};     %[r0, r1, c0, c1], patch location
+        tmp_block = block_pos{mpatch};
         C_patch = C{mpatch};                % previous estimation of neural activity
         if isempty(C_patch)
             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
             continue;
         end
         A_patch = A{mpatch};
+        
+        % use ind_patch to indicate pixels within the patch
+        ind_patch = false(diff(tmp_block(1:2))+1, diff(tmp_block(3:4))+1);
+        ind_patch((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1) = true;
         
         % get data
         if strcmpi(bg_model, 'ring')
@@ -114,11 +119,15 @@ if use_parallel
         
         % get background
         if strcmpi(bg_model, 'ring')
-            pause;
+            W_ring = W{mpatch};
+            b0_ring = b0{mpatch};
+            Ypatch = reshape(Ypatch, [], T);
+            tmp_Y = double(Ypatch)-A_patch*C_patch;
+            Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*tmp_Y, b0_ring-W_ring*mean(tmp_Y, 2));
         elseif strcmpi(bg_model, 'nmf')
             b_nmf = b{mpatch};
-            f_nmf = f{mpatch}; 
-            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf; 
+            f_nmf = f{mpatch};
+            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf;
         else
             b_svd = b{mpatch};
             f_svd = f{mpatch};
@@ -127,7 +136,7 @@ if use_parallel
         end
         
         % using HALS to update temporal components
-        [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch, C_patch, 2, deconv_options);
+        [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 2, deconv_options);
         
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
@@ -136,12 +145,17 @@ else
         % no neurons within the patch
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         tmp_patch = patch_pos{mpatch};     %[r0, r1, c0, c1], patch location
+        tmp_block = block_pos{mpatch};
         C_patch = C{mpatch};                % previous estimation of neural activity
         if isempty(C_patch)
             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
             continue;
         end
         A_patch = A{mpatch};
+        
+        % use ind_patch to indicate pixels within the patch
+        ind_patch = false(diff(tmp_block(1:2))+1, diff(tmp_block(3:4))+1);
+        ind_patch((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1) = true;
         
         % get data
         if strcmpi(bg_model, 'ring')
@@ -154,11 +168,15 @@ else
         
         % get background
         if strcmpi(bg_model, 'ring')
-            pause;
+            W_ring = W{mpatch};
+            b0_ring = b0{mpatch};
+            Ypatch = reshape(Ypatch, [], T);
+            tmp_Y = double(Ypatch)-A_patch*C_patch;
+            Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*tmp_Y, b0_ring-W_ring*mean(tmp_Y, 2));
         elseif strcmpi(bg_model, 'nmf')
             b_nmf = b{mpatch};
-            f_nmf = f{mpatch}; 
-            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf; 
+            f_nmf = f{mpatch};
+            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf;
         else
             b_svd = b{mpatch};
             f_svd = f{mpatch};
@@ -167,7 +185,7 @@ else
         end
         
         % using HALS to update temporal components
-        [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch, C_patch, 2, deconv_options);
+        [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 2, deconv_options);
         
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end

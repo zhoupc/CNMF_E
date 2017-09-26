@@ -1,10 +1,10 @@
-function [b, f, b0] = fit_svd_model(Ypatch, nb, A_patch, C_patch, b_old, f_old, thresh_outlier, sn, ind_patch)
+function [b, f, b0] = fit_svd_model(Y, nb, A, C, b_old, f_old, thresh_outlier, sn, ind_patch)
 % fit a patched data with SVD
-Ymean = mean(Ypatch,2); 
-Cmean = mean(C_patch, 2); 
-Ypatch = bsxfun(@minus, double(Ypatch), Ymean); 
-C_patch = bsxfun(@minus, C_patch, Cmean);
-Bf = Ypatch - A_patch*C_patch; 
+Ymean = mean(Y,2); 
+Cmean = mean(C, 2); 
+Y = bsxfun(@minus, double(Y), Ymean); 
+C = bsxfun(@minus, C, Cmean);
+Bf = Y - A*C; 
 Bf_old = b_old*f_old; 
 tmp_Bf = Bf(ind_patch, :); 
 ind_outlier = bsxfun(@gt, tmp_Bf, bsxfun(@plus, Bf_old, thresh_outlier*reshape(sn, [], 1))); 
@@ -15,5 +15,5 @@ clear tmp_Bf Bf_old ind_outlier;
 [u, s, v] = svdsecon(bsxfun(@minus, Bf, mean(Bf, 2)), nb); 
 b = u(ind_patch, :)*s; 
 f = v'; 
-b0 = Ymean(ind_patch) - A_patch(ind_patch,:)*Cmean-b*mean(f, 2);
+b0 = Ymean(ind_patch) - A(ind_patch,:)*Cmean-b*mean(f, 2);
 

@@ -74,7 +74,7 @@ end
 bd = options.bd;
 
 % no centering of the raw video
-options.center_psf = false;
+% options.center_psf = false;
 
 %% prepare for the variables for computing the background.
 bg_model = obj.options.background_model;
@@ -141,13 +141,17 @@ if use_parallel
         end
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         
+        % use ind_patch to indicate pixels within the patch 
+        ind_patch = false(diff(tmp_block(1:2))+1, diff(tmp_block(3:4))+1);
+        ind_patch((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1) = true;
+        
         % get the neural activity
         C_patch = C{mpatch};                % previous estimation of neural activity
         if isempty(C_patch)
-            C_patch = 0; 
-            A_patch = 0; 
+            C_patch = 0;
+            A_patch = 0;
         else
-                    A_patch = A{mpatch};
+            A_patch = A{mpatch};
         end
         
         % boundaries pixels to be avoided for detecting seed pixels
@@ -156,8 +160,8 @@ if use_parallel
         tmp_options.bd = max([(tmp_patch-tmp_block).*[1, -1, 1, -1]; bd, bd, bd, bd], [], 1);
         
         % patch dimension
-        tmp_options.d1 = diff(tmp_block(1:2))+1;
-        tmp_options.d2 = diff(tmp_block(3:4))+1;
+        tmp_options.d1 = diff(tmp_patch(1:2))+1;
+        tmp_options.d2 = diff(tmp_patch(3:4))+1;
         
         % parameter for calcium indicators. This one may not be used if the
         % selected deconvolution algorithm doesn't need it
@@ -181,11 +185,13 @@ if use_parallel
         Ypatch = double(reshape(Ypatch, [], T)) - A_patch*C_patch;
         % get background
         if strcmpi(bg_model, 'ring')
-            pause;
+            W_ring = W{mpatch};
+            b0_ring = b0{mpatch};
+            Ypatch = bsxfun(@minus, Ypatch(ind_patch,:)- W_ring*Ypatch, b0_ring-W_ring*mean(Ypatch, 2)); 
         elseif strcmpi(bg_model, 'nmf')
             b_nmf = b{mpatch};
-            f_nmf = f{mpatch}; 
-            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf; 
+            f_nmf = f{mpatch};
+            Ypatch = Ypatch- b_nmf*f_nmf;
         else
             b_svd = b{mpatch};
             f_svd = f{mpatch};
@@ -217,16 +223,19 @@ else
             tmp_block = tmp_patch;
         end
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
-                 
+        
+        % use ind_patch to indicate pixels within the patch 
+        ind_patch = false(diff(tmp_block(1:2))+1, diff(tmp_block(3:4))+1);
+        ind_patch((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1) = true;
+        
         % get the neural activity
         C_patch = C{mpatch};                % previous estimation of neural activity
         if isempty(C_patch)
-            C_patch = 0; 
-            A_patch = 0; 
+            C_patch = 0;
+            A_patch = 0;
         else
-                    A_patch = A{mpatch};
+            A_patch = A{mpatch};
         end
-        
         
         % boundaries pixels to be avoided for detecting seed pixels
         tmp_options = options;
@@ -234,8 +243,8 @@ else
         tmp_options.bd = max([(tmp_patch-tmp_block).*[1, -1, 1, -1]; bd, bd, bd, bd], [], 1);
         
         % patch dimension
-        tmp_options.d1 = diff(tmp_block(1:2))+1;
-        tmp_options.d2 = diff(tmp_block(3:4))+1;
+        tmp_options.d1 = diff(tmp_patch(1:2))+1;
+        tmp_options.d2 = diff(tmp_patch(3:4))+1;
         
         % parameter for calcium indicators. This one may not be used if the
         % selected deconvolution algorithm doesn't need it
@@ -259,17 +268,21 @@ else
         Ypatch = double(reshape(Ypatch, [], T)) - A_patch*C_patch;
         % get background
         if strcmpi(bg_model, 'ring')
-            pause;
+            W_ring = W{mpatch};
+            b0_ring = b0{mpatch};
+            Ypatch = bsxfun(@minus, Ypatch(ind_patch,:)- W_ring*Ypatch, b0_ring-W_ring*mean(Ypatch, 2)); 
         elseif strcmpi(bg_model, 'nmf')
             b_nmf = b{mpatch};
-            f_nmf = f{mpatch}; 
-            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf; 
+            f_nmf = f{mpatch};
+            Ypatch = Ypatch- b_nmf*f_nmf;
         else
             b_svd = b{mpatch};
             f_svd = f{mpatch};
             b0_svd = b0{mpatch};
             Ypatch = Ypatch - bsxfun(@plus, b_svd*f_svd, b0_svd);
         end
+        
+        
         
         [tmp_results, tmp_center, tmp_Cn, tmp_PNR, ~] = greedyROI_endoscope(Ypatch, K, tmp_options, [], tmp_save_avi);
         

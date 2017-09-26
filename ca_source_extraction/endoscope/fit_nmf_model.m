@@ -1,8 +1,8 @@
-function [b, f] = fit_nmf_model(Ypatch, nb, A_patch, C_patch, b_old, f_old, thresh_outlier, sn, ind_patch)
+function [b, f] = fit_nmf_model(Y, nb, A, C, b_old, f_old, thresh_outlier, sn, ind_patch)
 % fit a patched data with NMF
 
-Ypatch = double(Ypatch); 
-B = Ypatch - A_patch*C_patch; 
+Y = double(Y); 
+B = Y - A*C; 
 B_old = b_old*f_old; 
 tmp_B = B(ind_patch, :); 
 ind_outlier = bsxfun(@gt, tmp_B, bsxfun(@plus, B_old, thresh_outlier*reshape(sn, [], 1))); 

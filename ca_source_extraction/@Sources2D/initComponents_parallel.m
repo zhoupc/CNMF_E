@@ -64,18 +64,20 @@ try
                 % reuse this folder and stop the initialization
                 try
                     % copy the previous log file 
-                    log_old = fopen(fullfile(tmp_dir, previous_folder{choice}, 'logs.txt'), 'r'); 
-                    while true
-                        temp = fgets(log_old); 
-                        flog = fopen(log_file, 'a'); 
-                        fprintf(flog, '%s',temp);
-                        if strfind(temp, 'Finished the initialization procedure.')
-                            fclose(log_old); 
-                            break; 
-                        end
-                        fclose(flog); 
-                    end
+                    log_old = fopen(fullfile(tmp_dir, previous_folder{choice}, 'logs.txt'), 'r');
+                    flog = fopen(log_file, 'a');
                     
+                    while true
+                        temp = fgets(log_old);
+                        fprintf(flog, '%s',temp);
+                        
+                        if strfind(temp, 'Finished the initialization procedure.') %#ok<*STRIFCND>
+                            fclose(log_old);
+                            break;
+                        end
+                    end
+                    fclose(flog);
+
                     % copy the previous results 
                     data = matfile(fullfile(tmp_dir, previous_folder{1}, 'intermediate_results.mat'));
                     log_data.initialization = data.initialization;
@@ -194,38 +196,35 @@ bd = options.bd;
 
 %% preallocate spaces for saving model variables relating to background components
 bg_model = obj.options.background_model;
-if strcmpi(bg_model, 'ring')   
-    rr = obj.options.ring_radius;    % radius of the ring 
-    [r_shift, c_shift] = get_nhood(rr);    % shifts used for acquiring the neighboring pixels on the ring 
-    W = cell(nr_patch, nc_patch);    % matrix for saving the weight matrix within each block 
-    b0 = cell(nr_patch, nc_patch);   % constant baselines for all pixels 
-    
+W = cell(nr_patch, nc_patch);    % matrix for saving the weight matrix within each block
+b0 = cell(nr_patch, nc_patch);   % constant baselines for all pixels
+b = cell(nr_patch, nc_patch);
+f = cell(nr_patch, nc_patch);
+
+if strcmpi(bg_model, 'ring')
+    rr = obj.options.ring_radius;    % radius of the ring
+    [r_shift, c_shift] = get_nhood(rr);    % shifts used for acquiring the neighboring pixels on the ring  
     parfor mpatch=1:(nr_patch*nc_patch)
-        tmp_patch = patch_pos{mpatch};    % patch position 
-        tmp_block = block_pos{mpatch};    % block position 
-        nr = diff(tmp_patch(1:2)) + 1; 
-        nc = diff(tmp_patch(3:4)) + 1; 
-        nr_block = diff(tmp_block(1:2))+1; 
-        nc_block = diff(tmp_block(3:4))+1; 
+        tmp_patch = patch_pos{mpatch};    % patch position
+        tmp_block = block_pos{mpatch};    % block position
+        nr = diff(tmp_patch(1:2)) + 1;
+        nc = diff(tmp_patch(3:4)) + 1;
+        nr_block = diff(tmp_block(1:2))+1;
+        nc_block = diff(tmp_block(3:4))+1;
         [csub, rsub] = meshgrid(tmp_patch(3):tmp_patch(4), tmp_patch(1):tmp_patch(2));
         csub = reshape(csub, [], 1);
         rsub = reshape(rsub, [], 1);
         ii = repmat((1:numel(csub))', [1, length(r_shift)]);
         csub = bsxfun(@plus, csub, c_shift);
-        rsub = bsxfun(@plus, rsub, r_shift);       
-        ind = and(and(csub>=1, csub<=d2), and(rsub>=1, rsub<=d1)); 
+        rsub = bsxfun(@plus, rsub, r_shift);
+        ind = and(and(csub>=1, csub<=d2), and(rsub>=1, rsub<=d1));
         jj = (csub-tmp_block(3)) * (diff(tmp_block(1:2))+1) + (rsub-tmp_block(1)+1);
         
-        temp = sparse(ii(ind), jj(ind), 1, nr*nc, nr_block*nc_block); 
-        W{mpatch} = bsxfun(@times, temp, 1./sum(temp, 2)); 
-        b0{mpatch} = zeros(nr*nc, 1); 
+        temp = sparse(ii(ind), jj(ind), 1, nr*nc, nr_block*nc_block);
+        W{mpatch} = bsxfun(@times, temp, 1./sum(temp, 2));
+        b0{mpatch} = zeros(nr*nc, 1);
     end
-    obj.W = W; 
-    obj.b0 = b0; 
-    clear W b0; 
 elseif strcmpi(bg_model, 'nmf')
-    b = cell(nr_patch, nc_patch);
-    f = cell(nr_patch, nc_patch);
     nb = obj.options.nb;
     for mpatch=1:(nr_patch*nc_patch)
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);   % patch ind
@@ -235,13 +234,8 @@ elseif strcmpi(bg_model, 'nmf')
         b{r, c} = zeros(nr*nc, nb);
         f{r, c} = zeros(nb, T);
     end
-    obj.b = b; 
-    obj.f = f; 
 else
     %default, SVD model
-    b = cell(nr_patch, nc_patch);
-    f = cell(nr_patch, nc_patch);
-    b0 = cell(nr_patch, nc_patch); 
     nb = obj.options.nb;
     for mpatch=1:(nr_patch*nc_patch)
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);   % patch ind
@@ -250,12 +244,15 @@ else
         nc = diff(tmp_patch(3:4)) + 1;
         b{r, c} = zeros(nr*nc, nb);
         f{r, c} = zeros(nb, T);
-        b0{r, c} = zeros(nr*nc, 1); 
+        b0{r, c} = zeros(nr*nc, 1);
     end
-    obj.b = b; 
-    obj.f = f; 
-    obj.b0 = b0; 
 end
+
+obj.W = W;
+obj.b0 = b0;
+obj.b = b;
+obj.f = f;
+clear W b0 b f;    % remove these variables for saving RAM space 
 
 %% start initialization
 % save the log infomation

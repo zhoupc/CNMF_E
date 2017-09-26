@@ -98,7 +98,7 @@ while and(m>=1, m<=length(ind))
     
     %% save images
     if save_img
-        pause(0.1); 
+        drawnow(); 
         saveas(gcf, sprintf('neuron_%d.png', ind(m)));
         m = m+1;
     else

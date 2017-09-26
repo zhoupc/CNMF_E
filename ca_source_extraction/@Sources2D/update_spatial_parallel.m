@@ -41,7 +41,7 @@ frame_range = obj.frame_range;
 T = diff(frame_range) + 1;
 
 % threshold for detecting large residuals
-thresh_outlier = obj.options.thresh_outlier;
+% thresh_outlier = obj.options.thresh_outlier;
 
 % use parallel or not
 if ~exist('use_parallel', 'var')||isempty(use_parallel)
@@ -67,25 +67,20 @@ ind_neurons = cell(nr_patch, nc_patch);
 IND_search = cell(nr_patch, nc_patch);
 
 for mpatch=1:(nr_patch*nc_patch)
-    tmp_patch = patch_pos{mpatch};
-    tmp_block = block_pos{mpatch};
-    
-    % find the neurons that are within the block
     if strcmpi(bg_model, 'ring')
-        pause;
+        tmp_block = block_pos{mpatch};
     else
-        mask = false(d1, d2);
-        mask(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4)) = true;
-        ind = (reshape(double(mask(:)), 1, [])*IND>0);
-        IND_search{mpatch} = IND(logical(mask), ind);
-        A{mpatch}= obj.A(mask, ind);
-        sn{mpatch} = obj.P.sn(mask);
-        C{mpatch} = obj.C(ind, :);
-        ind_neurons{mpatch} = find(ind);    % indices of the neurons within each patch
+        tmp_block = patch_pos{mpatch};
     end
-    
+    % find the neurons that are within the block
+    mask = zeros(d1, d2);
+    mask(tmp_block(1):tmp_block(2), tmp_block(3):tmp_block(4)) = 1;
+    ind = (reshape(mask(:), 1, [])* obj.A>0);
+    A{mpatch}= obj.A(logical(mask), ind);
+    sn{mpatch} = obj.P.sn(logical(mask));
+    C{mpatch} = obj.C(ind, :);
+    ind_neurons{mpatch} = find(ind);    % indices of the neurons within each patch
 end
-
 %% prepare for the variables for computing the background.
 bg_model = obj.options.background_model;
 W = obj.W;
@@ -95,13 +90,14 @@ f = obj.f;
 
 %% start updating temporal components
 A_new = A;
+tmp_obj = Sources2D();
+tmp_obj.options = obj.options;
 if use_parallel
-    tmp_obj = Sources2D();
-    tmp_obj.options = obj.options; 
     parfor mpatch=1:(nr_patch*nc_patch)
         % no neurons within the patch
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         tmp_patch = patch_pos{mpatch};     %[r0, r1, c0, c1], patch location
+        tmp_block = block_pos{mpatch};
         A_patch = A{mpatch};
         if isempty(A_patch)
             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
@@ -111,6 +107,10 @@ if use_parallel
         IND_patch = IND_search{mpatch};
         nr = diff(tmp_patch(1:2)) + 1;
         nc = diff(tmp_patch(3:4)) + 1;
+        
+        % use ind_patch to indicate pixels within the patch
+        ind_patch = false(diff(tmp_block(1:2))+1, diff(tmp_block(3:4))+1);
+        ind_patch((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1) = true;
         
         % get data
         if strcmpi(bg_model, 'ring')
@@ -123,11 +123,15 @@ if use_parallel
         
         % get background
         if strcmpi(bg_model, 'ring')
-            pause;
+            W_ring = W{mpatch};
+            b0_ring = b0{mpatch};
+            Ypatch = reshape(Ypatch, [], T);
+            tmp_Y = double(Ypatch)-A_patch*C_patch;
+            Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*tmp_Y, b0_ring-W_ring*mean(tmp_Y, 2));
         elseif strcmpi(bg_model, 'nmf')
             b_nmf = b{mpatch};
-            f_nmf = f{mpatch}; 
-            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf; 
+            f_nmf = f{mpatch};
+            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf;
         else
             b_svd = b{mpatch};
             f_svd = f{mpatch};
@@ -136,7 +140,7 @@ if use_parallel
         end
         
         % using HALS to update spatial components
-        temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);
+        temp = HALS_spatial(Ypatch, A_patch(ind_patch, :), C_patch, IND_patch, 3);
         A_new{mpatch} = tmp_obj.post_process_spatial(reshape(full(temp), nr, nc, [])); %#ok<PFBNS>
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
@@ -145,6 +149,7 @@ else
         % no neurons within the patch
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         tmp_patch = patch_pos{mpatch};     %[r0, r1, c0, c1], patch location
+        tmp_block = block_pos{mpatch};
         A_patch = A{mpatch};
         if isempty(A_patch)
             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
@@ -154,6 +159,10 @@ else
         IND_patch = IND_search{mpatch};
         nr = diff(tmp_patch(1:2)) + 1;
         nc = diff(tmp_patch(3:4)) + 1;
+        
+        % use ind_patch to indicate pixels within the patch
+        ind_patch = false(diff(tmp_block(1:2))+1, diff(tmp_block(3:4))+1);
+        ind_patch((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1) = true;
         
         % get data
         if strcmpi(bg_model, 'ring')
@@ -166,11 +175,15 @@ else
         
         % get background
         if strcmpi(bg_model, 'ring')
-            pause;
+            W_ring = W{mpatch};
+            b0_ring = b0{mpatch};
+            Ypatch = reshape(Ypatch, [], T);
+            tmp_Y = double(Ypatch)-A_patch*C_patch;
+            Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*tmp_Y, b0_ring-W_ring*mean(tmp_Y, 2));
         elseif strcmpi(bg_model, 'nmf')
             b_nmf = b{mpatch};
-            f_nmf = f{mpatch}; 
-            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf; 
+            f_nmf = f{mpatch};
+            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf;
         else
             b_svd = b{mpatch};
             f_svd = f{mpatch};
@@ -179,9 +192,8 @@ else
         end
         
         % using HALS to update spatial components
-        temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);
-        A_new{mpatch} = obj.post_process_spatial(reshape(full(temp), nr, nc, []));
-
+        temp = HALS_spatial(Ypatch, A_patch(ind_patch, :), C_patch, IND_patch, 3);
+        A_new{mpatch} = tmp_obj.post_process_spatial(reshape(full(temp), nr, nc, [])); %#ok<PFBNS>
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
 end
@@ -204,7 +216,7 @@ end
 A_old = sparse(obj.A);
 A_new = sparse(obj.reshape(A_, 1));
 
-%% post-process results 
+%% post-process results
 fprintf('Post-process spatial components of all neurons...\n');
 obj.A = obj.post_process_spatial(obj.reshape(A_new, 2));
 fprintf('Done!\n');

@@ -93,12 +93,12 @@ if use_parallel
         % pull data
         Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, true);
         if strcmpi(bg_model, 'ring')
-            % extract the old (W, b)
-            %             W_old = W{mpatch};
-            %             b0_old = b0{mpatch};
-            %
+            % get the previous estimation
+            W_old = W{mpatch};
+            Ypatch = reshape(Ypatch, [], T); 
+            sn_patch = sn_block(ind_patch); 
             % run regression to get A, C, and W, b0
-            %             [W{match}, b0{match}, ~] = fit_ring_model(Ypatch, A_patch, C_patch, W_old, b0_old, thresh_outlier, ind_patch);
+            [W{mpatch}, b0{mpatch}] = fit_ring_model(Ypatch, A_block, C_block, W_old, thresh_outlier, sn_patch, ind_patch); 
         elseif strcmpi(bg_model, 'nmf')
             b_old = b{mpatch};
             f_old = f{mpatch}; 
@@ -136,12 +136,13 @@ else
         % pull data
         Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, true);
         if strcmpi(bg_model, 'ring')
-            % extract the old (W, b)
-            %             W_old = W{mpatch};
-            %             b0_old = b0{mpatch};
-            %
+            % get the previous estimation
+            W_old = W{mpatch};
+            Ypatch = reshape(Ypatch, [], T);
+            sn_patch = sn_block(ind_patch);
+            
             % run regression to get A, C, and W, b0
-            %             [W{match}, b0{match}, ~] = fit_ring_model(Ypatch, A_patch, C_patch, W_old, b0_old, thresh_outlier, ind_patch);
+            [W{mpatch}, b0{mpatch}] = fit_ring_model(Ypatch, A_block, C_block, W_old, thresh_outlier, sn_patch, ind_patch); 
         elseif strcmpi(bg_model, 'nmf')
             b_old = b{mpatch};
             f_old = f{mpatch};

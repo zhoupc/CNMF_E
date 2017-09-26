@@ -31,8 +31,12 @@ else
     [d1,d2, T] = size(Y);
     Y = reshape(Y, d1*d2, T);
     fprintf('Wait for a few second ....\n');
+    if obj.options.center_psf
     [u, v] = nnmf(double(Y),1);
-    img = reshape(max(double(Y)-u*v, [], 2), d1,d2);
+        img = reshape(max(double(Y)-u*v, [], 2), d1,d2);
+    else
+            img = reshape(max(Y,[],2), d1,d2);
+    end
     fig_1 = figure;
     imagesc(img); axis equal;
     while true

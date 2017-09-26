@@ -905,11 +905,10 @@ classdef Sources2D < handle
             end
             
             % frames to be loaded for initialization
-            frame_range = obj.frame_range;
-            T = diff(frame_range) + 1;
+            T = diff(obj.frame_range) + 1;
             
             % threshold for detecting large residuals
-            thresh_outlier = obj.options.thresh_outlier;
+%             thresh_outlier = obj.options.thresh_outlier;
             
             % options
             %% start updating the background
@@ -919,12 +918,27 @@ classdef Sources2D < handle
                 tmp_patch = patch_pos{mpatch};
                 
                 if strcmpi(bg_model, 'ring')
-                    % extract the old (W, b)
-                    W_old = obj.W{mpatch};
-                    b0_old = obj.b0{mpatch};
+                    W_ring = obj.W{mpatch}; 
+                    b0_ring = obj.b0{mpatch}; 
+                    % load data 
+                    Ypatch = get_patch_data(mat_data, tmp_patch, obj.frame_range, true);
+                    Ypatch = reshape(Ypatch, [], T); 
+                    tmp_block = block_pos{mpatch};
                     
-                    % run regression to get A, C, and W, b0
-                    [obj.W{match}, obj.b0{match}, ~] = fit_ring_model(Ypatch, A_patch, C_patch, W_old, b0_old, thresh_outlier, ind_patch);
+                    % find the neurons that are within the block
+                    mask = zeros(d1, d2);
+                    mask(tmp_block(1):tmp_block(2), tmp_block(3):tmp_block(4)) = 1;
+                    ind = (reshape(mask(:), 1, [])* obj.A>0);
+                    A_patch = obj.A(logical(mask), ind);
+                    C_patch = obj.C(ind, :);
+                    
+                    % reconstruct background 
+                    Ymean = mean(Ypatch,2);
+                    Cmean = mean(C_patch , 2);
+                    Ypatch = bsxfun(@minus, double(Ypatch), Ymean);
+                    C_patch = bsxfun(@minus, C_patch, Cmean);
+                    Bf = W_ring*(double(Ypatch) - A_patch*C_patch);
+                    Ybg(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4),:) = reshape(bsxfun(@plus, Bf, b0_ring), diff(tmp_patch(1:2))+1, [], T); 
                 elseif strcmpi(bg_model, 'nmf')
                     b_nmf = obj.b{mpatch};
                     f_nmf = obj.f{mpatch};
@@ -1211,6 +1225,8 @@ classdef Sources2D < handle
         
         %% save results
         function file_path = save_workspace(obj)
+            fprintf('------------- SAVE THE WHOLE WORKSPACE ----------\n\n');
+
             obj.compress_results();
             file_path = [obj.P.log_folder,  strrep(get_date(), ' ', '_'), '.mat'];
             evalin('base', sprintf('save(''%s''); ', file_path));
@@ -1218,8 +1234,10 @@ classdef Sources2D < handle
             try
                 fp = fopen(obj.P.log_file, 'a');
                 fprintf(fp, '\n--------%s--------\n[%s]\bSave the current workspace into file \n\t%s\n\n', get_date(), get_minute(), file_path);
+                fprintf('The current workspace has been saved into file \n\t%s\n\n', file_path);
                 fp.close();
             end
+            
         end
         
         %% compress A, S and W
@@ -1310,12 +1328,15 @@ classdef Sources2D < handle
                 with_label = false;
             end
             
-            if isempty(obj.Coor)  && (length(obj.Coor)~=K)
+            if isempty(obj.Coor) || (length(obj.Coor)~=K)
                 Coor = obj.get_contours(thr);
                 obj.Coor = Coor;
             end
             figure;
             plot_contours(obj.A(:, ind), img, thr,with_label, [], obj.Coor(ind), 2);
+            colormap gray;
+            file_path = [obj.P.log_folder,  'contours_%dneurons', strrep(get_date(), ' ', '_'), '.pdf'];
+            saveas(gcf, file_path);
         end
         
         %% get contours of the all neurons

@@ -137,21 +137,26 @@ while m <= n2merge
         xlim([min(tmp_c)-10, max(tmp_c)+10]);
         ylim([min(tmp_r)-10, max(tmp_r)+10]);
         axis off;
-        subplot(2,2,3:4); cla;
+        subplot(2,2,3:4); cla;       
+        aa = sum(obj_bk.A(:, IDs),1); 
         tmp_C = obj_bk.C_raw(IDs, :);
         %         tmp_C = bsxfun(@times, tmp_C, 1./max(tmp_C, [], 1));
         for mm=1:size(tmp_C, 1)
             hold on;
-            plot(tmp_C(mm,:), 'color', cols(col(mm), :),  'linewidth', 2);
+            plot(tmp_C(mm,:)*aa(mm), 'color', cols(col(mm), :),  'linewidth', 2);
         end
-        temp = input('keep this merge? (y(default)/n(cancel)/back(b)/end showing(e): ', 's');
+        temp = input('keep this merge? (y(default)/n(cancel)/back(b)/merge&delete(md)/end showing(e): ', 's');
         if strcmpi(temp, 'n')
-            m = m+1; 
+            m = m+1;
             continue;
         elseif strcmpi(temp, 'b')
-            m = m-1; 
+            m = m-1;
         elseif strcmpi(temp, 'e')
-            stop_show = false; 
+            stop_show = true;
+        elseif strcmpi(temp, 'md')
+            ind_del(IDs) = true;
+            m = m+1; 
+            continue;
         end
     end
     k_merged = k_merged+1;
