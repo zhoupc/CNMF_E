@@ -104,6 +104,7 @@ Names = [
     'center_psf         ' % center psf or not 
     'gaussian_shape     ' % neurons have 2D gaussian shapes. 
     'ring_radius        ' % radius of the ring in CNMF-E background model 
+    'num_neighbors      ' % number of pixels on the ring 
     'dmin               ' %minum distances between two neurons 
     'method_dist        ' % method for computing distances of two neurons 
     'thresh_outlier     ' % threshod for detecting outliers in the estimation of background 
@@ -287,6 +288,7 @@ Values = [
     {true}
     {true}
     {15}
+    {[]}
     {1}
     {'max'}
     {10} 

@@ -127,7 +127,11 @@ while m <= n2merge
     
     % manually verify the merge
     if show_merge && (~stop_show)
+        try
         figure(h_fig);
+        catch 
+            h_fig = figure(1); 
+        end
         [tmp_img, col, ~] = obj_bk.overlapA(IDs);
         subplot(221);
         imagesc(tmp_img);

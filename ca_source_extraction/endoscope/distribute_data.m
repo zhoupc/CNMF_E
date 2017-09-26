@@ -38,7 +38,7 @@ if isempty(patch_dims)
     patch_dims = [1, 1] * patch_width;
 else
     patch_dims(patch_dims< min_patch_width) = min_patch_width;
-    patch_dims(patch_dims>max_patch_width) = max_patch_width; 
+%     patch_dims(patch_dims>max_patch_width) = max_patch_width; 
     if length(patch_dims)==1
         patch_dims = patch_dims * [1,1];
     else
@@ -47,25 +47,39 @@ else
 end
 
 patch_dims = reshape(patch_dims, 1, []); 
-nr_patch = floor(d1/patch_dims(1)); 
-nc_patch = floor(d2/patch_dims(2)); 
-if nr_patch < 1
+nr_patch = round(d1/patch_dims(1)); 
+nc_patch = round(d2/patch_dims(2)); 
+if nr_patch <= 1
     patch_idx_r = [1, d1];
-    nr_patch = 1; 
 else
-    patch_idx_r = [1, 1+(1:(nr_patch-1))*patch_dims(1), d1]; 
-    patch_idx_r(end) = d1; 
+    patch_idx_r = round(linspace(1, d1, nr_patch+1));
+    patch_idx_r(end) = d1;
+    if diff(patch_idx_r(1:2))<min_patch_width
+        patch_idx_r = 1:min_patch_width:d1;
+        patch_idx_r(end) = d1;
+    end
 end
-if nc_patch < 1
+nr_patch = length(patch_idx_r) - 1;
+
+if nc_patch <= 1
     patch_idx_c = [1, d2];
-    nc_patch = 1; 
 else
-    patch_idx_c = [1, 1+(1:(nc_patch-1))*patch_dims(2), d2]; 
+    patch_idx_c = round(linspace(1, d2, nc_patch+1));
+    if diff(patch_idx_c(1:2))<min_patch_width
+        patch_idx_c = 1:min_patch_width:d2;
+        patch_idx_c(end) = d2;
+    end
 end
+nc_patch = length(patch_idx_c) - 1;
 
 fprintf('The FOV is divided into %d X %d patches. \nEach patch has %d X %d pixels. \n',...
     nr_patch, nc_patch, diff(patch_idx_r(1:2)), diff(patch_idx_c(1:2)));
-fprintf('It requires %.3f GB RAM for loading data related to each patch. \n\n', prod(patch_dims+2*w_overlap)*T/(2^27));
+temp = prod(patch_dims+2*w_overlap)*T/(2^27);
+fprintf('It requires %.3f GB RAM for loading data related to each patch. \n\n', temp);
+if temp > memory_size_per_patch
+    fprintf('You assign a smaller memory for each patch.\n');
+    fprintf('We suggest you process data in batch mode.\nEach batch has frames fewer than %d. \n\n', round(T*memory_size_per_patch/temp));
+end
 
 %% indices for dividing the FOV into multiple blocks.
 block_idx_r = bsxfun(@plus, patch_idx_r, [-1-w_overlap; w_overlap]);

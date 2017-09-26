@@ -44,7 +44,7 @@ if numel(Y) < 500^3
     patch_sz = [1, 1];
 else
     x = sqrt(numel(Y)/(500^3));
-    patch_sz = ceil(d1/x, d2/x);
+    patch_sz = ceil([d1/x, d2/x]);
 end
 r0_patch = round(linspace(1, d1, 1+patch_sz(1)));
 c0_patch = round(linspace(1, d2, 1+patch_sz(2)));

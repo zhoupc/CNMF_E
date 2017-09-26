@@ -96,7 +96,11 @@ if use_parallel
         % no neurons within the patch
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         tmp_patch = patch_pos{mpatch};     %[r0, r1, c0, c1], patch location
-        tmp_block = block_pos{mpatch};
+        if strcmpi(bg_model, 'ring')
+            tmp_block = block_pos{mpatch};
+        else
+            tmp_block = patch_pos{mpatch};
+        end
         C_patch = C{mpatch};                % previous estimation of neural activity
         if isempty(C_patch)
             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
@@ -145,7 +149,11 @@ else
         % no neurons within the patch
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         tmp_patch = patch_pos{mpatch};     %[r0, r1, c0, c1], patch location
-        tmp_block = block_pos{mpatch};
+        if strcmpi(bg_model, 'ring')
+            tmp_block = block_pos{mpatch};
+        else
+            tmp_block = patch_pos{mpatch};
+        end
         C_patch = C{mpatch};                % previous estimation of neural activity
         if isempty(C_patch)
             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);

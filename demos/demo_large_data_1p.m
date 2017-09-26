@@ -28,7 +28,7 @@ else
     updateA_dist = 5;
     updateA_bSiz = neuron.options.dist;
 end
-spatial_constraints = struct('connected', true, 'circular', true);  % you can include following constraints: 'circular'
+spatial_constraints = struct('connected', true, 'circular', false);  % you can include following constraints: 'circular'
 
 % -------------------------      TEMPORAL     -------------------------  %
 Fs = 6;             % frame rate

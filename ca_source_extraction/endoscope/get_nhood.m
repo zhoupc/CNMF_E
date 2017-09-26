@@ -1,4 +1,4 @@
-function [r_shift, c_shift] = get_nhood(radius)
+function [r_shift, c_shift] = get_nhood(radius, k)
 % find the pixel locations 
 %% determine neibours of each pixel
 rsub = (-radius):(radius);      % row subscript
@@ -10,3 +10,13 @@ neigh_kernel = (R>=radius) .* (R<radius+1);  % kernel representing the selected 
 [r_shift, c_shift] = find(neigh_kernel);
 r_shift = reshape(r_shift - radius -1, 1, []);
 c_shift = reshape(c_shift - radius - 1, 1, []);
+
+if isempty(k) || (k>length(r_shift))
+    return; 
+else
+    temp = atan2(r_shift, c_shift); 
+    [~, ids] = sort(temp); 
+    ind = round(linspace(1, length(ids), k)); 
+    r_shift = r_shift(ids(ind)); 
+    c_shift = c_shift(ids(ind)); 
+end 

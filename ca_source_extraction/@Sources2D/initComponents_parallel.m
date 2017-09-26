@@ -203,7 +203,7 @@ f = cell(nr_patch, nc_patch);
 
 if strcmpi(bg_model, 'ring')
     rr = obj.options.ring_radius;    % radius of the ring
-    [r_shift, c_shift] = get_nhood(rr);    % shifts used for acquiring the neighboring pixels on the ring  
+    [r_shift, c_shift] = get_nhood(rr, obj.options.num_neighbors);    % shifts used for acquiring the neighboring pixels on the ring  
     parfor mpatch=1:(nr_patch*nc_patch)
         tmp_patch = patch_pos{mpatch};    % patch position
         tmp_block = block_pos{mpatch};    % block position

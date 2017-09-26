@@ -9,6 +9,14 @@ function [W, b0] = fit_ring_model(Y, A, C, W_old, thresh_outlier, sn, ind_patch)
 %   thresh_outlier 
 %   sn: d*1 noise level 
 
+%% find pixels to be updated 
+% check whether this is the first run 
+if length(unique(W_old(1,:)))==2
+    ind_active = true(size(W_old(:,1))); 
+else
+    ind_active = (abs(W_old)*sum(A,2)>0);
+end
+
 %% compute the fluctuating background 
 Ymean = mean(Y,2); 
 Cmean = mean(C, 2); 
@@ -23,16 +31,31 @@ tmp_Bf = Bf(ind_patch, :);
 ind_outlier = bsxfun(@gt, tmp_Bf, bsxfun(@plus, Bf_old, thresh_outlier*reshape(sn, [], 1))); 
 tmp_Bf(ind_outlier) = Bf_old(ind_outlier);  
 Bf(ind_patch, :) = tmp_Bf; 
-clear tmp_Bf Bf_old ind_outlier; 
 
-%% fit a regression model to get W 
+%% we don't need all frames for weights estimation. 
 T = size(Y, 2); 
+pmax = max(sum(W_old>0, 2)); 
+nmax = pmax*50; 
+if nmax<T
+    temp = sum(ind_outlier);
+    ind_frames = (temp<=quantile(temp, nmax/T)); 
+    nmax = nnz(ind_frames); 
+    Bf = Bf(:, ind_frames); 
+    vec_ones = ones(1, nmax); 
+else
+    vec_ones = ones(1, T); 
+end 
 ind_pixels = find(ind_patch); 
 d = length(ind_pixels); 
-vec_ones = ones(1, T); 
 W = W_old; 
+clear tmp_Bf Bf_old; 
+
+%% fit a regression model to get W 
 
 for m=1:d
+    if ~ind_active(m)
+        continue; 
+    end
     idx = ind_pixels(m); 
     ind_ring = (W_old(m,:)~=0); 
     y = Bf(idx, :); 

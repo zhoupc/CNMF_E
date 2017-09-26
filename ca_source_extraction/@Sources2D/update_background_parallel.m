@@ -52,8 +52,10 @@ end
 % options
 options = obj.options;
 nb = options.nb;
+
 %% start updating the background
 bg_model = obj.options.background_model;
+
 A = cell(nr_patch, nc_patch);
 C = cell(nr_patch, nc_patch);
 sn = cell(nr_patch, nc_patch);
@@ -73,6 +75,13 @@ for mpatch=1:(nr_patch*nc_patch)
     C{mpatch} = obj.C(ind, :);
 end
 
+% check whether this is the first run of updating background components 
+if strcmpi(bg_model, 'ring')
+    flag_first = (length(unique(W{1}(1, :)))==2); 
+else
+    flag_first = (mean2(b{1})==0); 
+end
+
 if use_parallel
     parfor mpatch=1:(nr_patch*nc_patch)
         tmp_patch = patch_pos{mpatch};
@@ -85,6 +94,12 @@ if use_parallel
         sn_block = sn{mpatch};
         C_block = C{mpatch};
         
+        % stop the updating B because A&C doesn't change in this area 
+        if isempty(A_block) && (~flag_first)
+            [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
+            fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
+            continue;
+        end
         % use ind_patch to indicate pixels within the patch and only
         % update (W, b0) corresponding to these pixels
         mask(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4)) = 0;
@@ -128,6 +143,12 @@ else
         sn_block = sn{mpatch};
         C_block = C{mpatch};
         
+        % stop the updating B because A&C doesn't change in this area 
+        if isempty(A_block) && (~flag_first)
+            [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
+            fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
+            continue;
+        end
         % use ind_patch to indicate pixels within the patch and only
         % update (W, b0) corresponding to these pixels
         mask(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4)) = 0;
@@ -138,17 +159,16 @@ else
         if strcmpi(bg_model, 'ring')
             % get the previous estimation
             W_old = W{mpatch};
-            Ypatch = reshape(Ypatch, [], T);
-            sn_patch = sn_block(ind_patch);
-            
+            Ypatch = reshape(Ypatch, [], T); 
+            sn_patch = sn_block(ind_patch); 
             % run regression to get A, C, and W, b0
             [W{mpatch}, b0{mpatch}] = fit_ring_model(Ypatch, A_block, C_block, W_old, thresh_outlier, sn_patch, ind_patch); 
         elseif strcmpi(bg_model, 'nmf')
             b_old = b{mpatch};
-            f_old = f{mpatch};
-            Ypatch = reshape(Ypatch, [], T);
-            sn_patch = sn_block(ind_patch);
-            [b{mpatch}, f{mpatch}] = fit_nmf_model(Ypatch, nb, A_block, C_block, b_old, f_old, thresh_outlier, sn_patch, ind_patch);
+            f_old = f{mpatch}; 
+            Ypatch = reshape(Ypatch, [], T); 
+            sn_patch = sn_block(ind_patch); 
+            [b{mpatch}, f{mpatch}] = fit_nmf_model(Ypatch, nb, A_block, C_block, b_old, f_old, thresh_outlier, sn_patch, ind_patch); 
         else
             b_old = b{mpatch};
             f_old = f{mpatch};
@@ -174,6 +194,7 @@ bg.W = obj.W;
 tmp_str = get_date();
 tmp_str=strrep(tmp_str, '-', '_');
 eval(sprintf('log_data.bg_%s = bg;', tmp_str));
+fprintf('Finished updating background using %s model.\n', bg_model);
 
 fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, 'Finished updating background using %s model.\n', bg_model);

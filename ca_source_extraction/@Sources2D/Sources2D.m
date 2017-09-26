@@ -164,8 +164,9 @@ classdef Sources2D < handle
             dims = mat_data.dims;
             T = dims(3);
             if ~exist('frame_range', 'var') || isempty(frame_range)
-                frame_range = [1, T];
+                frame_range = [1, min(T, 3000)];
             end
+            T = diff(frame_range)+1;
             if ~exist('method', 'var') || isempty(method)
                 method = 'psd';
             end
@@ -1139,7 +1140,7 @@ classdef Sources2D < handle
             
             % check the number of calcium transients after the first frame
             if obj.options.deconv_flag
-                nz_spikes = full(sum(S_(:,2:end), 2));
+                nz_spikes = full(sum(S_(:,2:end)>0, 2));
                 tags_ = tags_ + uint16(nz_spikes<1)*2;
             end
             
@@ -1230,7 +1231,7 @@ classdef Sources2D < handle
 
             obj.compress_results();
             file_path = [obj.P.log_folder,  strrep(get_date(), ' ', '_'), '.mat'];
-            evalin('base', sprintf('save(''%s''); ', file_path));
+            evalin('base', sprintf('save(''%s'', ''neuron'', ''save_*'', ''show_*'', ''use_parallel'', ''with_*'', ''-v7.3''); ', file_path));
             
             try
                 fp = fopen(obj.P.log_file, 'a');
