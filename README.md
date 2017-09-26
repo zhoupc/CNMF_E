@@ -38,14 +38,15 @@ The best way to get started is running a demo script for analyzing an example da
 	`>> run demos/demo_large_data_2p.m`
 
 ## Questions
-You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. 
+You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. An email request for the invitation to the slack channel,  or you can ask your collegues who have joined the slack channel already for an invitation. 
+
+Please read more from the [wiki page](https://github.com/zhoupc/CNMF_E/wiki) 
 
 ## Reference
 **Please cite this paper when you use CNMF-E in your research. Thanks!**
 
 **Zhou, P.**, Resendez, S.L., Rodriguez-Romaguera, J., Jimenez, J.C, Neufeld, S.Q., Stuber, G.D., Hen, R., Kheirbek, M.A., Sabatini, B.L., Kass, R.E., Paninski, L. (2016). [Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data](https://arxiv.org/abs/1605.07266). arXiv Prepr, arXiv1605.07266.
 
-Please read more from the [wiki page](https://github.com/zhoupc/CNMF_E/wiki) 
 ## License
 Copyright 2016 Pengcheng Zhou
 
