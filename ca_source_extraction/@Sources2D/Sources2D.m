@@ -1,28 +1,52 @@
 classdef Sources2D < handle
     
-    % This class is a wrapper of Constrained NMF for standard 2D data.
-    % Author: Pengcheng Zhou, zhoupc1988@gmail.com with modifications from
-    % Eftychios Pnevmatikakis
+    % This class is a wrapper of Constrained NMF for standard 2D data. It
+    % Both CNMF and CNMF-E model can be used.
+    
+    % Author: Pengcheng Zhou, Columbia University, 2017
+    % zhoupc1988@gmail.com
     
     %% properties
     properties
+        % spatial
         A;          % spatial components of neurons
+        % temporal
         C;          % temporal components of neurons
+        C_raw;      % raw traces of temporal components
+        S;          % spike counts
+        kernel;     % calcium dynamics. this one is less used these days.
+        % background
         b;          % spatial components of backgrounds
         f;          % temporal components of backgrounds
-        S;          % spike counts
-        C_raw;      % raw traces of temporal components
+        W;          % a sparse weight matrix matrix
+        b0;         % constant baselines for each pixel
+        % optiosn
+        options;    % options for model fitting
+        P;          % some estimated parameters or parameters relating to data
+        % data info
+        Fs = nan;    % frame rate
+        file = '';
+        frame_range;  % frame range of the data
+        %quality control
+        ids;        % unique identifier for each neuron
+        tags;       % tags bad neurons with multiple criterion using a 16 bits number
+        % ai indicates the bit value of the ith digits from
+        % right to the left
+        % a1 = 0 means that neuron has too few nonzero pixels
+        % a2 = 0 means that neuron has silent calcium transients
+        % a3 = 0 means that neuron has unrealistic neuron
+        % shapes
+        % a4 = 0 indicates that user doesn't want this neuron
+        % a5 = 0 indicates that the neuron has been merged with
+        % others
+        %others
         Cn;         % correlation image
+        PNR;        % peak-to-noise ratio image.
         Coor;       % neuron contours
         Df;         % background for each component to normalize the filtered raw data
         C_df;       % temporal components of neurons and background normalized by Df
         S_df;       % spike counts of neurons normalized by Df
-        options;    % options for model fitting
-        P;          % some estimated parameters
-        Fs = nan;    % frame rate
-        indicator = 'GCaMP6f';
-        kernel;
-        file = '';
+        
     end
     
     %% methods
@@ -30,44 +54,210 @@ classdef Sources2D < handle
         %% constructor and options setting
         function obj = Sources2D(varargin)
             obj.options = CNMFSetParms();
-            obj.P = struct('p', 2, 'sn', []);
+            obj.P =struct('mat_file', [], 'mat_data', [], 'indicator', '', 'k_options', 0, ...
+                'k_snapshot', 0, 'k_del', 0, 'k_merge', 0, 'k_trim', 0, 'sn', [], ...
+                'kernel_pars',[], 'k_ids', 0);
             if nargin>0
                 obj.options = CNMFSetParms(obj.options, varargin{:});
             end
             obj.kernel = create_kernel('exp2');
         end
         
+        %------------------------------------------------------------------OPTIONS------------%
         %% update parameters
         function updateParams(obj, varargin)
             obj.options = CNMFSetParms(obj.options, varargin{:});
         end
         
+        %------------------------------------------------------------------PREPROCESSING-------%
         %% data preprocessing
         function Y = preprocess(obj,Y,p)
             [obj.P,Y] = preprocess_data(Y,p,obj.options);
         end
         
-        %% fast initialization
+        %------------------------------------------------------------------LOAD DATA-----------%
+        %% select data
+        function nam = select_data(obj, nam)
+            %% select file
+            if ~exist('nam', 'var') || isempty(nam) || ~exist(nam, 'file')
+                % choose files using graphical interfaces
+                try
+                    load .dir.mat;          %load previous path
+                catch
+                    dir_nm = [cd(), filesep];   %use the current path
+                end
+                [file_nm, dir_nm] = uigetfile(fullfile(dir_nm, '*.tif;*.mat;*.h5;*.avi'));
+                nam = [dir_nm, file_nm];        % full name of the data file
+            else
+                % file has been selected
+                nam =  get_fullname(nam);
+                [dir_nm, ~, ~] = fileparts(nam);
+            end
+            
+            
+            if dir_nm~=0
+                save .dir.mat dir_nm;
+            else
+                fprintf('no file was selected. STOP!\n');
+                return;
+            end
+            obj.file = nam;
+        end
+        
+        function Ypatch = load_patch_data(obj, patch_pos, frame_range)
+            %% load data within selected patch position and selected frames
+            mat_data = obj.P.mat_data;
+            
+            dims = mat_data.dims;
+            d1 = dims(1);
+            d2 = dims(2);
+            T = dims(3);
+            if ~exist('patch_pos', 'var') || isempty(patch_pos)
+                patch_pos = [1, d1, 1, d2];
+            end
+            if ~exist('frame_range', 'var') || isempty(frame_range)
+                frame_range = [1, T];
+            end
+            Ypatch = get_patch_data(mat_data, patch_pos, frame_range, false);
+        end
+        %% distribute data and be ready to run source extraction
+        function getReady(obj, pars_envs)
+            % data and its extension
+            nam = obj.file;
+            
+            % parameters for scaling things
+            if ~exist('pars_envs', 'var') || isempty(pars_envs)
+                memory_size_to_use = 16.0;  %GB
+                memory_size_per_patch = 1.0;  % GB;
+                patch_dims = [64, 64];
+            else
+                memory_size_to_use = pars_envs.memory_size_to_use;
+                memory_size_per_patch = pars_envs.memory_size_per_patch;
+                patch_dims = pars_envs.patch_dims;
+            end
+            
+            % overlapping area
+            w_overlap = obj.options.ring_radius;
+            
+            % distribute data
+            [data, dims, obj.P.folder_analysis] = distribute_data(nam, patch_dims, w_overlap, memory_size_per_patch, memory_size_to_use);
+            obj.P.mat_data = data;
+            obj.P.mat_file = data.Properties.Source;
+            obj.updateParams('d1', dims(1), 'd2', dims(2));
+            obj.P.numFrames = dims(3);
+            
+            % estimate the noise level for each pixel
+            try
+                obj.P.sn = obj.P.mat_data.sn;
+            catch
+                obj.P.sn = obj.estimate_noise();
+                mat_data = obj.P.mat_data;
+                mat_data.Properties.Writable = true;
+                mat_data.sn = obj.P.sn;
+                mat_data.Properties.Writable = false;
+            end
+        end
+        
+        %% estimate noise
+        function sn = estimate_noise(obj, frame_range, method)
+            mat_data = obj.P.mat_data;
+            dims = mat_data.dims;
+            T = dims(3);
+            if ~exist('frame_range', 'var') || isempty(frame_range)
+                frame_range = [1, T];
+            end
+            if ~exist('method', 'var') || isempty(method)
+                method = 'psd';
+            end
+            if strcmpi(method, 'hist')
+                % fit the histogram of with a parametric gaussian shape.
+                % it works badly when the
+                % most frames are involved in calcium transients.
+                foo = @(Y) GetSn_hist(Y, false);
+            elseif strcmpi(method, 'std')
+                % simly use the standard deviation. works badly when
+                % neurons have large calcium transients
+                foo = @(Y) std(Y, 0, 2);
+            else
+                % default options is using the power spectrum method.
+                % works badly when noises have temporal correlations
+                foo = @GetSn;
+            end
+            block_idx_r = mat_data.block_idx_r;
+            block_idx_c = mat_data.block_idx_c;
+            nr_block = length(block_idx_r) - 1;
+            nc_block = length(block_idx_c) - 1;
+            sn = cell(nr_block, nc_block);
+            fprintf('estimating the nosie level for every pixel.......\n');
+            tic;
+            parfor mblock=1:(nr_block*nc_block)
+                [m, n] = ind2sub([nr_block, nc_block], mblock);
+                r0 = block_idx_r(m); %#ok<PFBNS>
+                r1 = block_idx_r(m+1);
+                c0 = block_idx_c(n); %#ok<PFBNS>
+                c1 = block_idx_c(n+1);
+                Ypatch = get_patch_data(mat_data, [r0, r1, c0, c1], frame_range, false);
+                Ypatch = double(reshape(Ypatch, [], T));
+                tmp_sn = reshape(foo(Ypatch), r1-r0+1, c1-c0+1);
+                if m~=nr_block
+                    tmp_sn(end-1, :) = [];
+                end
+                if n~=nc_block
+                    tmp_sn(:, end-1) = [];
+                end
+                sn{mblock} = tmp_sn;
+            end
+            fprintf('Time cost for estimating the nosie levels:  %.3f \n\n', toc);
+            sn = cell2mat(sn);
+        end
+        
+        %% pick parameters
+        [gSig, gSiz, ring_radius, min_corr, min_pnr] = set_parameters(obj)
+        %------------------------------------------------------------------INITIALIZATION-----------%
+        %% fast initialization, for 2P data, CNMF
         function [center] = initComponents(obj, Y, K, tau)
             if nargin<4 ;    tau = [];             end
             [obj.A, obj.C, obj.b, obj.f, center] = initialize_components(Y, K, tau, obj.options);
         end
         
+        %% initialize neurons using patch method
+        % for 1P and 2P data, CNMF and CNMF-E
+        [center, Cn, PNR] = initComponents_parallel(obj, K, frame_range, save_avi, use_parallel)
+        
         %% fast initialization for microendoscopic data
         [center, Cn, pnr] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi);
         
         [center] = initComponents_2p(obj,Y, K, options, sn, debug_on, save_avi);
-        %% update spatial components
+        
+        %% pick neurons from the residual
+        % for 1P and 2P data, CNMF and CNMF-E
+        [center, Cn, PNR] = initComponents_residual_parallel(obj, K, save_avi, use_parallel)
+        
+        %------------------------------------------------------------------UPDATE MODEL VARIABLES---%
+        %% update background components in parallel
+        % for 1P and 2P data, CNMF and CNMF-E
+        update_background_parallel(obj, use_parallel)
+        
+        %% update spatial components in parallel
+        % for 1P and 2P data, CNMF and CNMF-E
+        update_spatial_parallel(obj, use_parallel)
+        
+        %% update spatial components in parallel
+        % for 1P and 2P data, CNMF and CNMF-E
+        update_temporal_parallel(obj, use_parallel)
+        
+        %% update spatial components, 2P data, CNMF
         function updateSpatial(obj, Y)
             [obj.A, obj.b, obj.C] = update_spatial_components(Y, ...
                 obj.C, obj.f, obj.A, obj.P, obj.options);
         end
         
-        %% udpate spatial components without background
+        %% udpate spatial components without background, no background components
         function updateSpatial_nb(obj, Y)
             [obj.A, obj.C] = update_spatial_components_nb(Y, ...
                 obj.C, obj.A, obj.P, obj.options);
         end
+        
         %% udpate spatial components using NNLS and thresholding
         function updateSpatial_nnls(obj, Y)
             [obj.A, obj.C] = update_spatial_nnls(Y, ...
@@ -93,13 +283,26 @@ classdef Sources2D < handle
                 Y, obj.A, obj.b, obj.C, obj.f, obj.P, obj.options);
         end
         
+        %------------------------------------------------------------------MERGE NEURONS ---------%
         %% merge found components
         function [nr, merged_ROIs] = merge(obj, Y)
             [obj.A, obj.C, nr, merged_ROIs, obj.P, obj.S] = merge_components(...
                 Y,obj.A, [], obj.C, [], obj.P,obj.S, obj.options);
         end
         
-        %% compute the residual
+        %% quick merge neurons based on spatial and temporal correlation
+        [merged_ROIs, newIDs] = quickMerge(obj, merge_thr)
+        
+        %% quick merge neurons based on spatial and temporal correlation
+        [merged_ROIs, newIDs] = MergeNeighbors(obj, dmin, method)
+        
+        %------------------------------------------------------------------EXPORT---%
+        function save_neurons(obj)
+            folder_nm = [obj.P.log_folder, 'neurons'];
+            obj.viewNeurons([], obj.C_raw, folder_nm);
+        end
+        
+        show_demixed_video(obj,save_avi, kt, center_ac, range_ac, range_Y, multi_factor)        %% compute the residual
         function [Y_res] = residual(obj, Yr)
             Y_res = Yr - obj.A*obj.C - obj.b*obj.f;
         end
@@ -156,7 +359,7 @@ classdef Sources2D < handle
                     Df = medfilt1(Ybg,options_.df_window,[],2,'truncate');
                 else
                     Df = zeros(size(Ybg));
-                    for i = 1:size(Df,1);
+                    for i = 1:size(Df,1)
                         df_temp = running_percentile(Ybg(i,:), options_.df_window, options_.df_prctile);
                         Df(i,:) = df_temp(:)';
                     end
@@ -173,14 +376,13 @@ classdef Sources2D < handle
             nA = sqrt(sum(obj.A.^2));
             nr = length(nA);
             if nargin<2
-                srt=[];
-            elseif ischar(srt)
-                if strcmpi(srt, 'snr')
-                    snrs = var(obj.C, 0, 2)./var(obj.C_raw-obj.C, 0, 2);
-                    [~, srt] = sort(snrs, 'descend');
-                elseif strcmpi(srt, 'decay_time')
+                srt='srt';
+            end
+            K = size(obj.C, 1);
+            
+            if ischar(srt)
+                if strcmpi(srt, 'decay_time')
                     % time constant
-                    K = size(obj.C, 1);
                     if K<0
                         disp('Are you kidding? You extracted 0 neurons!');
                         return;
@@ -193,21 +395,32 @@ classdef Sources2D < handle
                         [~, srt] = sort(taud);
                     end
                 elseif strcmp(srt, 'mean')
-                    [~, srt] = sort(mean(obj.C,2), 'descend'); 
-                else
-                    srt = [];
+                    [~, srt] = sort(mean(obj.C,2)'.*sum(obj.A), 'descend');
+                elseif strcmp(srt, 'circularity')
+                    % order neurons based on its circularity
+                    tmp_circularity = zeros(K,1);
+                    for m=1:K
+                        [w, r] = nnmf(obj.reshape(obj.A(:, m),2), 1);
+                        ky = sum(w>max(w)*0.3);
+                        kx = sum(r>max(r)*0.3);
+                        tmp_circularity(m) = abs((kx-ky+0.5)/((kx+ky)^2));
+                    end
+                    [~, srt] = sort(tmp_circularity, 'ascend');
+                elseif strcmpi(srt, 'snr')
+                    snrs = var(obj.C, 0, 2)./var(obj.C_raw-obj.C, 0, 2);
+                    [~, srt] = sort(snrs, 'descend');
                 end
             end
-            [obj.A, obj.C, obj.S, obj.P, srt] = order_ROIs(obj.A, obj.C,...
-                obj.S, obj.P, srt);
+            obj.A = obj.A(:, srt);
+            obj.C = obj.C(srt, :);
+            obj.ids = obj.ids(srt);
+            obj.tags = obj.tags(srt);
+            
             try
+                obj.C_raw = obj.C_raw(srt,:);
+                obj.S = obj.S(srt,:);
                 obj.P.kernel_pars = obj.P.kernel_pars(srt, :);
-            end
-            if ~isempty(obj.C_raw)
-                if isempty(srt)
-                    obj.C_raw = spdiags(nA(:),0,nr,nr)*obj.C_raw;
-                end
-                obj.C_raw = obj.C_raw(srt, :);
+                obj.P.neuron_sn = obj.P.neuron_sn(srt);
             end
         end
         
@@ -246,7 +459,6 @@ classdef Sources2D < handle
                 obj.options);
         end
         
-        %% new methods added by PC, Since 02/05/2016
         %% down sample data and initialize it
         [obj_ds, Y_ds] = downSample(obj, Y)
         
@@ -264,22 +476,47 @@ classdef Sources2D < handle
             end
         end
         
-        %% quick merge neurons based on spatial and temporal correlation
-        [merged_ROIs, newIDs] = quickMerge(obj, merge_thr)
-        
-        %% quick merge neurons based on spatial and temporal correlation
-        [merged_ROIs, newIDs] = MergeNeighbors(obj, dmin, method)
-        
-        
         %% quick view
         viewNeurons(obj, ind, C2, folder_nm);
         displayNeurons(obj, ind, C2, folder_nm);
         
         %% delete neurons
         function delete(obj, ind)
+            % write the deletion into the log file
+            if ~exist('ind', 'var') || isempty(ind)
+                return;
+            end
+            try
+                % folders and files for saving the results
+                log_file =  obj.P.log_file;
+                flog = fopen(log_file, 'a');
+                log_data = matfile(obj.P.log_data, 'Writable', true); %#ok<NASGU>
+                ids_del = obj.ids(ind);
+                if isempty(ids_del)
+                    fprintf('no neurons to be deleted\n');
+                    fclose(flog);
+                    return;
+                end
+                tmp_str = get_date();
+                tmp_str=strrep(tmp_str, '-', '_');
+                eval(sprintf('log_data.ids_del_%s = ids_del;', tmp_str));
+                
+                fprintf(flog, '[%s]\b', get_minute());
+                fprintf('Deleted %d neurons: ', length(ids_del));
+                fprintf(flog, 'Deleted %d neurons: \n', length(ids_del));
+                for m=1:length(ids_del)
+                    fprintf('%2d, ', ids_del(m));
+                    fprintf(flog, '%2d, ', ids_del(m));
+                end
+                fprintf(flog, '\n');
+                fprintf('\nThe IDS of these neurons were saved as intermediate_results.spatial_%s\n\n', tmp_str);
+                fprintf(flog, '\tThe IDS of these neurons were saved as intermediate_results.spatial_%s\n\n', tmp_str);
+                fclose(flog);
+            end
+            
             obj.A(:, ind) = [];
             obj.C(ind, :) = [];
-            if ~isempty(obj.S);
+            if ~isempty(obj.S)
                 try obj.S(ind, :) = []; catch; end
             end
             if ~isempty(obj.C_raw)
@@ -288,7 +525,13 @@ classdef Sources2D < handle
             if isfield(obj.P, 'kernel_pars')&&(  ~isempty(obj.P.kernel_pars))
                 try obj.P.kernel_pars(ind, :) = []; catch; end
             end
+            try  obj.ids(ind) = [];   catch;   end
+            try obj.tags(ind) =[]; catch; end
+            
+            % save the log
         end
+        
+        %% merge neurons
         
         %% estimate neuron centers
         function [center] = estCenter(obj)
@@ -311,86 +554,19 @@ classdef Sources2D < handle
             % reshape the imaging data into diffrent dimensions
             d1 = obj.options.d1;
             d2 = obj.options.d2;
-            if dim==1; Y=reshape(Y, d1*d2, []);  %each frame is a vector
-            else  Y = reshape(full(Y), d1, d2, []);    %each frame is an image
+            if dim==1
+                Y=reshape(Y, d1*d2, []);  %each frame is a vector
+            else
+                Y = reshape(full(Y), d1, d2, []);    %each frame is an image
             end
         end
         
         %% deconvolve all temporal components
-        function C_ = deconvTemporal(obj)
-            C_raw_ = obj.C_raw;
-            K = size(C_raw_, 1);
-            C_ = zeros(size(C_raw_));
-            S_ = C_;
-            kernel_pars = cell(K, 1);
-            for m=1:K
-                fprintf('|');
-            end
-            fprintf('\n');
-            for m=1:size(C_raw_,1)
-                [b_, sn] = estimate_baseline_noise(C_raw_(m, :));
-                [C_(m, :), S_(m,:), temp_options] = deconvolveCa(C_raw_(m, :)-b_, obj.options.deconv_options);
-                kernel_pars{m} = temp_options.pars;
-                obj.C_raw(m, :) = obj.C_raw(m, :)-b_;
-                fprintf('.');
-            end
-            fprintf('\n');
-            obj.C = C_;
-            obj.S = S_;
-            obj.P.kernel_pars = kernel_pars;
-        end
+        C_ = deconvTemporal(obj, use_parallel)
         
-        %% update background
-        function [Y, ind_bg, bg] = linearBG(obj, Y)
-            d1 = obj.options.d1;
-            d2 = obj.options.d2;
-            % model the background as linear function
-            if ndims(Y)==3; Y = neuron.reshape(Y,1); end
-            T = size(Y,2);
-            % find background area
-            ind_frame = round(linspace(1, T, min(T, 500)));
-            tmp_C1 = correlation_image(Y(:, ind_frame), [1, 2], d1, d2);
-            tmp_C2 = correlation_image(Y(:, ind_frame), [0,1]+ obj.options.gSiz, d1, d2);
-            tmp_Cn = tmp_C1(:)-tmp_C2(:);
-            ind = (tmp_Cn>0);
-            ind_bg = and(ind, tmp_Cn<quantile(tmp_Cn(ind), 0.1));
-            % get the mean activity within the selected area
-            Ybg = mean(Y(ind_bg(:), :), 1);
-            f1 = (Ybg-mean(Ybg))/std(Ybg);
-            
-            % regress DY over df to remove the trend
-            df = diff(f1,1);
-            b1 = diff(Y, 1,2)*df'/(df*df');
-            
-            Yres = Y-b1*f1;
-            b0 = median(Yres, 2);
-            %             b0 = quantile(Yres, 0.05,2);
-            Y = bsxfun(@minus, Yres, b0);
-            bg.b = [b1, b0];
-            bg.f = [f1; ones(1,T)];
-        end
-        
-        %% select background pixels
-        function [f1, ind_bg] = findBG(obj, Y, q)
-            d1 = obj.options.d1;
-            d2 = obj.options.d2;
-            if nargin<3;    q = 0.1; end;   %quantiles for selecting background pixels
-            % model the background as linear function
-            if ndims(Y)==3; Y = neuron.reshape(Y,1); end
-            T = size(Y,2);
-            % find background area
-            ind_frame = round(linspace(1, T, min(T, 500)));
-            tmp_C1 = correlation_image(Y(:, ind_frame), [1, 2], d1, d2);
-            tmp_C2 = correlation_image(Y(:, ind_frame), [0,1]+ obj.options.gSiz, d1, d2);
-            tmp_Cn = tmp_C1(:)-tmp_C2(:);
-            ind = (tmp_Cn>0);
-            ind_bg = and(ind, tmp_Cn<quantile(tmp_Cn(ind), q));
-            % get the mean activity within the selected area
-            Ybg = mean(Y(ind_bg(:), :), 1);
-            f1 = (Ybg-mean(Ybg))/std(Ybg);
-        end
         %% play movie
         function playMovie(obj, Y, min_max, col_map, avi_nm, t_pause)
+            Y = double(Y);
             d1 = obj.options.d1;
             d2 = obj.options.d2;
             % play movies
@@ -414,7 +590,7 @@ classdef Sources2D < handle
             end
             if ismatrix(Y); Y=obj.reshape(Y, 2); end
             [~, ~, T] = size(Y);
-            if (nargin<3) || (isempty(min_max));
+            if (nargin<3) || (isempty(min_max))
                 temp = Y(:, :, randi(T, min(100, T), 1));
                 min_max = quantile(temp(:), [0.2, 0.9999]);
                 min_max(1) = max(min_max(1), 0);
@@ -480,8 +656,8 @@ classdef Sources2D < handle
         %% trim spatial components
         function [ind_small] = trimSpatial(obj, thr, sz)
             % remove small nonzero pixels
-            if nargin<2;    thr = 0.01; end;
-            if nargin<3;    sz = 5; end;
+            if nargin<2;    thr = 0.01; end
+            if nargin<3;    sz = 5; end
             
             se = strel('square', sz);
             ind_small = false(size(obj.A, 2), 1);
@@ -509,14 +685,13 @@ classdef Sources2D < handle
             for m=1:size(obj.A, 2)
                 ai = obj.reshape(obj.A(:, m), 2);
                 ai = spatial_constraints(ai);
-                if sum(ai(:))>0
+                if sum(ai(:))>=obj.options.min_pixel
                     obj.A(:, m) = ai(:);
                 else
                     ind_del(m) = true;
                 end
             end
             obj.delete(ind_del);
-            obj.delete(sum(obj.A>0, 1)<=obj.options.min_pixel);
         end
         
         %% solve A & C with regression
@@ -601,7 +776,11 @@ classdef Sources2D < handle
         %% function
         function image(obj, a, min_max)
             if isvector(a); a = obj.reshape(a,2); end
-            if nargin<3; imagesc(a); else imagesc(a, min_max); end
+            if nargin<3
+                imagesc(a);
+            else
+                imagesc(a, min_max);
+            end
         end
         
         %% normalize
@@ -690,6 +869,145 @@ classdef Sources2D < handle
             obj.P.sn = sn(:);
             fprintf('  done \n');
         end
+        
+        %% reconstruct background
+        function Ybg = reconstruct_background(obj)
+            %%reconstruct background using the saved data
+            % input:
+            %   use_parallel: boolean, do initialization in patch mode or not.
+            %       default(true); we recommend you to set it false only when you want to debug the code.
+            
+            %% Author: Pengcheng Zhou, Columbia University, 2017
+            %% email: zhoupc1988@gmail.com
+            
+            %% process parameters
+            
+            try
+                % map data
+                mat_data = obj.P.mat_data;
+                
+                % dimension of data
+                dims = mat_data.dims;
+                d1 = dims(1);
+                d2 = dims(2);
+                T = dims(3);
+                obj.options.d1 = d1;
+                obj.options.d2 = d2;
+                
+                % parameters for patching information
+                patch_pos = mat_data.patch_pos;
+                block_pos = mat_data.block_pos;
+                
+                % number of patches
+                [nr_patch, nc_patch] = size(patch_pos);
+            catch
+                error('No data file selected');
+            end
+            
+            % frames to be loaded for initialization
+            T = diff(obj.frame_range) + 1;
+            
+            % threshold for detecting large residuals
+%             thresh_outlier = obj.options.thresh_outlier;
+            
+            % options
+            %% start updating the background
+            bg_model = obj.options.background_model;
+            Ybg = zeros(d1, d2, T);
+            for mpatch=1:(nr_patch*nc_patch)
+                tmp_patch = patch_pos{mpatch};
+                
+                if strcmpi(bg_model, 'ring')
+                    W_ring = obj.W{mpatch}; 
+                    b0_ring = obj.b0{mpatch}; 
+                    % load data 
+                    Ypatch = get_patch_data(mat_data, tmp_patch, obj.frame_range, true);
+                    Ypatch = reshape(Ypatch, [], T); 
+                    tmp_block = block_pos{mpatch};
+                    
+                    % find the neurons that are within the block
+                    mask = zeros(d1, d2);
+                    mask(tmp_block(1):tmp_block(2), tmp_block(3):tmp_block(4)) = 1;
+                    ind = (reshape(mask(:), 1, [])* obj.A>0);
+                    A_patch = obj.A(logical(mask), ind);
+                    C_patch = obj.C(ind, :);
+                    
+                    % reconstruct background 
+                    Ymean = mean(Ypatch,2);
+                    Cmean = mean(C_patch , 2);
+                    Ypatch = bsxfun(@minus, double(Ypatch), Ymean);
+                    C_patch = bsxfun(@minus, C_patch, Cmean);
+                    Bf = W_ring*(double(Ypatch) - A_patch*C_patch);
+                    Ybg(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4),:) = reshape(bsxfun(@plus, Bf, b0_ring), diff(tmp_patch(1:2))+1, [], T); 
+                elseif strcmpi(bg_model, 'nmf')
+                    b_nmf = obj.b{mpatch};
+                    f_nmf = obj.f{mpatch};
+                    Ybg(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4),:) = reshape(b_nmf*f_nmf, diff(tmp_patch(1:2))+1, [], T);
+                else
+                    b_svd = obj.b{mpatch};
+                    f_svd = obj.f{mpatch};
+                    b0_svd = obj.b0{mpatch};
+                    Ybg(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4),:) = reshape(bsxfun(@plus, b_svd*f_svd, b0_svd), diff(tmp_patch(1:2))+1, [], T);
+                end
+                
+            end
+            
+        end
+        
+        
+        
+        %% concateneate b, f, b0, W
+        %         function Ybg = concatenate_var(obj)
+        %             %% concatenate a signle variable for divided version of b, f, b0, W
+        %             % input:
+        %             %    nam: {'b', 'f', 'b0'}
+        %             %% Author: Pengcheng Zhou, Columbia University, 2017
+        %             %% email: zhoupc1988@gmail.com
+        %
+        %             %% process parameters
+        %
+        %             try
+        %                 % map data
+        %                 mat_data = obj.P.mat_data;
+        %                 mat_file = mat_data.Properties.Source;
+        %                 tmp_dir = fileparts(mat_file);
+        %
+        %                 % dimension of data
+        %                 dims = mat_data.dims;
+        %                 d1 = dims(1);
+        %                 d2 = dims(2);
+        %                 T = dims(3);
+        %                 obj.options.d1 = d1;
+        %                 obj.options.d2 = d2;
+        %
+        %                 % parameters for patching information
+        %                 patch_pos = mat_data.patch_pos;
+        %                 block_pos = mat_data.block_pos;
+        %
+        %                 % number of patches
+        %                 [nr_patch, nc_patch] = size(patch_pos);
+        %             catch
+        %                 error('No data file selected');
+        %             end
+        %
+        %             % frames to be loaded for initialization
+        %             frame_range = obj.frame_range;
+        %             T = diff(frame_range) + 1;
+        %
+        %             % threshold for detecting large residuals
+        %             thresh_outlier = obj.options.thresh_outlier;
+        %
+        %             % options
+        %             %% start updating the background
+        %             bg_model = obj.options.background_model;
+        %             Ybg = zeros(d1, d2, T);
+        %             for mpatch=1:(nr_patch*nc_patch)
+        %
+        %
+        %             end
+        %
+        %         end
+        
         %% merge neurons
         function [img, col0, AA] = overlapA(obj, ind, ratio)
             %merge all neurons' spatial components into one singal image
@@ -781,8 +1099,8 @@ classdef Sources2D < handle
                 seed_method = 'auto';
             end
             if ~exist('debug_on', 'var')||isempty(debug_on)
-                debug_on = false; 
-            end 
+                debug_on = false;
+            end
             neuron = obj.copy();
             neuron.options.seed_method = seed_method;
             neuron.options.gSig = 1;
@@ -798,20 +1116,40 @@ classdef Sources2D < handle
         end
         
         %% post process spatial component
-        function A_ = post_process_spatial(obj, A_)
-            if ~exist('A_', 'var');
-                A_ = obj.A;
-            end
-            A_ = threshold_components(A_, obj.options);
-            obj.A = A_;
-        end
+        A_ = post_process_spatial(obj, A_)
         
+        %% merge neruons
+        [merged_ROIs, newIDs, obj_bk] = merge_high_corr(obj, show_merge, merge_thr);
+        [merged_ROIs, newIDs, obj_bk] = merge_close_neighbors(obj, show_merge, merge_thr);
+        [merged_ROIs, newIDs, obj_bk] = merge_neurons_dist_corr(obj, show_merge, merge_thr, dmin, method_dist, max_decay_diff);
+        
+        %% tag neurons with quality control
+        function tags_ = tag_neurons_parallel(obj)
+            A_ = obj.A;
+            %             C_ = obj.C_;
+            S_ = obj.S;
+            K = size(A_, 2);
+            tags_ = zeros(K, 1, 'like', uint16(0));
+            min_pixel = obj.options.min_pixel;
+            
+            % check the number of nonzero pixels
+            nz_pixels = full(sum(A_>0, 1));
+            tags_ = tags_ + uint16(nz_pixels'<min_pixel);
+            
+            % check the number of calcium transients after the first frame
+            if obj.options.deconv_flag
+                nz_spikes = full(sum(S_(:,2:end), 2));
+                tags_ = tags_ + uint16(nz_spikes<1)*2;
+            end
+            
+            obj.tags = tags_;
+        end
         %% estimate local background
         function [Ybg, results] = localBG(obj, Ybg, ssub, rr, IND, sn, thresh)
             if ~exist('rr', 'var')||isempty(rr); rr=obj.options.gSiz; end
             if ~exist('ssub', 'var')||isempty(ssub); ssub = 1; end
             if ~exist('IND', 'var') ||isempty(IND); IND = []; end
-            if ~exist('sn', 'var')||isempty(sn);
+            if ~exist('sn', 'var')||isempty(sn)
                 if isfield(obj.P, 'sn')
                     sn = obj.reshape(obj.P.sn, 2);
                 else
@@ -885,6 +1223,32 @@ classdef Sources2D < handle
             end
         end
         
+        %% save results
+        function file_path = save_workspace(obj)
+            fprintf('------------- SAVE THE WHOLE WORKSPACE ----------\n\n');
+
+            obj.compress_results();
+            file_path = [obj.P.log_folder,  strrep(get_date(), ' ', '_'), '.mat'];
+            evalin('base', sprintf('save(''%s''); ', file_path));
+            
+            try
+                fp = fopen(obj.P.log_file, 'a');
+                fprintf(fp, '\n--------%s--------\n[%s]\bSave the current workspace into file \n\t%s\n\n', get_date(), get_minute(), file_path);
+                fprintf('The current workspace has been saved into file \n\t%s\n\n', file_path);
+                fp.close();
+            end
+            
+        end
+        
+        %% compress A, S and W
+        function compress_results(obj)
+            obj.A = sparse(obj.A);
+            obj.S = sparse(obj.S);
+            if ~iscell(obj.W)
+                obj.W = sparse(obj.W);
+            end
+        end
+        
         %% compute correlation image and peak to noise ratio for endoscopic
         % data. unlike the correlation image for two-photon data,
         % correlation image of the microendoscopic data needs to be
@@ -892,32 +1256,89 @@ classdef Sources2D < handle
         % overlapped.
         function [Cn, PNR] = correlation_pnr(obj, Y)
             [Cn, PNR] = correlation_image_endoscope(Y, obj.options);
-            %             obj.Cn = Cn;
-            %             obj.PNR = PNR;
         end
+        
+        %% compute correlation image and peak to noise ratio in parallel
+        [Cn, PNR] = correlation_pnr_parallel(obj, frame_range)
         
         %% convert struct data to Sources2D object
         function obj = struct2obj(obj, var_struct)
             temp = fieldnames(var_struct);
             for m=1:length(temp)
-                try
+                try %#ok<*TRYNC>
                     eval(sprintf('obj.%s=var_struct.%s;', temp{m}, temp{m}));
                 end
             end
         end
         
-        %% convert Sources2D object to a struct variable 
-        function neuron = obj2struct(obj)
-            neuron.A = obj.A; 
-            neuron.C = obj.C; 
-            neuron.C_raw = obj.C_raw; 
-            neuron.S = obj.S; 
-            neuron.options = obj.options; 
-            neuron.P = obj.P; 
-            neuron.b = obj.b; 
-            neuron.f = obj.f; 
+        %% convert Sources2D object to a struct variable
+        function neuron = obj2struct(obj, ind)
+            if ~exist('ind', 'var') || isempty(ind)
+                neuron.A = sparse(obj.A);
+                neuron.C = obj.C;
+                neuron.C_raw = obj.C_raw;
+                neuron.S = sparse(obj.S);
+                neuron.options = obj.options;
+                neuron.P = obj.P;
+                neuron.b = obj.b;
+                neuron.f = obj.f;
+                neuron.W = obj.W;
+                neuron.b0 = obj.b0;
+                neuron.Fs = obj.Fs;
+                neuron.frame_range = obj.frame_range;
+                neuron.kernel = obj.kernel;
+                neuron.file = obj.kernel;
+                neuron.Cn = obj.Cn;
+                neuron.ids = obj.ids;
+                neuron.tags = obj.tags;
+            else
+                neuron.A = sparse(obj.A(:, ind));
+                neuron.C = obj.C(ind,:);
+                neuron.C_raw = obj.C_raw(ind,:);
+                neuron.S = sparse(obj.S(ind,:));
+                neuron.ids = obj.ids(ind);
+                neuron.tags = obj.tags(ind);
+            end
+            
         end
-               
+        
+        %% show contours of the all neurons
+        function Coor = show_contours(obj, thr, ind, img, with_label)
+            %% show neuron contours
+            %% inputs:
+            %   thr: threshold for the compactness of the neuron
+            %   ind: indices of the neurons to be shown
+            %   img: the background image. by default, it uses the
+            %   correlation image
+            %   with_label: include the label of not
+            %% outputs:
+            %   Coor: contours of all neurosn
+            K = size(obj.A, 2);
+            if ~exist('ind', 'var') || isempty(ind)
+                ind = (1:K);
+            end
+            if ~exist('thr', 'var') || isempty(thr)
+                thr = 0.9;
+            end
+            if ~exist('img', 'var') || isempty(img)
+                img = obj.Cn;
+            end
+            
+            if ~exist('with_label', 'var') || isempty(with_label)
+                with_label = false;
+            end
+            
+            if isempty(obj.Coor) || (length(obj.Coor)~=K)
+                Coor = obj.get_contours(thr);
+                obj.Coor = Coor;
+            end
+            figure;
+            plot_contours(obj.A(:, ind), img, thr,with_label, [], obj.Coor(ind), 2);
+            colormap gray;
+            file_path = [obj.P.log_folder,  'contours_%dneurons', strrep(get_date(), ' ', '_'), '.pdf'];
+            saveas(gcf, file_path);
+        end
+        
         %% get contours of the all neurons
         function Coor = get_contours(obj, thr, ind)
             A_ = obj.A;
@@ -925,7 +1346,7 @@ classdef Sources2D < handle
                 A_ = A_(:, ind);
             end
             if ~exist('thr', 'var') || isempty(thr)
-                thr = 0.995;
+                thr = 0.9;
             end
             num_neuron = size(A_,2);
             if num_neuron==0
@@ -947,8 +1368,9 @@ classdef Sources2D < handle
                     pvpairs = { 'LevelList' , [0,0]+A_temp(ind(ff)), 'ZData', obj.reshape(A_temp,2)};
                     h = matlab.graphics.chart.primitive.Contour(pvpairs{:});
                     temp = h.ContourMatrix;
-                    temp = medfilt1(temp')';
-                    Coor{m} = temp(:, 3:end);
+                    %temp = medfilt1(temp')';
+                    temp = medfilt1(temp(:, 2:end)')';
+                    Coor{m} = [temp, temp(:, 1)]; 
                 end
                 
             end
@@ -989,6 +1411,8 @@ classdef Sources2D < handle
                 plot(y);
             end
         end
+        %% determine nonzero pixels
+        
         %         function Coor = get_contours(obj, thr, ind)
         %             A_ = obj.A;
         %             if exist('ind', 'var')
@@ -1040,6 +1464,56 @@ classdef Sources2D < handle
         %                 Coor{m} = [smooth(x(seq), 2)'; smooth(y(seq),2)'];
         %             end
         %
+        %         end
+        
+        %         %% update background
+        %         function [Y, ind_bg, bg] = linearBG(obj, Y)
+        %             d1 = obj.options.d1;
+        %             d2 = obj.options.d2;
+        %             % model the background as linear function
+        %             if ndims(Y)==3; Y = neuron.reshape(Y,1); end
+        %             T = size(Y,2);
+        %             % find background area
+        %             ind_frame = round(linspace(1, T, min(T, 500)));
+        %             tmp_C1 = correlation_image(Y(:, ind_frame), [1, 2], d1, d2);
+        %             tmp_C2 = correlation_image(Y(:, ind_frame), [0,1]+ obj.options.gSiz, d1, d2);
+        %             tmp_Cn = tmp_C1(:)-tmp_C2(:);
+        %             ind = (tmp_Cn>0);
+        %             ind_bg = and(ind, tmp_Cn<quantile(tmp_Cn(ind), 0.1));
+        %             % get the mean activity within the selected area
+        %             Ybg = mean(Y(ind_bg(:), :), 1);
+        %             f1 = (Ybg-mean(Ybg))/std(Ybg);
+        %
+        %             % regress DY over df to remove the trend
+        %             df = diff(f1,1);
+        %             b1 = diff(Y, 1,2)*df'/(df*df');
+        %
+        %             Yres = Y-b1*f1;
+        %             b0 = median(Yres, 2);
+        %             %             b0 = quantile(Yres, 0.05,2);
+        %             Y = bsxfun(@minus, Yres, b0);
+        %             bg.b = [b1, b0];
+        %             bg.f = [f1; ones(1,T)];
+        %         end
+        %
+        %         %% select background pixels
+        %         function [f1, ind_bg] = findBG(obj, Y, q)
+        %             d1 = obj.options.d1;
+        %             d2 = obj.options.d2;
+        %             if nargin<3;    q = 0.1; end;   %quantiles for selecting background pixels
+        %             % model the background as linear function
+        %             if ndims(Y)==3; Y = neuron.reshape(Y,1); end
+        %             T = size(Y,2);
+        %             % find background area
+        %             ind_frame = round(linspace(1, T, min(T, 500)));
+        %             tmp_C1 = correlation_image(Y(:, ind_frame), [1, 2], d1, d2);
+        %             tmp_C2 = correlation_image(Y(:, ind_frame), [0,1]+ obj.options.gSiz, d1, d2);
+        %             tmp_Cn = tmp_C1(:)-tmp_C2(:);
+        %             ind = (tmp_Cn>0);
+        %             ind_bg = and(ind, tmp_Cn<quantile(tmp_Cn(ind), q));
+        %             % get the mean activity within the selected area
+        %             Ybg = mean(Y(ind_bg(:), :), 1);
+        %             f1 = (Ybg-mean(Ybg))/std(Ybg);
         %         end
     end
     

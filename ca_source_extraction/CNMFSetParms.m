@@ -103,6 +103,14 @@ Names = [
     'smin               ' % mimimum spike size
     'center_psf         ' % center psf or not 
     'gaussian_shape     ' % neurons have 2D gaussian shapes. 
+    'ring_radius        ' % radius of the ring in CNMF-E background model 
+    'dmin               ' %minum distances between two neurons 
+    'method_dist        ' % method for computing distances of two neurons 
+    'thresh_outlier     ' % threshod for detecting outliers in the estimation of background 
+    'background_model   ' % model for estimating the the background {'ring', 'svd', 'nmf'}
+    'nk                 ' % number of knots for detrending data 
+    'detrend_method     ' % method for detrending {'spline', 'local_min'}
+    'spatial_constraints' % spatial constraints {'circular'}
     ];
 
 [m,n] = size(Names);
@@ -278,6 +286,14 @@ Values = [
     {5}
     {true}
     {true}
+    {15}
+    {1}
+    {'max'}
+    {10} 
+    {'svd'}
+    {1}
+    {'spline'}
+    {struct('circular', true, 'connected', true)}
     ];
 
 for j = 1:m

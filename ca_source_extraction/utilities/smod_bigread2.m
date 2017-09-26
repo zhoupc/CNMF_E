@@ -1,4 +1,4 @@
-function [imData,sizx,sizy]=smod_bigread2(varargin);
+function [imData,sizx,sizy]=smod_bigread2(varargin)
 %reads tiff files in Matlab bigger than 4GB, allows reading from sframe to sframe+num2read-1 frames of the tiff - in other words, you can read page 200-300 without rading in from page 1.
 %based on a partial solution posted on Matlab Central (http://www.mathworks.com/matlabcentral/answers/108021-matlab-only-opens-first-frame-of-multi-page-tiff-stack)
 %Darcy Peterka 2014, v1.0
@@ -18,24 +18,24 @@ function [imData,sizx,sizy]=smod_bigread2(varargin);
 %image description to load the files based on offset and image number.
 %
 
+%modified by Pengcheng Zhou, Colubmia University, 2017
+% it supports following data formats:
+% tiff
+% hdf5
+% avi
 
 %get image info
 path_to_file=strjoin(varargin(1));
 
-
+if nargin<2
+    sframe = 1;
+else
+    sframe = max(1, round(varargin{2}));
+end
 [~,~,ext] = fileparts(path_to_file);
 
 if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');
     info = imfinfo(path_to_file);
-    
-    % if ~isfield(info,'ImageDescription')
-    %    blah=size(info);
-    %    numFrames= blah(1);
-    % else
-    %     he=info.ImageDescription;
-    %     numFramesStr = regexp(he, 'images=(\d*)', 'tokens');
-    %     numFrames = str2double(numFramesStr{1}{1});
-    % end
     
     
     if isfield(info(1), 'ImageDescription') && ~isempty(strfind(info(1).ImageDescription,'ImageJ'))
@@ -44,7 +44,8 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');
             junk1=regexp(info(1).ImageDescription,'frames=\d*','match');
         end
         junk2=strjoin(junk1);
-        aa=strread(junk2,'%*s %d','delimiter','=');
+        aa=textscan(junk2,'%*s %d','delimiter','=');
+        aa = aa{1};
         
         numFrames=aa;
         num_tot_frames=numFrames;
@@ -234,7 +235,7 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');
             if (bd==64)
                 form='double';
             elseif(bd==32)
-                form='single'
+                form='single';
             elseif (bd==16)
                 form='uint16';
             elseif (bd==8)
@@ -342,6 +343,36 @@ elseif strcmpi(ext,'.hdf5') || strcmpi(ext,'.h5');
     end
     num2read = min(num2read,dims(end)-sframe+1);
     imData = h5read(path_to_file,'/mov',[ones(1,length(dims)-1),sframe],[dims(1:end-1),num2read]);
+elseif strcmpi(ext,'.avi')
+    obj = audiovideo.mmreader(path_to_file);
+    
+    frame_rate = obj.FrameRate;
+    total = obj.Duration;
+    numFrames = total*frame_rate;
+    
+    sizx = obj.Width;
+    sizy = obj.Height;
+    
+    if nargin < 3
+        num2read = numFrames-sframe+1;
+    else
+        num2read = min(numFrames-sframe+1, round(varargin{3}));
+    end
+    imData = obj.read([sframe, sframe+num2read-1]);
+    imData = squeeze(imData(:, :, 1, :));
+elseif strcmpi(ext, '.mat')
+    data = matfile(path_to_file);
+    dims = data.Ysiz;
+    sizy = dims(1);
+    sizx = dims(2);
+    numFrames = Ysiz(3);
+    if nargin < 3
+        num2read = numFrames-sframe+1;
+    else
+        num2read = min(numFrames-sframe+1, round(varargin{3}));
+    end
+    
+    imData = data.Y(:, :, sframe+(1:num2read));
 else
     error('Unknown file extension. Only .tiff and .hdf5 files are currently supported');
 end

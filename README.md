@@ -1,16 +1,12 @@
 # CNMF_E
 Constrained Nonnegative Matrix Factorization for microEndoscopic data 
 
-
-
-Download
-=======
+## Download
 OPTION 1: download the package using this [LINK](https://github.com/zhoupc/CNMF_E/archive/master.zip)
 
 OPTION 2: (recommended) clone the git repository <https://github.com/zhoupc/CNMF_E.git>. In this way, you are able to get the latest updates of the package within 1-line command or 1-button click. 
 
-Installation
-=======
+## Installation
 Run cnmfe_setup.m to add CNMF-E package to the search path of MATLAB
 
 `>> cnmfe_setup`
@@ -26,27 +22,30 @@ Other required MATLAB toolboxes are listed below.
 5. /curvefit/curvefit
 
 
-Example
-=======
-The best way to get started is running a demo script for analyzing an example data. 
+## Examples
+The best way to get started is running a demo script for analyzing an example data. We included three demo scripts for you to try. You can modify these demos to process your own datasets. 
 
-`>> run demos/demo_endoscope.m ` 
+1. demo_endoscope.m : this demo is good for exploratory analysis of your data. It gives you a good sense of different stages of CNMF-E pipeline and how different parameter selections influence your final results. 
 
-Questions
-=======
-You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. You can send me an email for requiring an invitation to the slack channel or ask your collegues who joined the slack channel already for invitation. 
+	`>> run demos/demo_endoscope.m ` 
 
-We are also slowly updating the CNMF-E [wiki](https://github.com/zhoupc/CNMF_E/wiki). 
+2. demo_large_data_1p.m : this demo is good for processing large-scale dataset with the minimal manual intervention. It can process small data as well and should be used in most automated analysis. 
 
-Reference
-=======
+	`>> run demos/demo_large_data_1p.m`
+
+3. demo_large_data_2p.m : this demo is the same as demo_large_data_1p.m. It is optimized for processing 2p data. 
+
+	`>> run demos/demo_large_data_2p.m`
+
+## Questions
+You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. 
+
+## Reference
 **Please cite this paper when you use CNMF-E in your research. Thanks!**
 
 **Zhou, P.**, Resendez, S.L., Rodriguez-Romaguera, J., Jimenez, J.C, Neufeld, S.Q., Stuber, G.D., Hen, R., Kheirbek, M.A., Sabatini, B.L., Kass, R.E., Paninski, L. (2016). [Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data](https://arxiv.org/abs/1605.07266). arXiv Prepr, arXiv1605.07266.
 
-License
-=======
-
+## License
 Copyright 2016 Pengcheng Zhou
 
 This program is free software: you can redistribute it and/or modify

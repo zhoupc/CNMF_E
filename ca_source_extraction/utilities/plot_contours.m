@@ -52,9 +52,10 @@ end
 if ~(nargin < 6 || isempty(Coor))
     CC = Coor;
     for i = 1:size(Aor,2)
-        cont = medfilt1(Coor{i}')';
+%         cont = medfilt1(Coor{i}')';
+        cont = Coor{i}; 
         if size(cont,2) > 1
-            plot(cont(1,2:end),cont(2,2:end),'Color',cmap(i+size(Aor,2),:), 'linewidth', ln_wd); hold on;
+            plot(cont(1,1:end),cont(2,1:end),'Color',cmap(i+size(Aor,2),:), 'linewidth', ln_wd); hold on;
         end
     end
 else

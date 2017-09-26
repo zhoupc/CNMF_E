@@ -1,0 +1,14 @@
+Data: /data/zhoupc/Dropbox/github/CNMF_E/demos/msCam1_source_extraction/data_53_53_26.mat
+
+23:20:07Start running source extraction......
+The collection of options are saved as intermediate_results.options_0
+
+23:20:07Start initializing neurons from frame 1 to frame 1000
+
+23:20:55Finished the initialization procedure.
+In total, 91 neurons were initialized. 
+The initialization results were saved as intermediate_results.initialization
+
+23:21:47Continue the analysis from the previous initialization results:
+ LOGS_09-11_23_20_03 
+

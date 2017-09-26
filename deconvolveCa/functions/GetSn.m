@@ -30,7 +30,7 @@ else
 end
 
 %% estimate the noise
-[psdx, ff] = pwelch(Y, [],[],[], 1);
+[psdx, ff] = pwelch(double(Y), [],[],[], 1);
 indf = and(ff>=range_ff(1), ff<=range_ff(2));
 switch method
     case 'mean'
