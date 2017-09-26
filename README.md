@@ -38,7 +38,7 @@ The best way to get started is running a demo script for analyzing an example da
 	`>> run demos/demo_large_data_2p.m`
 
 ## Questions
-You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. An email request for the invitation to the slack channel,  or you can ask your collegues who have joined the slack channel already for an invitation. 
+You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. An email request for slack channel invitation is required,  or you can ask your collegues who have joined the slack channel already for an invitation. 
 
 Please read more from the [wiki page](https://github.com/zhoupc/CNMF_E/wiki) 
 
