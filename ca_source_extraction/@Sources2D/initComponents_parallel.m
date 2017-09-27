@@ -455,7 +455,8 @@ initialization.PNR = PNR;
 log_data.initialization = initialization;
 
 fprintf(flog, '[%s]\b', get_minute());
-fprintf(flog, 'Finished the initialization procedure.\n');
 fprintf(flog, '\tIn total, %d neurons were initialized. \n', size(Ain,2));
 fprintf(flog, '\tThe initialization results were saved as intermediate_results.initialization\n\n');
+fprintf(flog, 'Finished the initialization procedure.\n');
+
 fclose(flog);
