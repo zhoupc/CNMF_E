@@ -123,5 +123,12 @@ neuron.update_background_batch(use_parallel);
 
 %% merge neurons 
 
+%% get the correlation image and PNR image for all neurons 
+neuron.correlation_pnr_batch(); 
+
+%% concatenate temporal components 
+neuron.concatenate_temporal_batch(); 
+neuron.viewNeurons([],neuron.C_raw); 
+
 %% save workspace 
 neuron.save_workspace_batch(); 

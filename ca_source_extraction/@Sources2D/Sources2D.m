@@ -341,6 +341,7 @@ classdef Sources2D < handle
             sn = cell2mat(sn);
         end
         
+        
         %% pick parameters
         [gSig, gSiz, ring_radius, min_corr, min_pnr] = set_parameters(obj)
         %------------------------------------------------------------------INITIALIZATION-----------%
@@ -621,6 +622,38 @@ classdef Sources2D < handle
             end
         end
         
+        %% concatenate results from multi patches
+        function concatenate_temporal_batch(obj)
+            T_k= obj.P.numFrames;
+            T = sum(T_k);
+            K = size(obj.A,2);
+            C_ = zeros(K, T);
+            C_raw_ = zeros(K, T);
+            deconv_flag = obj.options.deconv_flag;
+            if deconv_flag
+                S_ = zeros(K, T);
+            end
+            t = 0;
+            nbatches = length(obj.batches);
+            for mbatch=1:nbatches
+                neuron_k = obj.batches{mbatch}.neuron;
+                try 
+                C_(:, t+(1:T_k(mbatch))) = neuron_k.C;
+                catch 
+                    pause; 
+                end
+                C_raw_(:, t+(1:T_k(mbatch))) = neuron_k.C_raw;
+                if deconv_flag
+                    S_(:, t+(1:T_k(mbatch))) = neuron_k.S;
+                end
+                t = t+T_k(mbatch); 
+            end
+            obj.C = C_;
+            obj.C_raw = C_raw_;
+            if deconv_flag
+                obj.S = S_;
+            end
+        end
         %% quick view
         viewNeurons(obj, ind, C2, folder_nm);
         displayNeurons(obj, ind, C2, folder_nm);
@@ -1393,13 +1426,12 @@ classdef Sources2D < handle
                 batch_k = obj.batches{mbatch};
                 neuron_k = batch_k.neuron;
                 
-                file_paths{mbatch} = fprintf('\nprocessing batch %d/%d\n', mbatch, nbatches);
+                fprintf('\nprocessing batch %d/%d\n', mbatch, nbatches);
                 
                 % update background
-                neuron_k.save_workspace();
+                file_paths{mbatch} = neuron_k.save_workspace();
                 
             end
-            
         end
         %% compress A, S and W
         function compress_results(obj)
@@ -1410,17 +1442,27 @@ classdef Sources2D < handle
             end
         end
         
-        %% compute correlation image and peak to noise ratio for endoscopic
-        % data. unlike the correlation image for two-photon data,
-        % correlation image of the microendoscopic data needs to be
-        % spatially filtered first. otherwise neurons are significantly
-        % overlapped.
+        %% compute correlation image and PNR image
         function [Cn, PNR] = correlation_pnr(obj, Y)
             [Cn, PNR] = correlation_image_endoscope(Y, obj.options);
         end
         
         %% compute correlation image and peak to noise ratio in parallel
         [Cn, PNR] = correlation_pnr_parallel(obj, frame_range)
+        
+        %% compute correlation image and PNR image for each batch
+        function correlation_pnr_batch(obj)
+            nbatches = length(obj.batches);
+            for mbatch=1:nbatches
+                fprintf('\nprocessing batch %d/%d\n', mbatch, nbatches);
+                batch_k = obj.batches{mbatch};
+                neuron_k = batch_k.neuron;
+                [neuron_k.Cn, neuron_k.PNR] = neuron_k.correlation_pnr_parallel();
+                batch_k.neuron = neuron_k;
+                obj.batches{mbatch} = batch_k;
+            end
+            
+        end
         
         %% convert struct data to Sources2D object
         function obj = struct2obj(obj, var_struct)

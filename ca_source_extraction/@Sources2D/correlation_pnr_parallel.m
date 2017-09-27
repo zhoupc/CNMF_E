@@ -31,7 +31,10 @@ block_pos = mat_data.block_pos;
 
 
 % frames to be loaded for initialization
-if ~exist('frame_range', 'var') || isempty(frame_range)
+if ~exist('frame_range', 'var')
+    frame_range = obj.frame_range;
+end
+if isempty(frame_range)
     frame_range = [1, T];
 else
     frame_range(frame_range<1) = 1;

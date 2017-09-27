@@ -70,7 +70,7 @@ for mbatch=1:nbatches
     neuron_k.initComponents_residual_parallel([], save_avi, use_parallel);
     
     % collect results
-    batch_k.neurons = neuron_k;
+    batch_k.neuron = neuron_k;
     obj.A = neuron_k.A;
     obj.W = neuron_k.W;
     obj.b = neuron_k.b;
@@ -78,6 +78,7 @@ for mbatch=1:nbatches
     obj.b0 = neuron_k.b0;
     obj.ids = neuron_k.ids;
     obj.tags = neuron_k.tags;
+    obj.P.k_ids = neuron_k.P.k_ids; 
     obj.batches{mbatch} = batch_k;
 end
 
@@ -96,7 +97,6 @@ for mbatch=1:nbatches
     neuron_k.P.k_ids = obj.P.k_ids;
     neuron_k.ids = obj.ids;
     neuron_k.tags = obj.tags;
-    
     
     fprintf('\nprocessing batch %d/%d\n', mbatch, nbatches);
     [tmp_K, T] = size(neuron_k.C);
