@@ -46,7 +46,8 @@ classdef Sources2D < handle
         Df;         % background for each component to normalize the filtered raw data
         C_df;       % temporal components of neurons and background normalized by Df
         S_df;       % spike counts of neurons normalized by Df
-        
+        batches = cell(0);  % results for each small batch data
+        file_id = [];    % file id for each batch.
     end
     
     %% methods
@@ -96,12 +97,81 @@ classdef Sources2D < handle
             
             
             if dir_nm~=0
-                save .dir.mat dir_nm;
+                try
+                    save .dir.mat dir_nm;
+                catch
+                    fprintf('You do not have the access to write file to the current folder');
+                end
             else
                 fprintf('no file was selected. STOP!\n');
                 return;
             end
             obj.file = nam;
+        end
+        
+        %% select multiple datasets
+        function nams = select_multiple_files(obj, nams)
+            if ~isempty(nams)
+                nams = unique(nams);
+                ind_keep = true(size(nams));
+                for m=1:length(nams)
+                    if ~exist(nams{m}, 'file')
+                        ind_keep = false;
+                    else
+                        nams{m} = get_fullname(nams{m});
+                    end
+                end
+                
+                nams = nams(ind_keep);
+                fprintf('\n----------------------------------------\n');
+                for m=1:length(nams)
+                    fprintf('%d:\t%s\n', m, nams{m});
+                end
+                fprintf('\n----------------------------------------\n');
+                obj.file = nams;
+                return;
+                
+            end
+            fprintf('\t-------------------------- GUIDE --------------------------\n');
+            fprintf('\ttype -i to remove the selected i-th file\n');
+            fprintf('\ttype 0 to stop the data selection\n');
+            fprintf('\ttype anything else to select more data\n');
+            fprintf('\t--------------------------  END  --------------------------\n\n');
+            if ~exist('nams', 'var') || isempty(nams)
+                nams = cell(0);
+            end
+            while true
+                if isempty(nams)
+                    fprintf('You haven''t selected any file yet\n');
+                else
+                    ind_keep = true(size(nams));
+                    for m=1:length(nams)
+                        if ~exist(nams{m}, 'file')
+                            ind_keep = false;
+                        end
+                    end
+                    
+                    nams = nams(ind_keep);
+                    fprintf('\n----------------------------------------\n');
+                    for m=1:length(nams)
+                        fprintf('%d:\t%s\n', m, nams{m});
+                    end
+                    fprintf('\n----------------------------------------\n');
+                    
+                end
+                
+                % make choise
+                
+                your_ans = input('make  your choice: ');
+                if your_ans==0
+                    break;
+                elseif your_ans<0 && round(abs(your_ans))<length(nams)
+                    nams(round(abs(your_ans))) = [];
+                else
+                    nams{end+1} = obj.select_data([]);  %#ok<AGROW>
+                end
+            end
+            obj.file = unique(nams);
         end
         
         function Ypatch = load_patch_data(obj, patch_pos, frame_range)
@@ -123,8 +193,11 @@ classdef Sources2D < handle
         %% distribute data and be ready to run source extraction
         function getReady(obj, pars_envs)
             % data and its extension
-            nam = obj.file;
-            
+            if iscell(obj.file)
+                nam = obj.file{1};
+            else
+                nam = obj.file;
+            end
             % parameters for scaling things
             if ~exist('pars_envs', 'var') || isempty(pars_envs)
                 memory_size_to_use = 16.0;  %GB
@@ -156,6 +229,62 @@ classdef Sources2D < handle
                 mat_data.sn = obj.P.sn;
                 mat_data.Properties.Writable = false;
             end
+        end
+        
+        %% distribute data and be ready to run batch mode source extraction
+        function getReady_batch(obj, pars_envs)
+            %% parameters for scaling things
+            if ~exist('pars_envs', 'var') || isempty(pars_envs)
+                pars_envs = struct('memory_size_to_use', 4, ...   % GB, memory space you allow to use in MATLAB
+                    'memory_size_per_patch', 0.3, ...   % GB, space for loading data within one patch
+                    'patch_dims', [64, 64], ...  %GB, patch size
+                    'batch_frames', []);       % number of frames per batch
+            end
+            batch_frames = pars_envs.batch_frames;
+            
+            %% distribute all files
+            nams = unique(obj.file);
+            obj.file = nams;
+            % pre-allocate spaces for saving results of multiple patches
+            batches_ = cell(100, 1);
+            file_id_ = zeros(100,1, 'like', uint8(1));
+            numFrames = zeros(100,1);
+            
+            k_batch = 0;
+            for m=1:length(nams)
+                neuron = obj.copy();
+                neuron.file = nams{m};
+                neuron.getReady(pars_envs);
+                if m==1
+                    obj.options = neuron.options;
+                end
+                T = neuron.P.numFrames;
+                if isempty(batch_frames)
+                    batch_frames = T;
+                end
+                nbatches = round(T/batch_frames);
+                if nbatches<=1
+                    frame_range_t = [1, T];
+                else
+                    frame_range_t = round(linspace(1, T, nbatches+1));
+                end
+                nbatches = length(frame_range_t) -1;
+                
+                for n=1:nbatches
+                    k_batch = k_batch +1;
+                    tmp_neuron = neuron.copy();
+                    tmp_neuron.frame_range = frame_range_t(n:(n+1))-[0, 1*(n~=nbatches)];
+                    batch_i.neuron = tmp_neuron;
+                    batch_i.shifts = [];  % shifts allowed
+                    file_id_(k_batch) = m;
+                    batches_{k_batch} = batch_i;
+                    numFrames(k_batch) = diff(tmp_neuron.frame_range)+1;
+                end
+            end
+            
+            obj.batches = batches_(1:k_batch);
+            obj.file_id = file_id_(1:k_batch);
+            obj.P.numFrames = numFrames(1:k_batch);
         end
         
         %% estimate noise
@@ -225,6 +354,10 @@ classdef Sources2D < handle
         % for 1P and 2P data, CNMF and CNMF-E
         [center, Cn, PNR] = initComponents_parallel(obj, K, frame_range, save_avi, use_parallel)
         
+        %% initialize neurons for multiple batches
+        % for 1P and 2P data, CNMF and CNMF-E
+        [center, Cn, PNR] = initComponents_batch(obj, K, frame_range, save_avi, use_parallel)
+        
         %% fast initialization for microendoscopic data
         [center, Cn, pnr] = initComponents_endoscope(obj, Y, K, patch_sz, debug_on, save_avi);
         
@@ -239,13 +372,23 @@ classdef Sources2D < handle
         % for 1P and 2P data, CNMF and CNMF-E
         update_background_parallel(obj, use_parallel)
         
+        %% update  background for all batches
+        update_background_batch(obj, use_parallel)
+        
         %% update spatial components in parallel
         % for 1P and 2P data, CNMF and CNMF-E
         update_spatial_parallel(obj, use_parallel)
         
-        %% update spatial components in parallel
+        %% update spatial components in batch mode
+        update_spatial_batch(obj, use_parallel);
+        
+        %% update temporal components in parallel
         % for 1P and 2P data, CNMF and CNMF-E
         update_temporal_parallel(obj, use_parallel)
+        
+        %% update temporal components in batch mode
+        % for 1P and 2P data, CNMF and CNMF-E
+        update_temporal_batch(obj, use_parallel)
         
         %% update spatial components, 2P data, CNMF
         function updateSpatial(obj, Y)
@@ -910,7 +1053,7 @@ classdef Sources2D < handle
             T = diff(obj.frame_range) + 1;
             
             % threshold for detecting large residuals
-%             thresh_outlier = obj.options.thresh_outlier;
+            %             thresh_outlier = obj.options.thresh_outlier;
             
             % options
             %% start updating the background
@@ -920,11 +1063,11 @@ classdef Sources2D < handle
                 tmp_patch = patch_pos{mpatch};
                 
                 if strcmpi(bg_model, 'ring')
-                    W_ring = obj.W{mpatch}; 
-                    b0_ring = obj.b0{mpatch}; 
-                    % load data 
+                    W_ring = obj.W{mpatch};
+                    b0_ring = obj.b0{mpatch};
+                    % load data
                     Ypatch = get_patch_data(mat_data, tmp_patch, obj.frame_range, true);
-                    Ypatch = reshape(Ypatch, [], T); 
+                    Ypatch = reshape(Ypatch, [], T);
                     tmp_block = block_pos{mpatch};
                     
                     % find the neurons that are within the block
@@ -934,13 +1077,13 @@ classdef Sources2D < handle
                     A_patch = obj.A(logical(mask), ind);
                     C_patch = obj.C(ind, :);
                     
-                    % reconstruct background 
+                    % reconstruct background
                     Ymean = mean(Ypatch,2);
                     Cmean = mean(C_patch , 2);
                     Ypatch = bsxfun(@minus, double(Ypatch), Ymean);
                     C_patch = bsxfun(@minus, C_patch, Cmean);
                     Bf = W_ring*(double(Ypatch) - A_patch*C_patch);
-                    Ybg(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4),:) = reshape(bsxfun(@plus, Bf, b0_ring), diff(tmp_patch(1:2))+1, [], T); 
+                    Ybg(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4),:) = reshape(bsxfun(@plus, Bf, b0_ring), diff(tmp_patch(1:2))+1, [], T);
                 elseif strcmpi(bg_model, 'nmf')
                     b_nmf = obj.b{mpatch};
                     f_nmf = obj.f{mpatch};
@@ -1228,7 +1371,7 @@ classdef Sources2D < handle
         %% save results
         function file_path = save_workspace(obj)
             fprintf('------------- SAVE THE WHOLE WORKSPACE ----------\n\n');
-
+            
             obj.compress_results();
             file_path = [obj.P.log_folder,  strrep(get_date(), ' ', '_'), '.mat'];
             evalin('base', sprintf('save(''%s'', ''neuron'', ''save_*'', ''show_*'', ''use_parallel'', ''with_*'', ''-v7.3''); ', file_path));
@@ -1242,6 +1385,22 @@ classdef Sources2D < handle
             
         end
         
+        %% save results for all batches
+        function file_paths = save_workspace_batch(obj)
+            nbatches = length(obj.batches);
+            file_paths = cell(nbatches, 1);
+            for mbatch=1:nbatches
+                batch_k = obj.batches{mbatch};
+                neuron_k = batch_k.neuron;
+                
+                file_paths{mbatch} = fprintf('\nprocessing batch %d/%d\n', mbatch, nbatches);
+                
+                % update background
+                neuron_k.save_workspace();
+                
+            end
+            
+        end
         %% compress A, S and W
         function compress_results(obj)
             obj.A = sparse(obj.A);
@@ -1372,7 +1531,7 @@ classdef Sources2D < handle
                     temp = h.ContourMatrix;
                     %temp = medfilt1(temp')';
                     temp = medfilt1(temp(:, 2:end)')';
-                    Coor{m} = [temp, temp(:, 1)]; 
+                    Coor{m} = [temp, temp(:, 1)];
                 end
                 
             end

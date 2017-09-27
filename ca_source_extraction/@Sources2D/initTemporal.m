@@ -1,6 +1,6 @@
-function update_temporal_parallel(obj, use_parallel)
-%% update the the temporal components for all neurons
-% input:
+function initTemporal(obj, frame_range, use_parallel)
+%% initializing temporal components with known spatial components and background information
+%% input:
 %   use_parallel: boolean, do initialization in patch mode or not.
 %       default(true); we recommend you to set it false only when you want to debug the code.
 
@@ -8,15 +8,10 @@ function update_temporal_parallel(obj, use_parallel)
 %% email: zhoupc1988@gmail.com
 
 %% process parameters
-
 try
     % map data
     mat_data = obj.P.mat_data;
-    
-    % folders and files for saving the results
-    log_file =  obj.P.log_file;
-    flog = fopen(log_file, 'a');
-    log_data = matfile(obj.P.log_data, 'Writable', true); %#ok<NASGU>
+    mat_file = mat_data.Properties.Source;
     
     % dimension of data
     dims = mat_data.dims;
@@ -25,6 +20,34 @@ try
     T = dims(3);
     obj.options.d1 = d1;
     obj.options.d2 = d2;
+    % frames to be loaded for initialization
+    if ~exist('frame_range', 'var')
+        frame_range = obj.frame_range;
+    end
+    if isempty(frame_range)
+        frame_range = [1, T];
+    else
+        frame_range(frame_range<1) = 1;
+        frame_range(frame_range>T) = T;
+    end
+    T = diff(frame_range) + 1;
+    obj.frame_range = frame_range;
+    
+    % folders and files for saving the results
+    tmp_dir = sprintf('%s%sframes_%d_%d%s', fileparts(mat_file),filesep, frame_range(1), frame_range(2), filesep);
+    if ~exist(tmp_dir, 'dir')
+        mkdir(tmp_dir);
+    end
+    log_folder = [tmp_dir,  'LOGS_', get_date(), filesep];
+    log_file = [log_folder, 'logs.txt'];
+    log_data_file = [log_folder, 'intermediate_results.mat'];
+    obj.P.log_folder = log_folder;
+    obj.P.log_file = log_file;
+    obj.P.log_data = log_data_file;
+    log_data = matfile(log_data_file, 'Writable', true);
+    
+    % create a folder for new log
+    mkdir(log_folder);
     
     % parameters for patching information
     patch_pos = mat_data.patch_pos;
@@ -35,14 +58,6 @@ try
 catch
     error('No data file selected');
 end
-fprintf('\n-----------------UPDATE TEMPORAL---------------------------\n');
-
-% frames to be loaded
-frame_range = obj.frame_range;
-T = diff(frame_range) + 1;
-
-% threshold for detecting large residuals
-thresh_outlier = obj.options.thresh_outlier;
 
 % use parallel or not
 if ~exist('use_parallel', 'var')||isempty(use_parallel)
@@ -53,7 +68,26 @@ end
 options = obj.options;
 bg_model = options.background_model;
 
+%% create a folder for saving log information
+% save the log infomation
+log_data.options_0=options;
+obj.P.k_options = 1;
+obj.P.k_neurons = 0;
+flog = fopen(log_file, 'w');
+fprintf(flog, 'Data: %s\n\n', mat_file);
+fprintf(flog, '--------%s--------\n', get_date());
+fprintf(flog, '[%s]\b', get_minute());
+fprintf(flog, 'Start running source extraction......\nThe collection of options are saved as intermediate_results.options_0\n\n');
+
+fprintf(flog, '[%s]\b', get_minute());
+fprintf(flog, 'Start initializing neurons from frame %d to frame %d\n\n', frame_range(1), frame_range(2));
+fprintf(flog, 'The spatial components and the background are known already\n');
+
+fprintf('\n----------------- INITIALIZE TEMPORAL COMPONENTS --------------------\n');
+
+
 %% identify existing neurons within each patch
+K = size(obj.A, 2);
 A = cell(nr_patch, nc_patch);
 C = cell(nr_patch, nc_patch);
 sn = cell(nr_patch, nc_patch);
@@ -73,10 +107,10 @@ for mpatch=1:(nr_patch*nc_patch)
     ind = (reshape(mask(:), 1, [])* obj.A>0);
     A{mpatch}= obj.A(logical(mask), ind);
     sn{mpatch} = obj.P.sn(logical(mask));
-    C{mpatch} = obj.C(ind, :);
     ind_neurons{mpatch} = find(ind);    % indices of the neurons within each patch
 end
-%% prepare for the variables for computing the background.
+
+%% prepare variables for computing the background.
 bg_model = obj.options.background_model;
 W = obj.W;
 b0 = obj.b0;
@@ -100,16 +134,17 @@ if use_parallel
         else
             tmp_block = patch_pos{mpatch};
         end
-        C_patch = C{mpatch};                % previous estimation of neural activity
-        if isempty(C_patch)
+        A_patch = A{mpatch};
+        
+        if isempty(A_patch)
             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
             continue;
         end
-        A_patch = A{mpatch};
         
         % use ind_patch to indicate pixels within the patch
         ind_patch = false(diff(tmp_block(1:2))+1, diff(tmp_block(3:4))+1);
         ind_patch((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1) = true;
+        AA{mpatch}= sum(A_patch(ind_patch,:).^2, 1);
         
         % get data
         if strcmpi(bg_model, 'ring')
@@ -123,25 +158,38 @@ if use_parallel
         % get background
         if strcmpi(bg_model, 'ring')
             W_ring = W{mpatch};
-            b0_ring = b0{mpatch};
             Ypatch = reshape(Ypatch, [], T);
-            tmp_Y = double(Ypatch)-A_patch*C_patch;
-            Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*tmp_Y, b0_ring-W_ring*mean(tmp_Y, 2));
+            Ypatch = double(Ypatch(ind_patch,:))-W_ring*double(Ypatch);
+            A_patch = A_patch(ind_patch,:)-W_ring*A_patch;
+            [~, C_patch] = HALS_temporal(Ypatch, A_patch, [], 10);
+            [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch, C_patch, 2, deconv_options);
         elseif strcmpi(bg_model, 'nmf')
             b_nmf = b{mpatch};
-            f_nmf = f{mpatch};
+            k = size(A_patch, 2);
+            [~, tmp_C] = HALS_temporal(Ypatch, [A_patch, b_nmf], [], 10, []);
+            C_patch = tmp_C(1:k);
+            f_nmf = tmp_C((k+1):end, :);
+            f{mpatch} = f_nmf;
             Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf;
+            [~, C_patch] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 10,[]);
+            [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 2, deconv_options);
         else
             b_svd = b{mpatch};
-            f_svd = f{mpatch};
-            b0_svd = b0{mpatch};
+            b0_svd = mean(Ypatch, 2);
+            k = size(A_patch, 2);
+            tmp_A = [A_patch, b_svd];
+            tmp_C = (tmp_A'*tmp_A)\(tmp_A'*double(Ypatch)-tmp_A'*b0_svd*ones(1,T));
+            C_patch = tmp_C(1:k);
+            f_svd = tmp_C((k+1):end);
+            f{mpatch} = f_svd;
+            
+            b0{mpatch} = b0_svd;
             Ypatch = double(reshape(Ypatch, [], T)) - bsxfun(@plus, b_svd*f_svd, b0_svd);
+            [~, C_patch] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 10,[]);
+            [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 2, deconv_options);
         end
         
-        % using HALS to update temporal components
-        [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 2, deconv_options);
-        AA{mpatch}= sum(A_patch(ind_patch,:).^2, 1);
-
+        
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
 else
@@ -154,16 +202,17 @@ else
         else
             tmp_block = patch_pos{mpatch};
         end
-        C_patch = C{mpatch};                % previous estimation of neural activity
-        if isempty(C_patch)
+        A_patch = A{mpatch};
+        
+        if isempty(A_patch)
             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
             continue;
         end
-        A_patch = A{mpatch};
         
         % use ind_patch to indicate pixels within the patch
         ind_patch = false(diff(tmp_block(1:2))+1, diff(tmp_block(3:4))+1);
         ind_patch((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1) = true;
+        AA{mpatch}= sum(A_patch(ind_patch,:).^2, 1);
         
         % get data
         if strcmpi(bg_model, 'ring')
@@ -177,30 +226,47 @@ else
         % get background
         if strcmpi(bg_model, 'ring')
             W_ring = W{mpatch};
-            b0_ring = b0{mpatch};
             Ypatch = reshape(Ypatch, [], T);
-            tmp_Y = double(Ypatch)-A_patch*C_patch;
-            Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*tmp_Y, b0_ring-W_ring*mean(tmp_Y, 2));
+            Ypatch = double(Ypatch(ind_patch,:))-W_ring*double(Ypatch);
+            A_patch = A_patch(ind_patch,:)-W_ring*A_patch;
+            [~, C_patch] = HALS_temporal(Ypatch, A_patch, [], 10);
+            [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch, C_patch, 2, deconv_options);
         elseif strcmpi(bg_model, 'nmf')
             b_nmf = b{mpatch};
-            f_nmf = f{mpatch};
+            k = size(A_patch, 2);
+            [~, tmp_C] = HALS_temporal(Ypatch, [A_patch, b_nmf], [], 10, []);
+            C_patch = tmp_C(1:k);
+            f_nmf = tmp_C((k+1):end, :);
+            f{mpatch} = f_nmf;
             Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf;
+            [~, C_patch] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 10,[]);
+            [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 2, deconv_options);
         else
             b_svd = b{mpatch};
-            f_svd = f{mpatch};
-            b0_svd = b0{mpatch};
+            b0_svd = mean(Ypatch, 2);
+            k = size(A_patch, 2);
+            tmp_A = [A_patch, b_svd];
+            tmp_C = (tmp_A'*tmp_A)\(tmp_A'*double(Ypatch)-tmp_A'*b0_svd*ones(1,T));
+            C_patch = tmp_C(1:k);
+            f_svd = tmp_C((k+1):end);
+            f{mpatch} = f_svd;
+            
+            b0{mpatch} = b0_svd;
             Ypatch = double(reshape(Ypatch, [], T)) - bsxfun(@plus, b_svd*f_svd, b0_svd);
+            [~, C_patch] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 10,[]);
+            [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 2, deconv_options);
         end
         
-        % using HALS to update temporal components
-        [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 2, deconv_options);
-        AA{mpatch}= sum(A_patch(ind_patch,:).^2, 1);
         
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
 end
+
+obj.b0 = b0;
+obj.b=b;
+obj.f=f;
+
 %% collect results
-K = size(obj.C, 1);
 C_new = zeros(K, T);
 aa = zeros(K, 1);
 fprintf('Collect results from all small patches...\n');
@@ -217,34 +283,14 @@ end
 aa(aa==0) = 1;
 obj.C_raw = bsxfun(@times, C_new, 1./aa);
 fprintf('Deconvolve and denoise all temporal traces again...\n');
-C_new = obj.deconvTemporal();
-fprintf('Done!\n');
-
-%% upadte b0
-fprintf('Update the constant baselines for all pixels..\n');
-C_old = obj.C;
-db = obj.A*(mean(C_old, 2)-mean(C_new,2));
-db = obj.reshape(db, 2);
-b0 = obj.b0;
-for mpatch = 1:(nr_patch*nc_patch)
-    tmp_patch = patch_pos{mpatch};     %[r0, r1, c0, c1], patch location
-    db_patch = db(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4));
-    b0{mpatch} = b0{mpatch} + reshape(db_patch, [],1);
-end
-obj.b0 = b0;
+obj.deconvTemporal();
 fprintf('Done!\n');
 
 %% save the results to log
-temporal.C_raw = obj.C_raw;
-temporal.C = obj.C;
-temporal.S = obj.S;
-temporal.P.kernel_pars = obj.P.kernel_pars;
-temporal.b0 = obj.b0;
-tmp_str = get_date();
-tmp_str=strrep(tmp_str, '-', '_');
-eval(sprintf('log_data.temporal_%s = temporal;', tmp_str));
+initialization.neuron = obj.obj2struct();
+log_data.initialization = initialization;
 
 fprintf(flog, '[%s]\b', get_minute());
-fprintf(flog, 'Finished updating temporal components.\n');
-fprintf(flog, '\tThe results were saved as intermediate_results.temporal_%s\n\n', tmp_str);
+fprintf(flog, '\tThe initialization results were saved as intermediate_results.initialization\n\n');
+fprintf(flog, 'Finished the initialization procedure.\n');
 fclose(flog);

@@ -1,22 +1,22 @@
 function show_demixed_video(obj,save_avi, kt, center_ac, range_ac, range_Y, multi_factor)
-%% save the final results of source extraction. 
-%% inputs: 
+%% save the final results of source extraction.
+%% inputs:
 %   kt:  scalar, the number of frames to be skipped
 
-%% author: Pengcheng Zhou, Columbia University 2017 
+%% author: Pengcheng Zhou, Columbia University 2017
 % zhoupc1988@gmail.com
 if ~exist('save_avi', 'var')||isempty(save_avi)
-    save_avi = false; 
+    save_avi = false;
 end
 if ~exist('kt', 'var')||isempty(kt)
     kt = 1;
 end
-%% load data 
-frame_range = obj.frame_range; 
-t_begin = frame_range(1); 
-t_end = frame_range(2); 
+%% load data
+frame_range = obj.frame_range;
+t_begin = frame_range(1);
+t_end = frame_range(2);
 %% data preparation
-Y = obj.load_patch_data(); 
+Y = obj.load_patch_data([], obj.frame_range);
 Ybg = obj.reconstruct_background();
 figure('position', [0,0, 600, 400]);
 
@@ -33,7 +33,7 @@ if ~exist('range_Y', 'var') || isempty(range_Y)
         temp = quantile(double(Y(randi(numel(Y), 10000,1))), [0.01, 0.98]);
         multi_factor = ceil(diff(temp)/diff(range_ac));
     else
-        temp = quantile(Y(randi(numel(Y), 10000,1)), 0.01); 
+        temp = quantile(Y(randi(numel(Y), 10000,1)), 0.01);
     end
     center_Y = temp(1) + multi_factor*center_ac;
     range_Y = center_Y + range_res*multi_factor;
@@ -67,7 +67,7 @@ ax_signal=    axes('position', [0.345, 0.51, 0.3, 0.42]);
 ax_denoised =    axes('position', [0.345, 0.01, 0.3, 0.42]);
 ax_res =    axes('position', [0.675, 0.51, 0.3, 0.42]);
 ax_mix =     axes('position', [0.675, 0.01, 0.3, 0.42]);
-for m=t_begin:kt:t_end
+for m=1:kt:(t_end-t_begin+1)
     axes(ax_y); cla;
     imagesc(Y(:, :,m), range_Y);
     %     set(gca, 'children', flipud(get(gca, 'children')));
@@ -87,7 +87,7 @@ for m=t_begin:kt:t_end
     axis equal off tight;
     
     axes(ax_denoised); cla;
-    img_ac = obj.reshape(obj.A*obj.C(:, m), 2); 
+    img_ac = obj.reshape(obj.A*obj.C(:, m), 2);
     imagesc(img_ac, range_ac);
     %     imagesc(Ybg(:, :, m), [-50, 50]);
     title(sprintf('Denoised X %d', multi_factor));
@@ -103,13 +103,13 @@ for m=t_begin:kt:t_end
     axes(ax_mix); cla;
     imagesc(obj.reshape(Y_mixed(:, m,:),2));  hold on;
     title('Demixed');
-    text(1, 10, sprintf('Time: %.2f second', m/obj.Fs), 'color', 'w', 'fontweight', 'bold');
+    text(1, 10, sprintf('Time: %.2f second', (m+t_begin)/obj.Fs), 'color', 'w', 'fontweight', 'bold');
     
     axis equal tight off;
     %     box on; set(gca, 'xtick', []);
     %     set(gca, 'ytick', []);
     
-    drawnow(); 
+    drawnow();
     if save_avi
         temp = getframe(gcf);
         temp = imresize(temp.cdata, [400, 600]);

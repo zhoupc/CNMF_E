@@ -77,7 +77,7 @@ fprintf('The FOV is divided into %d X %d patches. \nEach patch has %d X %d pixel
 temp = prod(patch_dims+2*w_overlap)*T/(2^27);
 fprintf('It requires %.3f GB RAM for loading data related to each patch. \n\n', temp);
 if temp > memory_size_per_patch
-    fprintf('You assign a smaller memory for each patch.\n');
+    fprintf('You assigned a smaller memory for each patch.\n');
     fprintf('We suggest you process data in batch mode.\nEach batch has frames fewer than %d. \n\n', round(T*memory_size_per_patch/temp));
 end
 

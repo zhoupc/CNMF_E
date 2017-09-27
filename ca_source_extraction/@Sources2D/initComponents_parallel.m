@@ -1,4 +1,4 @@
-function [center, Cn, PNR] = initComponents_parallel(obj, K, frame_range, save_avi, use_parallel)
+function [center, Cn, PNR] = initComponents_parallel(obj, K, frame_range, save_avi, use_parallel, A)
 %% initializing spatial/temporal components for calcium imaging data
 %% input:
 %   K:  scalar, maximum number of neurons
@@ -15,15 +15,37 @@ function [center, Cn, PNR] = initComponents_parallel(obj, K, frame_range, save_a
 %% email: zhoupc1988@gmail.com
 
 %% process parameters
-
 try
     % map data
     mat_data = obj.P.mat_data;
     mat_file = mat_data.Properties.Source;
-    tmp_dir = fileparts(mat_file);
+    
+    % dimension of data
+    dims = mat_data.dims;
+    d1 = dims(1);
+    d2 = dims(2);
+    T = dims(3);
+    obj.options.d1 = d1;
+    obj.options.d2 = d2;
+    % frames to be loaded for initialization
+    if ~exist('frame_range', 'var')
+        frame_range = obj.frame_range;
+    end
+    if isempty(frame_range)
+        frame_range = [1, T];
+    else
+        frame_range(frame_range<1) = 1;
+        frame_range(frame_range>T) = T;
+    end
+    T = diff(frame_range) + 1;
+    obj.frame_range = frame_range;
     
     % folders and files for saving the results
-    log_folder = [tmp_dir, filesep, 'LOGS_', get_date(), filesep];
+    tmp_dir = sprintf('%s%sframes_%d_%d%s', fileparts(mat_file),filesep, frame_range(1), frame_range(2), filesep);
+    if ~exist(tmp_dir, 'dir')
+        mkdir(tmp_dir); 
+    end
+    log_folder = [tmp_dir,  'LOGS_', get_date(), filesep];
     log_file = [log_folder, 'logs.txt'];
     log_data_file = [log_folder, 'intermediate_results.mat'];
     obj.P.log_folder = log_folder;
@@ -133,13 +155,6 @@ try
         
     end
     %
-    % dimension of data
-    dims = mat_data.dims;
-    d1 = dims(1);
-    d2 = dims(2);
-    T = dims(3);
-    obj.options.d1 = d1;
-    obj.options.d2 = d2;
     
     % parameters for patching information
     patch_pos = mat_data.patch_pos;
@@ -151,15 +166,6 @@ catch
     error('No data file selected');
 end
 
-% frames to be loaded for initialization
-if ~exist('frame_range', 'var') || isempty(frame_range)
-    frame_range = [1, T];
-else
-    frame_range(frame_range<1) = 1;
-    frame_range(frame_range>T) = T;
-end
-T = diff(frame_range) + 1;
-obj.frame_range = frame_range;
 
 % maximum neuron number in each patch
 if (~exist('K', 'var')) || (isempty(K))

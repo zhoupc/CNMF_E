@@ -13,4 +13,6 @@ demos/demos_backup/*
 NoRMCorre/
 demos/*_source_extraction/*
 demos/data_endoscope_neurons*
-deconvolveCa/examples/*
+deconvolveCa/example*
+deconvolveCa/constrained-foopsi*
+deconvolveCa/MCMC*

@@ -35,7 +35,7 @@ try
 catch
     error('No data file selected');
 end
-fprintf('\n-----------------UPDATE BACKGROUND---------------------------\n'); 
+fprintf('\n-----------------UPDATE BACKGROUND---------------------------\n');
 
 % frames to be loaded for initialization
 frame_range = obj.frame_range;
@@ -75,51 +75,50 @@ for mpatch=1:(nr_patch*nc_patch)
     C{mpatch} = obj.C(ind, :);
 end
 
-% check whether this is the first run of updating background components 
+% check whether this is the first run of updating background components
 if strcmpi(bg_model, 'ring')
-    flag_first = (length(unique(W{1}(1, :)))==2); 
+    flag_first = (length(unique(W{1}(1, :)))==2);
 else
-    flag_first = (mean2(b{1})==0); 
+    flag_first = (mean2(b{1})==0);
 end
 
 if use_parallel
+    
     parfor mpatch=1:(nr_patch*nc_patch)
         tmp_patch = patch_pos{mpatch};
         tmp_block = block_pos{mpatch};
         
-        % find the neurons that are within the block
-        mask = zeros(d1, d2);
-        mask(tmp_block(1):tmp_block(2), tmp_block(3):tmp_block(4)) = 1;
         A_block = A{mpatch};
         sn_block = sn{mpatch};
         C_block = C{mpatch};
-        
-        % stop the updating B because A&C doesn't change in this area 
+        % stop the updating B because A&C doesn't change in this area
         if isempty(A_block) && (~flag_first)
             [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
             continue;
         end
+        
         % use ind_patch to indicate pixels within the patch and only
         % update (W, b0) corresponding to these pixels
-        mask(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4)) = 0;
-        ind_patch = logical(1-mask(tmp_block(1):tmp_block(2), tmp_block(3):tmp_block(4)));
+        ind_patch = false(diff(tmp_block(1:2))+1, diff(tmp_block(3:4))+1);
+        ind_patch((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1) = true;
         
         % pull data
         Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, true);
         if strcmpi(bg_model, 'ring')
             % get the previous estimation
             W_old = W{mpatch};
-            Ypatch = reshape(Ypatch, [], T); 
-            sn_patch = sn_block(ind_patch); 
+            Ypatch = reshape(Ypatch, [], T);
+            sn_patch = sn_block(ind_patch);
             % run regression to get A, C, and W, b0
-            [W{mpatch}, b0{mpatch}] = fit_ring_model(Ypatch, A_block, C_block, W_old, thresh_outlier, sn_patch, ind_patch); 
+            
+            [W{mpatch}, b0{mpatch}] = fit_ring_model(Ypatch, A_block, C_block, W_old, thresh_outlier, sn_patch, ind_patch);
         elseif strcmpi(bg_model, 'nmf')
             b_old = b{mpatch};
-            f_old = f{mpatch}; 
-            Ypatch = reshape(Ypatch, [], T); 
-            sn_patch = sn_block(ind_patch); 
-            [b{mpatch}, f{mpatch}] = fit_nmf_model(Ypatch, nb, A_block, C_block, b_old, f_old, thresh_outlier, sn_patch, ind_patch); 
+            f_old = f{mpatch};
+            Ypatch = reshape(Ypatch, [], T);
+            sn_patch = sn_block(ind_patch);
+            [b{mpatch}, f{mpatch}] = fit_nmf_model(Ypatch, nb, A_block, C_block, b_old, f_old, thresh_outlier, sn_patch, ind_patch);
         else
             b_old = b{mpatch};
             f_old = f{mpatch};
@@ -136,39 +135,37 @@ else
         tmp_patch = patch_pos{mpatch};
         tmp_block = block_pos{mpatch};
         
-        % find the neurons that are within the block
-        mask = zeros(d1, d2);
-        mask(tmp_block(1):tmp_block(2), tmp_block(3):tmp_block(4)) = 1;
         A_block = A{mpatch};
         sn_block = sn{mpatch};
         C_block = C{mpatch};
         
-        % stop the updating B because A&C doesn't change in this area 
+        % stop the updating B because A&C doesn't change in this area
         if isempty(A_block) && (~flag_first)
             [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
             continue;
         end
+        
         % use ind_patch to indicate pixels within the patch and only
         % update (W, b0) corresponding to these pixels
-        mask(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4)) = 0;
-        ind_patch = logical(1-mask(tmp_block(1):tmp_block(2), tmp_block(3):tmp_block(4)));
+        ind_patch = false(diff(tmp_block(1:2))+1, diff(tmp_block(3:4))+1);
+        ind_patch((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1) = true;
         
         % pull data
         Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, true);
         if strcmpi(bg_model, 'ring')
             % get the previous estimation
             W_old = W{mpatch};
-            Ypatch = reshape(Ypatch, [], T); 
-            sn_patch = sn_block(ind_patch); 
+            Ypatch = reshape(Ypatch, [], T);
+            sn_patch = sn_block(ind_patch);
             % run regression to get A, C, and W, b0
-            [W{mpatch}, b0{mpatch}] = fit_ring_model(Ypatch, A_block, C_block, W_old, thresh_outlier, sn_patch, ind_patch); 
+            [W{mpatch}, b0{mpatch}] = fit_ring_model(Ypatch, A_block, C_block, W_old, thresh_outlier, sn_patch, ind_patch);
         elseif strcmpi(bg_model, 'nmf')
             b_old = b{mpatch};
-            f_old = f{mpatch}; 
-            Ypatch = reshape(Ypatch, [], T); 
-            sn_patch = sn_block(ind_patch); 
-            [b{mpatch}, f{mpatch}] = fit_nmf_model(Ypatch, nb, A_block, C_block, b_old, f_old, thresh_outlier, sn_patch, ind_patch); 
+            f_old = f{mpatch};
+            Ypatch = reshape(Ypatch, [], T);
+            sn_patch = sn_block(ind_patch);
+            [b{mpatch}, f{mpatch}] = fit_nmf_model(Ypatch, nb, A_block, C_block, b_old, f_old, thresh_outlier, sn_patch, ind_patch);
         else
             b_old = b{mpatch};
             f_old = f{mpatch};
