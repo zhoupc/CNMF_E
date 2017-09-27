@@ -154,11 +154,11 @@ if use_parallel
         else
             Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, false);
         end
+        Ypatch = reshape(Ypatch, [], T);
         
         % get background
         if strcmpi(bg_model, 'ring')
             W_ring = W{mpatch};
-            Ypatch = reshape(Ypatch, [], T);
             Ypatch = double(Ypatch(ind_patch,:))-W_ring*double(Ypatch);
             A_patch = A_patch(ind_patch,:)-W_ring*A_patch;
             [~, C_patch] = HALS_temporal(Ypatch, A_patch, [], 10);
@@ -166,11 +166,11 @@ if use_parallel
         elseif strcmpi(bg_model, 'nmf')
             b_nmf = b{mpatch};
             k = size(A_patch, 2);
-            [~, tmp_C] = HALS_temporal(Ypatch, [A_patch, b_nmf], [], 10, []);
-            C_patch = tmp_C(1:k);
+            [~, tmp_C] = HALS_temporal(double(Ypatch), [A_patch, b_nmf], [], 10, []);
+            C_patch = tmp_C(1:k, :);
             f_nmf = tmp_C((k+1):end, :);
             f{mpatch} = f_nmf;
-            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf;
+            Ypatch = double(Ypatch)- b_nmf*f_nmf;
             [~, C_patch] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 10,[]);
             [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 2, deconv_options);
         else
@@ -179,12 +179,12 @@ if use_parallel
             k = size(A_patch, 2);
             tmp_A = [A_patch, b_svd];
             tmp_C = (tmp_A'*tmp_A)\(tmp_A'*double(Ypatch)-tmp_A'*b0_svd*ones(1,T));
-            C_patch = tmp_C(1:k);
-            f_svd = tmp_C((k+1):end);
+            C_patch = tmp_C(1:k, :);
+            f_svd = tmp_C((k+1):end, :);
             f{mpatch} = f_svd;
             
             b0{mpatch} = b0_svd;
-            Ypatch = double(reshape(Ypatch, [], T)) - bsxfun(@plus, b_svd*f_svd, b0_svd);
+            Ypatch = double(Ypatch) - bsxfun(@plus, b_svd*f_svd, b0_svd);
             [~, C_patch] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 10,[]);
             [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 2, deconv_options);
         end
@@ -222,23 +222,23 @@ else
         else
             Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, false);
         end
+        Ypatch = reshape(Ypatch, [], T);
         
         % get background
         if strcmpi(bg_model, 'ring')
             W_ring = W{mpatch};
-            Ypatch = reshape(Ypatch, [], T);
             Ypatch = double(Ypatch(ind_patch,:))-W_ring*double(Ypatch);
             A_patch = A_patch(ind_patch,:)-W_ring*A_patch;
-            [~, C_patch] = HALS_temporal(Ypatch, A_patch, [], 10);
+            [~, C_patch] = HALS_temporal(double(Ypatch), A_patch, [], 10);
             [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch, C_patch, 2, deconv_options);
         elseif strcmpi(bg_model, 'nmf')
             b_nmf = b{mpatch};
             k = size(A_patch, 2);
             [~, tmp_C] = HALS_temporal(Ypatch, [A_patch, b_nmf], [], 10, []);
-            C_patch = tmp_C(1:k);
+            C_patch = tmp_C(1:k, :);
             f_nmf = tmp_C((k+1):end, :);
             f{mpatch} = f_nmf;
-            Ypatch = double(reshape(Ypatch, [], T))- b_nmf*f_nmf;
+            Ypatch = double(Ypatch)- b_nmf*f_nmf;
             [~, C_patch] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 10,[]);
             [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 2, deconv_options);
         else
@@ -247,12 +247,12 @@ else
             k = size(A_patch, 2);
             tmp_A = [A_patch, b_svd];
             tmp_C = (tmp_A'*tmp_A)\(tmp_A'*double(Ypatch)-tmp_A'*b0_svd*ones(1,T));
-            C_patch = tmp_C(1:k);
-            f_svd = tmp_C((k+1):end);
+            C_patch = tmp_C(1:k, :);
+            f_svd = tmp_C((k+1):end, :);
             f{mpatch} = f_svd;
             
             b0{mpatch} = b0_svd;
-            Ypatch = double(reshape(Ypatch, [], T)) - bsxfun(@plus, b_svd*f_svd, b0_svd);
+            Ypatch = double(Ypatch) - bsxfun(@plus, b_svd*f_svd, b0_svd);
             [~, C_patch] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 10,[]);
             [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 2, deconv_options);
         end

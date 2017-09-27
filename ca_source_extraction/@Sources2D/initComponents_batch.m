@@ -56,12 +56,13 @@ for mbatch=1:nbatches
         neuron_k.b = obj.b;
         neuron_k.ids = obj.ids;
         neuron_k.tags = obj.tags;
-        neuron_k.initTemporal(neuron_k.frame_range, use_parallel);
         
         neuron_k.W = W_init;
         neuron_k.b = b_init;
         neuron_k.f = f_init;
         neuron_k.b0 = b0_init;
+        
+        neuron_k.initTemporal(neuron_k.frame_range, use_parallel);
     end
     % update background
     neuron_k.update_background_parallel(use_parallel);

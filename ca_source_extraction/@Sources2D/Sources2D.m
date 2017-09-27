@@ -637,16 +637,16 @@ classdef Sources2D < handle
             nbatches = length(obj.batches);
             for mbatch=1:nbatches
                 neuron_k = obj.batches{mbatch}.neuron;
-                try 
-                C_(:, t+(1:T_k(mbatch))) = neuron_k.C;
-                catch 
-                    pause; 
+                try
+                    C_(:, t+(1:T_k(mbatch))) = neuron_k.C;
+                catch
+                    pause;
                 end
                 C_raw_(:, t+(1:T_k(mbatch))) = neuron_k.C_raw;
                 if deconv_flag
                     S_(:, t+(1:T_k(mbatch))) = neuron_k.S;
                 end
-                t = t+T_k(mbatch); 
+                t = t+T_k(mbatch);
             end
             obj.C = C_;
             obj.C_raw = C_raw_;
@@ -1431,6 +1431,33 @@ classdef Sources2D < handle
                 % update background
                 file_paths{mbatch} = neuron_k.save_workspace();
                 
+            end
+        end
+        
+        %% clean the log folders
+        function clean_results(obj)
+            if ~isempty(obj.batches)
+                obj.clean_results_bach(); 
+            end
+            try
+                rmdir(obj.P.log_folder, 's');
+                fprintf('results have been cleaned\n');
+            catch
+                fprintf('file deletion failed\n');
+            end
+        end
+        
+        %% clean the log folders for all patch
+        function clean_results_batch(obj)
+            nbatches = length(obj.batches);
+            for mbatch=1:nbatches
+                batch_k = obj.batches{mbatch};
+                neuron_k = batch_k.neuron;
+                
+                fprintf('\nprocessing batch %d/%d\n', mbatch, nbatches);
+                
+                % update background
+                neuron_k.clean_results();
             end
         end
         %% compress A, S and W

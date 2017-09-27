@@ -64,7 +64,11 @@ for miter=1:maxIter
             %remove baseline and estimate noise level. estiamte the noise
             %using two methods: psd and histogram. choose the one with
             %smaller value. 
-            [b_hist, sn_hist] = estimate_baseline_noise(ck_raw);
+            try
+                [b_hist, sn_hist] = estimate_baseline_noise(ck_raw);
+            catch
+                sn_hist = inf;
+            end
             b = mean(ck_raw(ck_raw<median(ck_raw)));
             sn_psd = GetSn(ck_raw);
             if sn_psd<sn_hist
