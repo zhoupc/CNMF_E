@@ -236,7 +236,7 @@ close(gcf);
 neuron.drawPNRCn(min_pnr,min_corr)
 close(gcf);
 
-ColorAllNeurons(neuron.A,d1,d2,Picname,outputdir);
+ColorAllNeurons(neuron.A,d1,d2,[Picname,strcat('PNR=',num2str(min_pnr)),'.png'],outputdir);
 if strcmp(mode,'initiation')
     A0s=neuron.A;
     File.options=neuron.options;    
