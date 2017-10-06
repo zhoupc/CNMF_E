@@ -10,7 +10,7 @@ end
 
 %% data preparation
 Y = neuron.reshape(Y, 2); 
-Yac = neuron.reshape(neuron.A*neuron.C_raw, 2);
+Yac = neuron.reshape(neuron.A*neuron.C, 2);
 Ybg = neuron.reshape(Ybg, 2);
 Ysignal = neuron.reshape(Ysignal, 2);
 figure('position', [0,0, 600, 400]);
@@ -20,14 +20,16 @@ if ~exist('center_ac', 'var')
 end
 range_res = [-1,1]*center_ac;
 if ~exist('range_ac', 'var')
-    range_ac = center_ac+range_res;
+    range_ac = center_ac*1.01+range_res;
 end
 if ~exist('range_Y', 'var')
     if ~exist('multi_factor', 'var')
         temp = quantile(Y(randi(numel(Y), 10000,1)), [0.01, 0.98]);
-                    multi_factor = floor(diff(temp)/diff(range_ac));
+        multi_factor = ceil(diff(temp)/diff(range_ac));
 %     else
 %         temp = quantile(Y(randi(numel(Y), 10000,1)), 0.01);
+    else
+        temp = quantile(Y(randi(numel(Y), 10000,1)), 0.01); 
     end
     center_Y = temp(1) + multi_factor*center_ac;
     range_Y = center_Y + range_res*multi_factor;
@@ -104,7 +106,7 @@ for m=t_begin:kt:t_end
     %     box on; set(gca, 'xtick', []);
     %     set(gca, 'ytick', []);
     
-    
+    drawnow(); 
     if save_avi
         temp = getframe(gcf);
         temp = imresize(temp.cdata, [400, 600]);

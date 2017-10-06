@@ -40,7 +40,11 @@ if ~exist('g', 'var') || isempty(g)
     g = estimate_time_constant(y, 1);
 end
 if ~exist('lam', 'var') || isempty(lam);   lam = 0; end
-if ~exist('smin', 'var') || isempty(smin);   smin = 0; end
+if ~exist('smin', 'var') || isempty(smin)
+    smin = 0;
+elseif smin<0
+    smin = abs(smin) * GetSn(y);     % use a threshold that is proportional to the noise level
+end
 if ~exist('optimize_b', 'var') || isempty(optimize_b)
     optimize_b = false;
 end

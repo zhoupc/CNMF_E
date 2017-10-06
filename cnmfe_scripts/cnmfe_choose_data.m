@@ -8,7 +8,7 @@ if ~exist('nam', 'var') || isempty(nam)
     catch
         dir_nm = [cd(), filesep]; %use the current path
     end
-    [file_nm, dir_nm] = uigetfile(fullfile(dir_nm, '*.tif;*.mat'));
+    [file_nm, dir_nm] = uigetfile(fullfile(dir_nm, '*.tif;*.mat;*.h5'));
     nam = [dir_nm, file_nm];  % full name of the data file
     [dir_nm, file_nm, file_type] = fileparts(nam);
 else
@@ -39,6 +39,19 @@ elseif or(strcmpi(file_type, '.tif'), strcmpi(file_type, '.tiff'))
     fprintf('converting the selected file to *.mat version...\n');
     nam_mat = tif2mat(nam);
     fprintf('Time cost in converting data to *.mat file:     %.2f seconds\n', toc);
+elseif or(strcmpi(file_type, '.h5'), strcmpi(file_type, '.hdf5'))
+    fprintf('the selected file is hdf5 file\n'); 
+    temp = h5info(nam);
+    dataset_nam = ['/', temp.Datasets.Name];
+    dataset_info = h5info(nam, dataset_nam);
+    dims = dataset_info.Dataspace.Size;
+    ndims = length(dims);
+    d1 = dims(2); 
+    d2 = dims(3); 
+    numFrame = dims(end);
+    Ysiz = [d1, d2, numFrame]; 
+    fprintf('\nThe data has %d X %d pixels X %d frames. \nLoading all data requires %.2f GB RAM\n\n', d1, d2, numFrame, prod(Ysiz)*8/(2^30));
+    return; 
 else
     fprintf('The selected file type was not supported yet! email me to get support (zhoupc1988@gmail.com)\n');
     return;

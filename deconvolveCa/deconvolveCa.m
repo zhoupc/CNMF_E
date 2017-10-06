@@ -67,15 +67,20 @@ end
 win = options.window;   % length of the convolution kernel
 % estimate the noise
 if isempty(options.sn)
-    psd_sn = GetSn(y);
-    [~, sn] = estimate_baseline_noise(y);
-    options.sn = min(sn, psd_sn); 
+    options.sn = GetSn(y);
 end
 % estimate time constant
 if isempty(options.pars)
     switch options.type
         case 'ar1'
+            try
             options.pars = estimate_time_constant(y, 1, options.sn);
+            catch 
+                c = y*0;
+                s = c; 
+                fprintf('fail to deconvolve the trace\n'); 
+                return; 
+            end
             if length(options.pars)~=1
                 c = zeros(size(y)); 
                 s = zeros(size(y)); 
@@ -106,9 +111,15 @@ s = y;
 switch lower(options.method)
     case 'foopsi'  %% use FOOPSI
         if strcmpi(options.type, 'ar1')  % AR 1
+            if options.smin<0
+                options.smin = abs(options.smin)*options.sn; 
+            end
             [c, s, options.b, options.pars] = foopsi_oasisAR1(y-options.b, options.pars, options.lambda, ...
                 options.smin, options.optimize_b, options.optimize_pars, [], options.maxIter);
         elseif strcmpi(options.type, 'ar2') % AR 2
+            if options.smin<0
+                options.smin = abs(smin)*options.sn/max_ht(options.pars);
+            end
             [c, s, options.b, options.pars] = foopsi_oasisAR2(y-options.b, options.pars, options.lambda, ...
                 options.smin);
         elseif strcmpi(options.type, 'exp2')   % difference of two exponential functions
@@ -213,7 +224,9 @@ else
 end
 %% parse all input arguments
 while k<=nargin
-    
+    if isempty(varargin{k})
+        k = k+1; 
+    end 
     switch lower(varargin{k})
         case {'ar1', 'ar2', 'exp2', 'kernel'}
             % convolution kernel type

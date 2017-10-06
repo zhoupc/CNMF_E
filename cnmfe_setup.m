@@ -19,7 +19,7 @@ if isempty(which('cvx_begin.m'))
         elseif ispc
             cvx_url = 'http://web.cvxr.com/cvx/cvx-w64.zip';
         else
-            fprints('Your platform is not supported by CVX\n');
+            fprintf('Your platform is not supported by CVX\n');
             return;
         end
         fprintf('Downloading CVX...\n');

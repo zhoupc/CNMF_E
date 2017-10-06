@@ -44,16 +44,30 @@ end
 
 S = obj.S;
 if isempty(S) || (size(S, 1)~=size(obj.C, 1))
-    S = diff(obj.C, 1, 2);
+    try
+        S = diff(obj.C_raw, 1, 2);
+    catch
+        S = diff(obj.C, 1, 2);
+    end
+    S(:, end+1) = 0;
+    
     S(bsxfun(@lt, S, 2*get_noise_fft(S))) = 0;
 end
 S_corr = corr(S') - eye(K);
 C_corr = corr(C')-eye(K);
 
-
 %% using merging criterion to detect paired neurons
 flag_merge = (A_overlap>A_thr)&(C_corr>C_thr)&(S_corr>S_thr);
-
+if length(merge_thr)>3
+    max_decay_diff = merge_thr(4); 
+     taud = zeros(K, 1);
+     for m=1:K
+         temp = ar2exp(obj.P.kernel_pars(m));
+         taud(m) = temp(1);
+     end
+     decay_diff = abs(bsxfun(@minus, taud, taud'));
+     flag_merge = flag_merge & (decay_diff<max_decay_diff); 
+end
 [l,c] = graph_connected_comp(sparse(flag_merge));     % extract connected components
 
 MC = bsxfun(@eq, reshape(l, [],1), 1:c);
@@ -86,9 +100,9 @@ for m=1:n2merge
         ai = data*ci'/(ci*ci');
         ci = ai'*data/(ai'*ai);
     end
-    % normalize ai to make its maximum to be 1
+    % normalize ci
     sn = get_noise_fft(ci);
-    A(active_pixel, IDs(1)) = ai*sn;
+    obj.A(active_pixel, IDs(1)) = ai*sn;
     obj.C_raw(IDs(1), :) = ci/sn;
     %     [obj.C(IDs(1), :), obj.S(IDs(1), :), tmp_kernel] = deconvCa(ci, obj.kernel, 3, true, false);
     try

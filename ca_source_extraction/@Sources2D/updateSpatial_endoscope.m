@@ -49,6 +49,9 @@ if strcmpi(method, 'hals')
 elseif strcmpi(method, 'hals_thresh')
     obj.A = HALS_spatial_threshold(Y, obj.A, obj.C, IND, num, obj.P.sn); 
 elseif strcmpi(method, 'lars')
+     if ~isfield(obj.P, 'mis_entries')
+         obj.P.mis_entries = sparse(isnan(Y)); 
+     end 
      [obj.A, obj.C] = update_spatial_components_nb(Y,obj.C,obj.A, obj.P, obj.options); 
 elseif strcmpi(method, 'nnls_thresh')&&(~isempty(IND_thresh)) 
     obj.A = nnls_spatial_thresh(Y, obj.A, obj.C, IND, num, obj.P.sn); 
@@ -57,6 +60,6 @@ else
 end
 
 %% thresholding the minimum number of neurons
-obj.delete(sum(obj.A, 1)<=obj.options.min_pixel);
+obj.delete(sum(obj.A>0, 1)<=obj.options.min_pixel);
 
 end

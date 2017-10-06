@@ -1,44 +1,53 @@
-
 # CNMF_E
-Constrained Nonnegative Matrix Factorization for microEndoscopic data 
+Constrained Nonnegative Matrix Factorization for microEndoscopic data. 
 
-
-
-Download
-=======
+## Download
 OPTION 1: download the package using this [LINK](https://github.com/zhoupc/CNMF_E/archive/master.zip)
 
 OPTION 2: (recommended) clone the git repository <https://github.com/zhoupc/CNMF_E.git>. In this way, you are able to get the latest updates of the package within 1-line command or 1-button click. 
 
-Installation
-=======
+## Installation
 Run cnmfe_setup.m to add CNMF-E package to the search path of MATLAB
 
 `>> cnmfe_setup`
 
 CNMF-E requires [CVX](http://cvxr.com/cvx/) to denoise the extracted calcium traces. CNMF-E will automatically downloaded it and add it to the searching path. 
 
-Example
-=======
-The best way to get started is running a demo script for analyzing an example data. 
+Other required MATLAB toolboxes are listed below. 
 
-`>> run demos/demo_endoscope.m ` 
+1. /images/images
+2. /shared/optimlib/
+3. /signal/signal/
+4. /stats/stats/
+5. /curvefit/curvefit
 
-Questions
-=======
-You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. 
 
-Reference
-=======
-**Please cite this paper when you use CNMF-E for your research. Thanks!**
+## Examples
+The best way to get started is running a demo script for analyzing an example data. We included three demo scripts for you to try. You can modify these demos to process your own datasets. 
 
-**Zhou, P.**, Resendez, S. L., Stuber, G. D., Kass, R. E., & Paninski, L. (2016). *Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data*. arXiv preprint arXiv:1605.07266.
+1. demo_endoscope.m : this demo is good for exploratory analysis of your data. It gives you a good sense of different stages of CNMF-E pipeline and how different parameter selections influence your final results. 
 
-**Note**: This manusript is relatively old. We made main changes to our model and algorithms. The new version will be updated soon. 
+	`>> run demos/demo_endoscope.m ` 
 
-License
-=======
+2. demo_large_data_1p.m : this demo is good for processing large-scale dataset with the minimal manual intervention. It can process small data as well and should be used in most automated analysis. 
 
+	`>> run demos/demo_large_data_1p.m`
+
+3. demo_large_data_2p.m : this demo is the same as demo_large_data_1p.m. It is optimized for processing 2p data. 
+
+	`>> run demos/demo_large_data_2p.m`
+
+## Questions
+You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. An email request for slack channel invitation is required,  or you can ask your collegues who have joined the slack channel already for an invitation. 
+
+Please read more from the [wiki page](https://github.com/zhoupc/CNMF_E/wiki) 
+
+## Reference
+**Please cite this paper when you use CNMF-E in your research. Thanks!**
+
+**Zhou, P.**, Resendez, S.L., Rodriguez-Romaguera, J., Jimenez, J.C, Neufeld, S.Q., Stuber, G.D., Hen, R., Kheirbek, M.A., Sabatini, B.L., Kass, R.E., Paninski, L. (2016). [Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data](https://arxiv.org/abs/1605.07266). arXiv Prepr, arXiv1605.07266.
+
+## License
 Copyright 2016 Pengcheng Zhou
 
 This program is free software: you can redistribute it and/or modify
