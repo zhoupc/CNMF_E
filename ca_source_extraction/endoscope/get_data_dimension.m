@@ -49,6 +49,40 @@ elseif isempty(ext)
     % the input is a folder and data are stored as image sequences
     imgs = dir([path_to_file, filesep,'*.tif']);
     
+    trialandframe = zeros(length(imgs),2);
+
+    % fill out (trial and) frame list for sorting/excluding frames
+    firstInd = 1;
+    for file = 1:length(imgs)
+        fnam = imgs(file).name;
+        IDs = regexp(fnam,'\d*\d*','match'); % use a regular expression to find trial index and frame index within each file name
+        trialandframe(file,1)=str2num(IDs{1})+firstInd-1;
+        trialandframe(file,2)=str2num(IDs{2});
+    end
+    
+    % throw out trials with less than trial_length frames 
+    firstCol = trialandframe(:,1);
+    allTrials = unique(firstCol);
+    badTrials = zeros(size(firstCol));
+    for i = 1:length(allTrials)
+        if length(trialandframe(firstCol==allTrials(i),:)) < 800
+            badTrials = badTrials + firstCol==allTrials(i);
+        end
+    end
+    trialandframe(logical(badTrials),:) = [];
+    imgs(logical(badTrials))=[];
+    
+%   find indices of frames to throw out (i.e. the first 5 frames of every
+%   trial, etc.)
+    excludeIDs = (trialandframe(:,2) == 0);
+    
+    % sort frames in ascending order before reading
+    trialandframe(excludeIDs,:) = [];
+    [~, srt] = sortrows(trialandframe,[1 2]);
+    
+    imgs(excludeIDs)=[]; 
+    imgs = imgs(srt);
+    
     %get image info from first image of sequence
     first_img= fullfile(path_to_file,imgs(1).name);
     
