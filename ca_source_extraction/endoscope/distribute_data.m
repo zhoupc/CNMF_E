@@ -95,7 +95,9 @@ nc_block = length(block_idx_c) - 1;
 % num_blocks = nr_block * nc_block;
 
 %% prepare for distributing the data into multiple patches.
-[dir_nm, file_nm, ~] = fileparts(file_name);
+[~, file_nm, ~] = fileparts(file_name);
+fprintf('Choose folder to save results into...\n');
+dir_nm = uigetdir();
 folder_analysis = [dir_nm, filesep, file_nm, '_source_extraction'];
 mat_file = [folder_analysis, filesep,...
     sprintf('data_%d_%d_%d.mat', patch_dims(1), patch_dims(2), w_overlap)];
@@ -129,7 +131,7 @@ mat_data.patch_dims = patch_dims;
 mat_data.dims = dims;
 
 % pre-allocate matrices for saving the video data 
-img = smod_bigread2(file_name,1,1);
+img = smod_bigread2_trials(file_name,1,1);
 default_value = 0*img(1);
 temp = whos('img');
 mat_data.dtype = temp.class;
@@ -168,7 +170,7 @@ fprintf('Data is being loaded and distributed into multiple small blocks for eas
 
 while t_start<T
     num2read = min(Tchunk, T-t_start);
-    Y = smod_bigread2(file_name, t_start, num2read);
+    Y = smod_bigread2_trials(file_name, t_start, num2read);
     for m=1:nr_block
         r0 = block_idx_r(m);
         r1 = block_idx_r(m+1);
