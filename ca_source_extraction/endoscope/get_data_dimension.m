@@ -43,8 +43,23 @@ elseif strcmpi(ext, '.avi')
     sizy = obj.Height;
     dims = [sizy, sizx, numFrames];
 elseif strcmpi(ext, '.mat')
-    data = matfile(file_to_file); 
+    data = matfile(path_to_file); 
     dims = data.Ysiz; 
+elseif isempty(ext)
+    % the input is a folder and data are stored as image sequences
+    imgs = dir([path_to_file, filesep,'*.tif']);
+    
+    %get image info from first image of sequence
+    first_img= fullfile(path_to_file,imgs(1).name);
+    
+    info = imfinfo(first_img);
+    sizx = info.Height;
+    sizy = info.Width;
+    
+    numFrames=length(imgs);
+    
+    dims = [sizy, sizx, numFrames];
+
 else
     error('Unknown file extension. Only .tiff and .hdf5 files are currently supported');
     dims = [];

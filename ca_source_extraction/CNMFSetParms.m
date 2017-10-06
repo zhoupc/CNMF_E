@@ -112,6 +112,7 @@ Names = [
     'nk                 ' % number of knots for detrending data 
     'detrend_method     ' % method for detrending {'spline', 'local_min'}
     'spatial_constraints' % spatial constraints {'circular'}
+    'spatial_algorithm  ' % method for updating spatial components 
     ];
 
 [m,n] = size(Names);
@@ -296,6 +297,7 @@ Values = [
     {1}
     {'spline'}
     {struct('circular', true, 'connected', true)}
+    {'lars'}
     ];
 
 for j = 1:m

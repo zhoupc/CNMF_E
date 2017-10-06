@@ -232,7 +232,7 @@ classdef Sources2D < handle
         end
         
         %% distribute data and be ready to run batch mode source extraction
-        function getReady_batch(obj, pars_envs)
+        function getReady_batch(obj, pars_envs, log_folder)
             %% parameters for scaling things
             if ~exist('pars_envs', 'var') || isempty(pars_envs)
                 pars_envs = struct('memory_size_to_use', 4, ...   % GB, memory space you allow to use in MATLAB
@@ -241,7 +241,11 @@ classdef Sources2D < handle
                     'batch_frames', []);       % number of frames per batch
             end
             batch_frames = pars_envs.batch_frames;
-            
+            if ~exist('log_folder', 'var')||isempty(log_folder)||(~exist(log_folder, 'dir'))
+                obj.P.log_folder = [cd(), filesep];
+            else
+                obj.P.log_folder = log_folder;
+            end
             %% distribute all files
             nams = unique(obj.file);
             obj.file = nams;
@@ -1408,7 +1412,6 @@ classdef Sources2D < handle
             obj.compress_results();
             file_path = [obj.P.log_folder,  strrep(get_date(), ' ', '_'), '.mat'];
             evalin('base', sprintf('save(''%s'', ''neuron'', ''save_*'', ''show_*'', ''use_parallel'', ''with_*'', ''-v7.3''); ', file_path));
-            
             try
                 fp = fopen(obj.P.log_file, 'a');
                 fprintf(fp, '\n--------%s--------\n[%s]\bSave the current workspace into file \n\t%s\n\n', get_date(), get_minute(), file_path);
@@ -1419,19 +1422,36 @@ classdef Sources2D < handle
         end
         
         %% save results for all batches
-        function file_paths = save_workspace_batch(obj)
+        function file_paths = save_workspace_batch(obj, log_folder)
+            if ~exist('log_folder', 'var')||isempty(log_folder)||(~exist(log_folder, 'dir'))
+                log_folder = [cd(), filesep];
+            end
+            obj.P.log_folder = log_folder;
             nbatches = length(obj.batches);
             file_paths = cell(nbatches, 1);
+            
             for mbatch=1:nbatches
                 batch_k = obj.batches{mbatch};
-                neuron_k = batch_k.neuron;
+                neuron = batch_k.neuron;
                 
                 fprintf('\nprocessing batch %d/%d\n', mbatch, nbatches);
                 
                 % update background
-                file_paths{mbatch} = neuron_k.save_workspace();
+                neuron.compress_results();
+                file_path = [neuron.P.log_folder,  strrep(get_date(), ' ', '_'), '.mat'];
+                
+                save(file_path, 'neuron');
+                try
+                    fp = fopen(neuron.P.log_file, 'a');
+                    fprintf(fp, '\n--------%s--------\n[%s]\bSave the current workspace into file \n\t%s\n\n', get_date(), get_minute(), file_path);
+                    fprintf('The current workspace has been saved into file \n\t%s\n\n', file_path);
+                    fp.close();
+                end
+                file_paths{mbatch} = file_path;
                 
             end
+            obj.P.file_paths = file_paths;
+            obj.save_workspace();
         end
         
         %% clean the log folders
@@ -1566,7 +1586,9 @@ classdef Sources2D < handle
             plot_contours(obj.A(:, ind), img, thr,with_label, [], obj.Coor(ind), 2);
             colormap gray;
             file_path = [obj.P.log_folder,  'contours_%dneurons', strrep(get_date(), ' ', '_'), '.pdf'];
-            saveas(gcf, file_path);
+            try
+                saveas(gcf, file_path);
+            end
         end
         
         %% get contours of the all neurons

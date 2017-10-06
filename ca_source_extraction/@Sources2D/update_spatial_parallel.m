@@ -76,7 +76,8 @@ for mpatch=1:(nr_patch*nc_patch)
     mask = zeros(d1, d2);
     mask(tmp_block(1):tmp_block(2), tmp_block(3):tmp_block(4)) = 1;
     ind = (reshape(mask(:), 1, [])* obj.A>0);
-    A{mpatch}= obj.A(logical(mask), ind);
+    A{mpatch}= obj.A(logical(mask), ind);   
+    IND_search{mpatch} = IND(logical(mask), ind); 
     sn{mpatch} = obj.P.sn(logical(mask));
     C{mpatch} = obj.C(ind, :);
     ind_neurons{mpatch} = find(ind);    % indices of the neurons within each patch
@@ -144,7 +145,9 @@ if use_parallel
         end
         
         % using HALS to update spatial components
-        temp = HALS_spatial(Ypatch, A_patch(ind_patch, :), C_patch, IND_patch, 3);
+        A_patch = A_patch(ind_patch, :); 
+        IND_patch = IND_patch(ind_patch, :); 
+        temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);
         A_new{mpatch} = tmp_obj.post_process_spatial(reshape(full(temp), nr, nc, [])); %#ok<PFBNS>
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
@@ -200,7 +203,9 @@ else
         end
         
         % using HALS to update spatial components
-        temp = HALS_spatial(Ypatch, A_patch(ind_patch, :), C_patch, IND_patch, 3);
+        A_patch = A_patch(ind_patch, :); 
+        IND_patch = IND_patch(ind_patch, :); 
+        temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);
         A_new{mpatch} = tmp_obj.post_process_spatial(reshape(full(temp), nr, nc, [])); %#ok<PFBNS>
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end

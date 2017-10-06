@@ -180,15 +180,15 @@ else
     
     try
         fprintf(flog, '\tDeleting manually selected neurons:\n');
-        
-        obj.delete(ind(ind_del));
-        %     obj.Coor = obj.get_contours(0.9);
-        
-        manual_intervention.after = obj.obj2struct();
+    end
+    obj.delete(ind(ind_del));
+    %     obj.Coor = obj.get_contours(0.9);
+    
+    try
+        manual_intervention.after = obj.obj2struct(); %#ok<STRNU>
         tmp_str = get_date();
         tmp_str=strrep(tmp_str, '-', '_');
         eval(sprintf('log_data.manual_%s = manual_intervention;', tmp_str));
-        
         fprintf(flog, '[%s]\b', get_minute());
         fprintf(flog, 'Finished the manual intervention.\n');
         fprintf(flog, '[%s]\b', get_minute());

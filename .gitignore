@@ -16,3 +16,5 @@ demos/data_endoscope_neurons*
 deconvolveCa/example*
 deconvolveCa/constrained-foopsi*
 deconvolveCa/MCMC*
+
+demos/compare/

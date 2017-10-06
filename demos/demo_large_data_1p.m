@@ -114,7 +114,8 @@ end
 
 [center, Cn, PNR] = neuron.initComponents_parallel(K, frame_range, save_initialization, use_parallel); 
 if show_init
-    h_init=figure();
+    figure();
+    ax_init= axes(); 
     imagesc(Cn, [0, 1]); colormap gray;
     hold on;
     plot(center(:, 2), center(:, 1), '.r', 'markersize', 10);
@@ -127,7 +128,7 @@ neuron_init = neuron.copy();
 %% pick neurons from the residual 
 [center_res, Cn_res, PNR_res] =neuron.initComponents_residual_parallel([], save_initialization, use_parallel);
 if show_init
-    figure(h_init);
+    axes(ax_init);
     plot(center_res(:, 2), center_res(:, 1), '.g', 'markersize', 10);
 end
 neuron_init_res = neuron.copy();

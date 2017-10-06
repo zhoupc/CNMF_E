@@ -373,6 +373,56 @@ elseif strcmpi(ext, '.mat')
     end
     
     imData = data.Y(:, :, sframe+(1:num2read));
+elseif isempty(ext)
+    % the input is a folder and data are stored as image sequences
+    
+    imgs = dir([path_to_file, filesep,'*.tif']);
+    frames = zeros(1,length(imgs));
+    for file = 1:length(imgs)
+        fnam = imgs(file).name;
+        IDs = regexp(fnam,'\d*','match'); % use a regular expression to find frame index within each file name
+        frames(file) = str2num(IDs{1});
+    end
+    
+    % sort frames in ascending order before reading
+    [~,srt] = sort(frames,'ascend');
+    imgs = imgs(srt);
+    
+    %get image info from first image of sequence
+    first_img= fullfile(path_to_file,imgs(1).name);
+    
+    info = imfinfo(first_img);
+    sizx = info.Height;
+    sizy = info.Width;
+    
+    num_tot_frames=length(imgs);
+    if nargin < 2
+        sframe = 1;
+    end
+    if nargin < 3
+        num2read = num_tot_frames-sframe+1;
+    else
+        num2read = min(num_tot_frames-sframe+1, round(varargin{3}));
+    end
+    
+    if (num2read+sframe<= num_tot_frames+1)
+        lastframe=num2read+sframe-1;
+    else
+        num2read=num_tot_frames-sframe+1;
+        lastframe=num_tot_frames;
+        display('Hmmm...just reading from starting frame until the end');
+    end
+    
+    imData = zeros(sizx,sizx,num2read);
+    
+    sframemsg = ['Reading from frame ',num2str(sframe),' to frame ',num2str(lastframe),' of ',num2str(num_tot_frames), ' total frames'];
+    disp(sframemsg)
+    
+    for t = 1:num2read
+        imData(:,:,t)=imread(fullfile(path_to_file,imgs(t+sframe-1).name));
+    end
+    
+    display('Finished reading images')
 else
     error('Unknown file extension. Only .tiff and .hdf5 files are currently supported');
 end

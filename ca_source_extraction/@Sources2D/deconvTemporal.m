@@ -20,7 +20,7 @@ fprintf('\n');
 deconv_options = obj.options.deconv_options;
 if use_parallel
     tmp_flag = false(K,1); 
-    ind = randi(K, floor(K/num_per_row), 1); 
+    ind = randi(K, ceil(K/num_per_row), 1); 
     tmp_flag(ind) = true; 
     tmp_flag = num2cell(tmp_flag); 
     parfor k=1:size(C_raw_,1)
@@ -45,11 +45,7 @@ if use_parallel
         sn{k} = tmp_sn;
         
         % deconvolution
-%         try
-            [ck, sk, tmp_options]= deconvolveCa(ck_raw, deconv_options, 'maxIter', 2, 'sn', tmp_sn);
-%         catch
-%             pause;
-%         end
+        [ck, sk, tmp_options]= deconvolveCa(ck_raw, deconv_options, 'maxIter', 2, 'sn', tmp_sn);
         if sum(abs(ck))==0
             ck = ck_raw;
         end
@@ -85,11 +81,8 @@ else
         sn{k} = tmp_sn;
         
         % deconvolution
-%         try
-            [ck, sk, tmp_options]= deconvolveCa(ck_raw, deconv_options, 'maxIter', 2, 'sn', tmp_sn);
-%         catch
-%             pause;
-%         end
+        [ck, sk, tmp_options]= deconvolveCa(ck_raw, deconv_options, 'maxIter', 2, 'sn', tmp_sn);
+        
         if sum(abs(ck))==0
             ck = ck_raw;
         end
