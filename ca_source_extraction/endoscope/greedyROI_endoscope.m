@@ -319,7 +319,7 @@ while searching_flag
             [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz, options.spatial_constraints);
         end
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
-        if sum(ai)<=min_pixel; ind_succwss = false; end 
+        if sum(ai)<=min_pixel; ind_success = false; end 
         %         if max(ci_raw)<min_pnr;
         %             ind_success=false;
         %         end
