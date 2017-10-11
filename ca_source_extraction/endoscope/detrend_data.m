@@ -19,7 +19,7 @@ if ~exist('method', 'var') || isempty(method)
     method = 'spline'; 
 end 
 
-if strcmpi(method, 'sline')
+if strcmpi(method, 'spline')
 X = bsplineM((1:T)', linspace(1, T, nk), 4); 
 
 %% compute coefficients of all spline basis 
