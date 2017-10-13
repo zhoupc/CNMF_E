@@ -34,7 +34,7 @@ else
 end
 [~,~,ext] = fileparts(path_to_file);
 
-if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');
+if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif') || strcmpi(ext,'.BTF');
     info = imfinfo(path_to_file);
     
     
