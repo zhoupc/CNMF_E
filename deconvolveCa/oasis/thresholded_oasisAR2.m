@@ -69,7 +69,7 @@ if ~exist('thresh_factor', 'var') || isempty(thresh_factor)
 end
 
 %% start from smin that avoid counting gaussian noise as a spike
-smin = choose_smin(g, sn, 0.9999);
+smin = choose_smin(g, sn, 0.99999999);
 thresh = thresh_factor* sn * sn * T;
 
 % change parameters due to downsampling

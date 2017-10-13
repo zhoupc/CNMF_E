@@ -47,6 +47,10 @@ min_corr = options.min_corr;    %minimum local correlations for determining seed
 min_pnr = options.min_pnr;               % peak to noise ratio for determining seed pixels
 min_v_search = min_corr*min_pnr;
 seed_method = options.seed_method; % methods for selecting seed pixels
+if strcmpi(seed_method, 'manual')
+    min_corr = min_corr/2;
+    min_pnr = min_pnr/2;
+end
 % kernel_0 = options.kernel;
 deconv_options_0= options.deconv_options;
 min_pixel = options.min_pixel;  % minimum number of pixels to be a neuron
@@ -84,19 +88,19 @@ T = size(Y, 2);
 %% preprocessing data
 % create a spatial filter for removing background
 if gSig>0
-psf = fspecial('gaussian', round(gSiz), gSig);
-if options.center_psf
-    ind_nonzero = (psf(:)>=max(psf(:,1)));
-    psf = psf-mean(psf(ind_nonzero));
-    psf(~ind_nonzero) = 0;
-end
+    psf = fspecial('gaussian', round(gSiz), gSig);
+    if options.center_psf
+        ind_nonzero = (psf(:)>=max(psf(:,1)));
+        psf = psf-mean(psf(ind_nonzero));
+        psf(~ind_nonzero) = 0;
+    end
 else
-    psf = []; 
+    psf = [];
 end
 
 % filter the data
 if isempty(psf)
-    % no filtering 
+    % no filtering
     HY = Y;
 else
     HY = imfilter(reshape(Y, d1,d2,[]), psf, 'replicate');
@@ -131,7 +135,7 @@ v_search(or(Cn<min_corr, PNR<min_pnr)) = 0;
 ind_search = false(d1*d2,1);  % showing whether this pixel has been searched before
 ind_search(v_search==0) = true; % ignore pixels with small correlations or low peak-noise-ratio
 
-% ignore boundaries pixels when determinging seed pixels 
+% ignore boundaries pixels when determinging seed pixels
 if length(bd) ==1
     bd = ones(1,4)*bd;
 end
@@ -153,7 +157,7 @@ if debug_on
     imagesc(Cn0);
     %     imagesc(Cn.*PNR, quantile(Cn(:).*PNR(:), [0.5, 0.99]));
     axis equal off; hold on;
-    axis([bd(3), d2-bd(4), bd(1), d1-bd(2)]); 
+    axis([bd(3), d2-bd(4), bd(1), d1-bd(2)]);
     %     title('Cn * PNR');
     title('Cn');
     if exist('avi_name', 'var')
@@ -169,7 +173,7 @@ if debug_on
 end
 
 %% start initialization
-if ~exist('K', 'var')||isempty(K);
+if ~exist('K', 'var')||isempty(K)
     K = floor(sum(v_search(:)>0)/10);
 else
     K = min(floor(sum(v_search(:)>0)/10), K);
@@ -188,7 +192,7 @@ k = 0;      %number of found components
 while searching_flag
     %% find local maximum as initialization point
     %find all local maximum as initialization point
-
+    
     tmp_d = round(gSiz/4);
     v_search = medfilt2(v_search,2*[1, 1]); %+randn(size(v_search))*(1e-100);
     v_search(ind_search) = 0;
@@ -199,17 +203,19 @@ while searching_flag
     if strcmpi(seed_method, 'manual') %manually select seed pixels
         tmp_fig = figure('position', [200, 200, 1024, 412]);
         subplot(121); cla;
-        imagesc(Cn0.*PNR0);  hold on;
-        title('Cn*PNR');
+        imagesc(PNR);  hold on;
+        title('PNR');
         plot(center(1:k, 2), center(1:k, 1), '*r');
         axis equal off;
-            axis([bd(3), d2-bd(4), bd(1), d1-bd(2)]); 
-
+        axis([bd(3), d2-bd(4), bd(1), d1-bd(2)]);
+        colorbar;
+        
         subplot(122);
-        imagesc(v_search.*Cn0.*PNR0); %, [0, max(max(min_v_search(:)*0.99), min_v_search)]);
+        imagesc(Cn, [min_corr, 1]); %, [0, max(max(min_v_search(:)*0.99), min_v_search)]);
+        colorbar;
         hold on;
-        axis equal; 
-            axis([bd(3), d2-bd(4), bd(1), d1-bd(2)]); 
+        axis equal;
+        axis([bd(3), d2-bd(4), bd(1), d1-bd(2)]);
         drawnow;
         set(gca, 'xtick', []);
         set(gca, 'ytick', []);
@@ -244,7 +250,7 @@ while searching_flag
     [r_peak, c_peak] = ind2sub([d1,d2],ind_localmax);
     
     %% try initialization over all local maximums
-    for mcell = 1:length(ind_localmax);
+    for mcell = 1:length(ind_localmax)
         % find the starting point
         ind_p = ind_localmax(mcell);
         %         max_v = max_vs(mcell);
@@ -253,9 +259,9 @@ while searching_flag
             img_clim = [0, max_v];
         end
         ind_search(ind_p) = true; % indicating that this pixel has been searched.
-        if max_v<min_v_search; % all pixels have been tried for initialization
+        if max_v<min_v_search % all pixels have been tried for initialization
             continue;
-        end;
+        end
         [r, c]  = ind2sub([d1, d2], ind_p);
         
         % roughly check whether this is a good starting point
@@ -294,7 +300,7 @@ while searching_flag
             imagesc(reshape(v_search, d1, d2), img_clim); % [0, max_v]);
             title(sprintf('neuron %d', k+1));
             axis equal off; hold on;
-                axis([bd(3), d2-bd(4), bd(1), d1-bd(2)]); 
+            axis([bd(3), d2-bd(4), bd(1), d1-bd(2)]);
             plot(c_peak(mcell:end), r_peak(mcell:end), '.r');
             plot(c,r, 'or', 'markerfacecolor', 'r', 'markersize', 10);
             axes(ax_cn_box);
@@ -319,7 +325,7 @@ while searching_flag
             [ai, ci_raw, ind_success] =  extract_ac(HY_box, Y_box, ind_ctr, sz, options.spatial_constraints);
         end
         if or(any(isnan(ai)), any(isnan(ci_raw))); ind_success=false; end
-        if sum(ai)<=min_pixel; ind_success = false; end 
+        if sum(ai)<=min_pixel; ind_success = false; end
         %         if max(ci_raw)<min_pnr;
         %             ind_success=false;
         %         end
@@ -353,7 +359,7 @@ while searching_flag
             Y(ind_nhood, :) = Y_box - ai*ci;
             % update filtered data
             if isempty(psf)
-                Hai = reshape(Ain(ind_nhood_HY, k), nr2, nc2); 
+                Hai = reshape(Ain(ind_nhood_HY, k), nr2, nc2);
             else
                 Hai = imfilter(reshape(Ain(ind_nhood_HY, k), nr2, nc2), psf, 'replicate');
             end
@@ -437,7 +443,7 @@ end
 Cn = Cn0;
 PNR = PNR0;
 if exist('avi_file', 'var');
-    close(gcf); 
+    close(gcf);
     if avi_file.Duration==0
         warning('off', 'MATLAB:audiovideo:VideoWriter:noFramesWritten')
         avi_file.close();

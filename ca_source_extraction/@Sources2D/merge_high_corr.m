@@ -2,7 +2,7 @@ function [merged_ROIs, newIDs, obj_bk]  = merge_high_corr(obj, show_merge, merge
 %% merge neurons if they have high temporal correlations
 % inputs:
 %   show_merge: boolean scale, manually verify the merging
-%   merge_thr: scalar or 1*3 vector, threshold for three metrics {'C', 'S', 'A'}, it merge neurons based
+%   merge_thr: scalar or 1*3 vector, threshold for three metrics {'A', 'C', 'S'}, it merge neurons based
 %       on correlations of spatial shapes ('A'),  calcium traces ('C') and  spike counts ('S').
 %       if it's a scalar, it's the temporal corrleation of C.
 %       the other two are 0.
@@ -49,8 +49,8 @@ deconv_options_0 = obj.options.deconv_options;
 
 %% find neuron pairs to merge
 % compute spatial correlation
-% temp = bsxfun(@times, A, 1./sum(A.^2,1));
-temp = bsxfun(@times, A_>0, 1./sqrt(sum(A_>0)));
+temp = bsxfun(@times, A_, 1./sqrt(sum(A_.^2,1)));
+% temp = bsxfun(@times, A_>0, 1./sqrt(sum(A_>0)));
 A_overlap = temp'*temp;
 
 S_ = obj.S;
@@ -151,6 +151,7 @@ while m <= n2merge
             continue;
         elseif strcmpi(temp, 'b')
             m = m-1;
+            continue; 
         elseif strcmpi(temp, 'e')
             stop_show = true;
         elseif strcmpi(temp, 'md')

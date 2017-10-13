@@ -118,7 +118,7 @@ switch lower(options.method)
                 options.smin, options.optimize_b, options.optimize_pars, [], options.maxIter);
         elseif strcmpi(options.type, 'ar2') % AR 2
             if options.smin<0
-                options.smin = abs(smin)*options.sn/max_ht(options.pars);
+                options.smin = abs(options.smin)*options.sn/max_ht(options.pars);
             end
             [c, s, options.b, options.pars] = foopsi_oasisAR2(y-options.b, options.pars, options.lambda, ...
                 options.smin);

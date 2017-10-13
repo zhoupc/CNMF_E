@@ -1,7 +1,7 @@
 function img = connectivity_constraint(img, thr, sz, ind_max)
 % remove small nonzero pixels
 if ~exist('thr', 'var') || isempty(thr)
-    thr = 0.01; 
+    thr = 0.005; 
 end
 if ~exist('sz', 'var')||isemtpy(sz)
     sz = 5; 

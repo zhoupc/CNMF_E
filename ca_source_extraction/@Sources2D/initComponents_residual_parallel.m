@@ -1,4 +1,4 @@
-function [center, Cn, PNR] = initComponents_residual_parallel(obj, K, save_avi, use_parallel)
+function [center, Cn, PNR] = initComponents_residual_parallel(obj, K, save_avi, use_parallel, min_corr, min_pnr, seed_method)
 %% initializing spatial/temporal components for the residual video
 %% input:
 %   K:  scalar, maximum number of neurons
@@ -44,6 +44,15 @@ catch
 end
 fprintf('\n---------------PICK NEURONS FROM THE RESIDUAL----------------\n');
 
+if exist('min_corr', 'var') || ~isempty(min_corr)
+    obj.options.min_corr = min_corr; 
+end 
+if exist('min_pnr', 'var') || ~isempty(min_pnr)
+    obj.options.min_pnr = min_pnr; 
+end 
+if exist('seed_method', 'var') || ~isempty(seed_method)
+    obj.options.seed_method = seed_method; 
+end 
 % frames to be loaded for initialization
 frame_range = obj.frame_range;
 T = diff(frame_range) + 1;
@@ -73,6 +82,9 @@ if ~isfield(options, 'bd') || isempty(options.bd')
 end
 bd = options.bd;
 
+if strcmpi(obj.options.seed_method, 'manual')
+    use_parallel = false; 
+end
 % no centering of the raw video
 % options.center_psf = false;
 

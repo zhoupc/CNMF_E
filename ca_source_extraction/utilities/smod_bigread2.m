@@ -365,14 +365,14 @@ elseif strcmpi(ext, '.mat')
     dims = data.Ysiz;
     sizy = dims(1);
     sizx = dims(2);
-    numFrames = Ysiz(3);
+    numFrames = dims(3);
     if nargin < 3
         num2read = numFrames-sframe+1;
     else
         num2read = min(numFrames-sframe+1, round(varargin{3}));
     end
     
-    imData = data.Y(:, :, sframe+(1:num2read));
+    imData = data.Y(:, :, sframe+(0:(num2read-1)));
 elseif isempty(ext)
     % the input is a folder and data are stored as image sequences
     

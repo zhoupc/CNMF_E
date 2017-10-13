@@ -56,9 +56,10 @@ else
     [yy, xx] = ind2sub([obj.options.d1, obj.options.d2], temp);
 end
 dist_v = sqrt(bsxfun(@minus, xx, xx').^2 + bsxfun(@minus, yy, yy').^2);
-
+temp = bsxfun(@times, obj.A, 1./sqrt(sum(obj.A.^2)));
+A_overlap = temp'*temp;
 %% using merging criterion to detect paired neurons
-flag_merge = (dist_v<=dmin(1));
+flag_merge = (dist_v<=dmin(1)) &(A_overlap>0.8);
 
 % neurons should have similar decaying time constant if we want to merge
 % them.
@@ -149,6 +150,7 @@ while m <= n2merge
             continue;
         elseif strcmpi(temp, 'b')
             m = m-1;
+            continue; 
         elseif strcmpi(temp, 'e')
             stop_show = true;
         elseif strcmpi(temp, 'md')

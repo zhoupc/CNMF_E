@@ -168,7 +168,7 @@ fprintf('Data is being loaded and distributed into multiple small blocks for eas
 
 while t_start<T
     num2read = min(Tchunk, T-t_start);
-    Y = smod_bigread2(file_name, t_start, num2read);
+    Y = smod_bigread2(file_name, t_start+1, num2read);
     for m=1:nr_block
         r0 = block_idx_r(m);
         r1 = block_idx_r(m+1);

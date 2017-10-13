@@ -324,7 +324,7 @@ classdef Sources2D < handle
             sn = cell(nr_block, nc_block);
             fprintf('estimating the nosie level for every pixel.......\n');
             tic;
-            parfor mblock=1:(nr_block*nc_block)
+            for mblock=1:(nr_block*nc_block)
                 [m, n] = ind2sub([nr_block, nc_block], mblock);
                 r0 = block_idx_r(m); %#ok<PFBNS>
                 r1 = block_idx_r(m+1);
@@ -370,7 +370,7 @@ classdef Sources2D < handle
         
         %% pick neurons from the residual
         % for 1P and 2P data, CNMF and CNMF-E
-        [center, Cn, PNR] = initComponents_residual_parallel(obj, K, save_avi, use_parallel)
+        [center, Cn, PNR] = initComponents_residual_parallel(obj, K, save_avi, use_parallel, min_corr, min_pnr, seed_method)
         
         %------------------------------------------------------------------UPDATE MODEL VARIABLES---%
         %% update background components in parallel
