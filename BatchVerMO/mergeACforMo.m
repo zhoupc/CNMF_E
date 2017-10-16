@@ -71,7 +71,13 @@ flag_merge2 = (dist_v<=dmin);
 flag_merge=or(flag_merge1,flag_merge2);
 
 MC=merge_detail(flag_merge);
+MC=MC(:,sum(MC,1)>=numel(M));
+MC=merge_with_eachday(M,MC);
+
 MC1=merge_detail(flag_merge1);
+MC1=MC1(:,sum(MC1,1)>=numel(M));
+MC1=merge_with_eachday(M,MC1);
+
 [~,close_ind]=setdiff(MC',MC1','rows','stable');
 
 clear A_overlap C_corr C flag_merge1 flag_merge2 flag_merge;

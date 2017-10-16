@@ -126,7 +126,7 @@ view_neurons = false;           % view all neurons
 % parameters, estimate the background
 spatial_ds_factor = 1;          % spatial downsampling factor. it's for faster estimation
 thresh=thresh_detecting_frames; % threshold for detecting frames with large cellular activity. (mean of neighbors' activity  + thresh*sn)
-%bg_neuron_ratio = bg_neuron_ratio;  % spatial range / diameter of neurons
+bg_neuron_ratio = bg_neuron_ratio;  % spatial range / diameter of neurons
 
 % parameters, estimate the spatial components
 update_spatial_method = 'hals';  % the method for updating spatial components {'hals', 'hals_thresh', 'nnls', 'lars'}
@@ -236,7 +236,7 @@ close(gcf);
 neuron.drawPNRCn(min_pnr,min_corr)
 close(gcf);
 
-ColorAllNeurons(neuron.A,d1,d2,Picname,outputdir);
+ColorAllNeurons(neuron.A,d1,d2,[Picname,strcat('PNR=',num2str(min_pnr)),'.png'],outputdir);
 if strcmp(mode,'initiation')
     A0s=neuron.A;
     File.options=neuron.options;    
