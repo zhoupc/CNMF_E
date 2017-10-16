@@ -425,7 +425,7 @@ while searching_flag
             fprintf('%d neurons have been detected\n', k);
         end
         
-        if k==K;
+        if k==K
             searching_flag = false;
             break;
         end

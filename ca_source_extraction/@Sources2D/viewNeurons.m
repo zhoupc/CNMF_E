@@ -104,7 +104,7 @@ while and(m>=1, m<=length(ind))
         saveas(gcf, sprintf('neuron_%d.png', ind(m)));
         m = m+1;
     else
-        fprintf('Neuron %d, keep(k, default)/delete(d)/split(s)/trim(t)/trim cancel(tc)/delete all(da)/backward(b)/end(e):    ', ind(m));
+        fprintf('Neuron %d, keep(k, default)/delete(d)/split(s)/trim(t)\n\t/trim cancel(tc)/delete all(da)/backward(b)/end(e):    ', ind(m));
         
         temp = input('', 's');
         if temp=='d'
@@ -178,12 +178,18 @@ else
         end
     end
     
-    try
-        fprintf(flog, '\tDeleting manually selected neurons:\n');
+    if ~isempty(ind(ind_del))
+        try
+            fprintf(flog, '\tDeleting manually selected neurons:\n');
+        end
+        obj.delete(ind(ind_del));
     end
-    obj.delete(ind(ind_del));
     %     obj.Coor = obj.get_contours(0.9);
     
+    
+    if isempty(ind(ind_trim))&&isempty(ind(ind_trim))
+        return; 
+    end
     try
         manual_intervention.after = obj.obj2struct(); %#ok<STRNU>
         tmp_str = get_date();

@@ -52,7 +52,7 @@ nc_patch = round(d2/patch_dims(2));
 if nr_patch <= 1
     patch_idx_r = [1, d1];
 else
-    patch_idx_r = round(linspace(1, d1, nr_patch+1));
+    patch_idx_r = ceil(linspace(1, d1, nr_patch+1));
     patch_idx_r(end) = d1;
     if diff(patch_idx_r(1:2))<min_patch_width
         patch_idx_r = 1:min_patch_width:d1;
@@ -64,7 +64,7 @@ nr_patch = length(patch_idx_r) - 1;
 if nc_patch <= 1
     patch_idx_c = [1, d2];
 else
-    patch_idx_c = round(linspace(1, d2, nc_patch+1));
+    patch_idx_c = ceil(linspace(1, d2, nc_patch+1));
     if diff(patch_idx_c(1:2))<min_patch_width
         patch_idx_c = 1:min_patch_width:d2;
         patch_idx_c(end) = d2;

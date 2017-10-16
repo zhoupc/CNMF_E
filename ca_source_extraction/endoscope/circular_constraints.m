@@ -34,6 +34,7 @@ if rmin==1 && rmax==nr && cmin==1 && cmax==nc
     ind = ((fx.*(x0-x)+fy.*(y0-y)) < 0) & (img<vmax/3);
     img(ind) = 0;
     
+    % image erose 
     % remove isolated pixels 
     l = bwlabel(img, 4);
     ind = imdilate(l==l(ind_max), strel('square', 3)); 

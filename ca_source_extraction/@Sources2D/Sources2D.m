@@ -32,13 +32,13 @@ classdef Sources2D < handle
         tags;       % tags bad neurons with multiple criterion using a 16 bits number
         % ai indicates the bit value of the ith digits from
         % right to the left
-        % a1 = 0 means that neuron has too few nonzero pixels
-        % a2 = 0 means that neuron has silent calcium transients
-        % a3 = 0 means that neuron has unrealistic neuron
-        % shapes
-        % a4 = 0 indicates that user doesn't want this neuron
-        % a5 = 0 indicates that the neuron has been merged with
-        % others
+        % a1 = 1 means that neuron has too few nonzero pixels
+        % a2 = 1 means that neuron has silent calcium transients
+        % a3 = 1 indicates that the residual after being deconvolved has
+        % much smaller std than the raw data, which is uaually the case
+        % when temporal traces are random noise
+        
+        % a4 = 1 indicates that the neuron has small PNR
         %others
         Cn;         % correlation image
         PNR;        % peak-to-noise ratio image.
@@ -544,7 +544,12 @@ classdef Sources2D < handle
                         [~, srt] = sort(taud);
                     end
                 elseif strcmp(srt, 'mean')
-                    [~, srt] = sort(mean(obj.C,2)'.*sum(obj.A), 'descend');
+                    if obj.options.deconv_flag
+                        temp = mean(obj.C,2)'.*sum(obj.A); 
+                    else
+                        temp = mean(obj.C,2)'.*sum(obj.A)./obj.P.neuron.sn'; 
+                    end
+                    [~, srt] = sort(temp, 'descend');
                 elseif strcmp(srt, 'circularity')
                     % order neurons based on its circularity
                     tmp_circularity = zeros(K,1);
@@ -555,9 +560,12 @@ classdef Sources2D < handle
                         tmp_circularity(m) = abs((kx-ky+0.5)/((kx+ky)^2));
                     end
                     [~, srt] = sort(tmp_circularity, 'ascend');
+                elseif strcmpi(srt, 'pnr')
+                    pnrs = max(obj.C, [], 2)./std(obj.C_raw-obj.C, 0, 2);
+                    [~, srt] = sort(pnrs.*sum(obj.A, 1)', 'descend');
                 elseif strcmpi(srt, 'snr')
                     snrs = var(obj.C, 0, 2)./var(obj.C_raw-obj.C, 0, 2);
-                    [~, srt] = sort(snrs, 'descend');
+                    [~, srt] = sort(snrs.*sum(obj.A, 1)', 'descend');
                 end
             end
             obj.A = obj.A(:, srt);
@@ -1306,7 +1314,10 @@ classdef Sources2D < handle
         [merged_ROIs, newIDs, obj_bk] = merge_neurons_dist_corr(obj, show_merge, merge_thr, dmin, method_dist, max_decay_diff);
         
         %% tag neurons with quality control
-        function tags_ = tag_neurons_parallel(obj)
+        function tags_ = tag_neurons_parallel(obj, min_pnr)
+            if ~exist('min_pnr', 'var') || isempty(min_pnr)
+               min_pnr = 3;  
+            end
             A_ = obj.A;
             %             C_ = obj.C_;
             S_ = obj.S;
@@ -1323,6 +1334,17 @@ classdef Sources2D < handle
                 nz_spikes = full(sum(S_(:,2:end)>0, 2));
                 tags_ = tags_ + uint16(nz_spikes<1)*2;
             end
+            
+            if obj.options.deconv_flag
+                % check the noise level, it shouldn't be 0
+                temp= std(obj.C_raw-obj.C, 0, 2)./obj.P.neuron_sn;
+                tags_ = tags_ + uint16(temp<0.1)*4;
+                
+                % check PNR of neural traces
+                pnrs = max(obj.C, [], 2)./std(obj.C_raw-obj.C, 0, 2);
+                tags_ = tags_+uint16(pnrs<min_pnr)*8; 
+            end
+            
             
             obj.tags = tags_;
         end
@@ -1581,12 +1603,14 @@ classdef Sources2D < handle
             if isempty(obj.Coor) || (length(obj.Coor)~=K)
                 Coor = obj.get_contours(thr);
                 obj.Coor = Coor;
+            else
+                Coor = obj.Coor; 
             end
             figure;
             plot_contours(obj.A(:, ind), img, thr,with_label, [], obj.Coor(ind), 2);
             colormap gray;
-            file_path = [obj.P.log_folder,  'contours_%dneurons', strrep(get_date(), ' ', '_'), '.pdf'];
             try
+                file_path = [obj.P.log_folder,  'contours_%dneurons', strrep(get_date(), ' ', '_'), '.pdf'];
                 saveas(gcf, file_path);
             end
         end

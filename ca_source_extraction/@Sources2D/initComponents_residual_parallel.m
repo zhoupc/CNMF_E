@@ -169,7 +169,7 @@ if use_parallel
         % boundaries pixels to be avoided for detecting seed pixels
         tmp_options = options;
         tmp_options.visible_off = true;
-        tmp_options.bd = max([(tmp_patch-tmp_block).*[1, -1, 1, -1]; bd, bd, bd, bd], [], 1);
+        tmp_options.bd = bd*([r==1, r==nr_patch, c==1, c==nc_patch]);
         
         % patch dimension
         tmp_options.d1 = diff(tmp_patch(1:2))+1;
@@ -252,7 +252,7 @@ else
         % boundaries pixels to be avoided for detecting seed pixels
         tmp_options = options;
         tmp_options.visible_off = true;
-        tmp_options.bd = max([(tmp_patch-tmp_block).*[1, -1, 1, -1]; bd, bd, bd, bd], [], 1);
+        tmp_options.bd = bd*([r==1, r==nr_patch, c==1, c==nc_patch]);
         
         % patch dimension
         tmp_options.d1 = diff(tmp_patch(1:2))+1;
