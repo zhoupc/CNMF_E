@@ -254,6 +254,7 @@ classdef Sources2D < handle
             obj.C(ind, :) = [];
             THRESH=obj.P.THRESH;
             THRESH.Corr(ind)=[];
+            
             THRESH.PNR(ind)=[];
             if ~isempty(obj.S);
                 try obj.S(ind, :) = []; catch; end
