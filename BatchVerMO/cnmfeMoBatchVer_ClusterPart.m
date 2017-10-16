@@ -112,7 +112,7 @@ end
 % The following will be executed for cnmf_e(BatchVer), without motion
 % correction.
 %% 5 "massive" procedure: Extract A from each file
-neuron_batch(length(samplelist)) = struct('rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[]);
+neuron_batch(length(samplelist)) = struct('ind_del',[],'rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[],'C',[],'C_raw',[]);
 
 parfor i= 1:length(samplelist)  
     mode='massive';
@@ -124,14 +124,15 @@ parfor i= 1:length(samplelist)
                                    thresh_detecting_frames);
     neuron_batch(i).FileOrigin=filelist(i); % save origin(filelist)
 end
+neuron_batchMO = rmfield(neuron_batchMO,{'C','C_raw'});
 fprintf('Massive extraction in each file done.');
 
 %% 6 Save A*C
 
-parfor i= 1:length(filelist)
+parfor i= 1:length(samplelist)
     for j=1:size(neuron_batch(i).neuron.A,2)
         jA=neuron_batch(i).neuron.A(:,j);
-        jC=neuron_batch(i).neuron.C(j,:);
+        jC=neuron_batch(i).neuron.C_raw(j,:);
         neuron_batch(i).rawsignal(j,:)=median(jA(jA>0)*jC);
     end        
     fprintf('neuron_batch %.0f extraction done\n', i);
