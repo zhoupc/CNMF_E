@@ -43,7 +43,7 @@ end
 if numel(Y) < 500^3
     patch_sz = [1, 1];
 else
-    x = sqrt(numel(Y)/(500^3));
+    x = sqrt(500^3/T);
     patch_sz = ceil([d1/x, d2/x]);
 end
 r0_patch = round(linspace(1, d1, 1+patch_sz(1)));
@@ -86,6 +86,5 @@ for mr = 1:nr_patch
         HY(bsxfun(@lt, HY, Ysig*sig)) = 0;
         tmp_Cn = correlation_image(HY, [1,2], nrows, ncols);
         Cn(r0:r1, c0:c1) = max(Cn(r0:r1, c0:c1), tmp_Cn);
-        
     end
 end

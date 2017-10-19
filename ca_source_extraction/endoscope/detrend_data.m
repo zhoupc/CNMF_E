@@ -17,26 +17,26 @@ if ~exist('nk', 'var')
 end 
 if ~exist('method', 'var') || isempty(method) 
     method = 'spline'; 
-end 
+end
 
 if strcmpi(method, 'spline')
-X = bsplineM((1:T)', linspace(1, T, nk), 4); 
-
-%% compute coefficients of all spline basis 
-R = (Y*X)/(X'*X); 
-
-%% compute detrended data 
-Ydt = Y-R*X'; 
+    X = bsplineM((1:T)', linspace(1, T, nk), 4);
+    
+    %% compute coefficients of all spline basis
+    R = (Y*X)/(X'*X);
+    
+    %% compute detrended data
+    Ydt = Y-R*X';
 else
     k = ceil(T/nk);
-    [d, T] = size(Y); 
+    [d, T] = size(Y);
     Tnew = ceil(T/k)*k;
     if T~=Tnew
         Y(:, (T+1):Tnew) = repmat(Y(:, T), [1, Tnew-T]);
     end
     Y = reshape(Y, d, k, []);
     Ydt = reshape(bsxfun(@minus, Y, min(Y,[], 2)), d, []);
-    Ydt = Ydt(:, 1:T); 
-    X = []; 
-    R = []; 
+    Ydt = Ydt(:, 1:T);
+    X = [];
+    R = [];
 end 

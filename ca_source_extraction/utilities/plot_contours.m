@@ -81,7 +81,7 @@ end
 cm = com(Aor(:,1:end),d1,d2);
 if display_numbers
     lbl = strtrim(cellstr(num2str((1:size(Aor,2))')));
-    text(round(cm(1:max_number,2)),round(cm(1:max_number,1)),lbl(1:max_number),'color',[0,0,0],'fontsize',16,'fontname',fontname,'fontweight','bold');
+    text((cm(1:max_number,2)),(cm(1:max_number,1)),lbl(1:max_number),'color',[0,0,0],'fontsize',16,'fontname',fontname,'fontweight','bold');
 end
 axis off;
 if ~(nargin < 6 || isempty(Coor))

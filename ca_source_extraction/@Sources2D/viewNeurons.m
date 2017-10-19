@@ -82,9 +82,10 @@ while and(m>=1, m<=length(ind))
     axis equal; axis off;
     x0 = ctr(ind(m), 2);
     y0 = ctr(ind(m), 1);
-    xlim(x0+[-gSiz, gSiz]*2);
-    ylim(y0+[-gSiz, gSiz]*2);
-    
+    if ~isnan(x0)
+        xlim(x0+[-gSiz, gSiz]*2);
+        ylim(y0+[-gSiz, gSiz]*2);
+    end
     
     %% temporal components
     subplot(2,2,3:4);cla;
@@ -104,7 +105,7 @@ while and(m>=1, m<=length(ind))
         saveas(gcf, sprintf('neuron_%d.png', ind(m)));
         m = m+1;
     else
-        fprintf('Neuron %d, keep(k, default)/delete(d)/split(s)/trim(t)/trim cancel(tc)/delete all(da)/backward(b)/end(e):    ', ind(m));
+        fprintf('Neuron %d, keep(k, default)/delete(d)/split(s)/trim(t)\n\t/trim cancel(tc)/delete all(da)/backward(b)/end(e):    ', ind(m));
         
         temp = input('', 's');
         if temp=='d'
@@ -178,12 +179,18 @@ else
         end
     end
     
-    try
-        fprintf(flog, '\tDeleting manually selected neurons:\n');
+    if ~isempty(ind(ind_del))
+        try
+            fprintf(flog, '\tDeleting manually selected neurons:\n');
+        end
+        obj.delete(ind(ind_del));
     end
-    obj.delete(ind(ind_del));
     %     obj.Coor = obj.get_contours(0.9);
     
+    
+    if isempty(ind(ind_trim))&&isempty(ind(ind_trim))
+        return;
+    end
     try
         manual_intervention.after = obj.obj2struct(); %#ok<STRNU>
         tmp_str = get_date();

@@ -44,13 +44,13 @@ catch
 end
 fprintf('\n---------------PICK NEURONS FROM THE RESIDUAL----------------\n');
 
-if exist('min_corr', 'var') || ~isempty(min_corr)
+if exist('min_corr', 'var') && ~isempty(min_corr)
     obj.options.min_corr = min_corr; 
 end 
-if exist('min_pnr', 'var') || ~isempty(min_pnr)
+if exist('min_pnr', 'var') && ~isempty(min_pnr)
     obj.options.min_pnr = min_pnr; 
 end 
-if exist('seed_method', 'var') || ~isempty(seed_method)
+if exist('seed_method', 'var') && ~isempty(seed_method)
     obj.options.seed_method = seed_method; 
 end 
 % frames to be loaded for initialization
@@ -169,7 +169,7 @@ if use_parallel
         % boundaries pixels to be avoided for detecting seed pixels
         tmp_options = options;
         tmp_options.visible_off = true;
-        tmp_options.bd = max([(tmp_patch-tmp_block).*[1, -1, 1, -1]; bd, bd, bd, bd], [], 1);
+        tmp_options.bd = bd*([r==1, r==nr_patch, c==1, c==nc_patch]);
         
         % patch dimension
         tmp_options.d1 = diff(tmp_patch(1:2))+1;
@@ -252,7 +252,7 @@ else
         % boundaries pixels to be avoided for detecting seed pixels
         tmp_options = options;
         tmp_options.visible_off = true;
-        tmp_options.bd = max([(tmp_patch-tmp_block).*[1, -1, 1, -1]; bd, bd, bd, bd], [], 1);
+        tmp_options.bd = bd*([r==1, r==nr_patch, c==1, c==nc_patch]);
         
         % patch dimension
         tmp_options.d1 = diff(tmp_patch(1:2))+1;

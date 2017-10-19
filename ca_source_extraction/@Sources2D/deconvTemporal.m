@@ -19,33 +19,23 @@ end
 fprintf('\n');
 deconv_options = obj.options.deconv_options;
 if use_parallel
-    tmp_flag = false(K,1); 
-    ind = randi(K, ceil(K/num_per_row), 1); 
-    tmp_flag(ind) = true; 
-    tmp_flag = num2cell(tmp_flag); 
+    tmp_flag = false(K,1);
+    ind = randi(K, ceil(K/num_per_row), 1);
+    tmp_flag(ind) = true;
+    tmp_flag = num2cell(tmp_flag);
     parfor k=1:size(C_raw_,1)
         ck_raw = C_raw_{k};
         
         %remove baseline and estimate noise level. estiamte the noise
-        %using two methods: psd and histogram. choose the one with
-        %smaller value.
-        [b_hist, sn_hist] = estimate_baseline_noise(ck_raw);
-
-        baseline_ = mean(ck_raw(ck_raw<median(ck_raw)));
         sn_psd = GetSn(ck_raw);
-        if sn_psd<sn_hist
-            tmp_sn = sn_psd;
-        else
-            tmp_sn = sn_hist;
-            baseline_ = b_hist;
-        end
+        
         
         % subtract the baseline
-        ck_raw = ck_raw -baseline_;
-        sn{k} = tmp_sn;
+        sn{k} = sn_psd;
         
         % deconvolution
-        [ck, sk, tmp_options]= deconvolveCa(ck_raw, deconv_options, 'maxIter', 2, 'sn', tmp_sn);
+        [ck, sk, tmp_options]= deconvolveCa(ck_raw, deconv_options, 'sn', sn_psd);
+        
         if sum(abs(ck))==0
             ck = ck_raw;
         end
@@ -64,24 +54,14 @@ else
         ck_raw = C_raw_{k};
         
         %remove baseline and estimate noise level. estiamte the noise
-        %using two methods: psd and histogram. choose the one with
-        %smaller value.
-        [b_hist, sn_hist] = estimate_baseline_noise(ck_raw);
-        baseline_ = mean(ck_raw(ck_raw<median(ck_raw)));
         sn_psd = GetSn(ck_raw);
-        if sn_psd<sn_hist
-            tmp_sn = sn_psd;
-        else
-            tmp_sn = sn_hist;
-            baseline_ = b_hist;
-        end
+        
         
         % subtract the baseline
-        ck_raw = ck_raw -baseline_;
-        sn{k} = tmp_sn;
+        sn{k} = sn_psd;
         
         % deconvolution
-        [ck, sk, tmp_options]= deconvolveCa(ck_raw, deconv_options, 'maxIter', 2, 'sn', tmp_sn);
+        [ck, sk, tmp_options]= deconvolveCa(ck_raw, deconv_options, 'sn', sn_psd);
         
         if sum(abs(ck))==0
             ck = ck_raw;
@@ -90,7 +70,7 @@ else
         S_{k} = reshape(sk, 1, []);
         kernel_pars{k} = reshape(tmp_options.pars, 1, []);
         C_raw_{k} = ck_raw - tmp_options.b;
-        fprintf('.'); 
+        fprintf('.');
         if mod(k,num_per_row)==0
             fprintf('\n');
         end

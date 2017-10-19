@@ -188,13 +188,14 @@ center = zeros(K, 2);   % center of the initialized components
 %% do initialization in a greedy way
 searching_flag = true;
 k = 0;      %number of found components
-
+[ii, jj] = meshgrid(1:d2, 1:d1); 
+pixel_v = (ii*100+jj)*(1e-9); 
 while searching_flag
     %% find local maximum as initialization point
     %find all local maximum as initialization point
     
-    tmp_d = round(gSiz/4);
-    v_search = medfilt2(v_search,2*[1, 1]); %+randn(size(v_search))*(1e-100);
+    tmp_d = max(3, round(gSiz/4));
+    v_search = medfilt2(v_search,3*[1, 1])+pixel_v; % add an extra value to avoid repeated seed pixels within one ROI. 
     v_search(ind_search) = 0;
     v_max = ordfilt2(v_search, tmp_d^2, true(tmp_d));
     % set boundary to be 0
@@ -425,7 +426,7 @@ while searching_flag
             fprintf('%d neurons have been detected\n', k);
         end
         
-        if k==K;
+        if k==K
             searching_flag = false;
             break;
         end

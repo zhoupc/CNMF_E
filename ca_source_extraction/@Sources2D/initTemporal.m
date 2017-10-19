@@ -177,7 +177,7 @@ if use_parallel
             b_svd = b{mpatch};
             b0_svd = mean(Ypatch, 2);
             k = size(A_patch, 2);
-            tmp_A = [A_patch, b_svd];
+            tmp_A = full([A_patch, b_svd]);
             tmp_C = (tmp_A'*tmp_A)\(tmp_A'*double(Ypatch)-tmp_A'*b0_svd*ones(1,T));
             C_patch = tmp_C(1:k, :);
             f_svd = tmp_C((k+1):end, :);

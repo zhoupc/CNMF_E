@@ -199,6 +199,7 @@ if ~isfield(options, 'bd') || isempty(options.bd')
     options.bd = options.gSiz;   % boundary pixesl to be ignored during the process of detecting seed pixels
 end
 bd = options.bd;
+bg_ssub = options.bg_ssub; 
 
 %% preallocate spaces for saving model variables relating to background components
 bg_model = obj.options.background_model;
@@ -208,8 +209,8 @@ b = cell(nr_patch, nc_patch);
 f = cell(nr_patch, nc_patch);
 
 if strcmpi(bg_model, 'ring')
-    rr = obj.options.ring_radius;    % radius of the ring
-    [r_shift, c_shift] = get_nhood(rr, obj.options.num_neighbors);    % shifts used for acquiring the neighboring pixels on the ring  
+    rr = ceil(obj.options.ring_radius/bg_ssub);    % radius of the ring
+    [r_shift, c_shift] = get_nhood(rr, obj.options.num_neighbors);    % shifts used for acquiring the neighboring pixels on the ring
     parfor mpatch=1:(nr_patch*nc_patch)
         tmp_patch = patch_pos{mpatch};    % patch position
         tmp_block = block_pos{mpatch};    % block position
@@ -217,18 +218,36 @@ if strcmpi(bg_model, 'ring')
         nc = diff(tmp_patch(3:4)) + 1;
         nr_block = diff(tmp_block(1:2))+1;
         nc_block = diff(tmp_block(3:4))+1;
-        [csub, rsub] = meshgrid(tmp_patch(3):tmp_patch(4), tmp_patch(1):tmp_patch(2));
-        csub = reshape(csub, [], 1);
-        rsub = reshape(rsub, [], 1);
-        ii = repmat((1:numel(csub))', [1, length(r_shift)]);
-        csub = bsxfun(@plus, csub, c_shift);
-        rsub = bsxfun(@plus, rsub, r_shift);
-        ind = and(and(csub>=1, csub<=d2), and(rsub>=1, rsub<=d1));
-        jj = (csub-tmp_block(3)) * (diff(tmp_block(1:2))+1) + (rsub-tmp_block(1)+1);
-        
-        temp = sparse(ii(ind), jj(ind), 1, nr*nc, nr_block*nc_block);
-        W{mpatch} = bsxfun(@times, temp, 1./sum(temp, 2));
         b0{mpatch} = zeros(nr*nc, 1);
+
+        if bg_ssub==1
+            [csub, rsub] = meshgrid(tmp_patch(3):tmp_patch(4), tmp_patch(1):tmp_patch(2));
+            csub = reshape(csub, [], 1);
+            rsub = reshape(rsub, [], 1);
+            ii = repmat((1:numel(csub))', [1, length(r_shift)]);
+            csub = bsxfun(@plus, csub, c_shift);
+            rsub = bsxfun(@plus, rsub, r_shift);
+            ind = and(and(csub>=1, csub<=d2), and(rsub>=1, rsub<=d1));
+            jj = (csub-tmp_block(3)) * (diff(tmp_block(1:2))+1) + (rsub-tmp_block(1)+1);
+            
+            temp = sparse(ii(ind), jj(ind), 1, nr*nc, nr_block*nc_block);
+            W{mpatch} = bsxfun(@times, temp, 1./sum(temp, 2));
+        else
+            d1s = ceil(nr_block/bg_ssub); 
+            d2s = ceil(nc_block/bg_ssub);
+            
+            [csub, rsub] = meshgrid(1:d2s, 1:d1s);
+            csub = reshape(csub, [], 1);
+            rsub = reshape(rsub, [], 1);
+            ii = repmat((1:numel(csub))', [1, length(r_shift)]);
+            csub = bsxfun(@plus, csub, c_shift);
+            rsub = bsxfun(@plus, rsub, r_shift);
+            jj = (csub-1) * d1s + rsub;
+            % remove neighbors that are out of boundary
+            ind = and(and(csub>=1, csub<=d2s), and(rsub>=1, rsub<=d1s));
+            temp = sparse(ii(ind), jj(ind), 1, d1s*d2s, d1s*d2s);
+            W{mpatch} = bsxfun(@times, temp, 1./sum(temp, 2));
+        end
     end
 elseif strcmpi(bg_model, 'nmf')
     nb = obj.options.nb;

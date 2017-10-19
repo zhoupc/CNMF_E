@@ -340,9 +340,14 @@ elseif strcmpi(ext,'.hdf5') || strcmpi(ext,'.h5');
     end
     if nargin < 3
         num2read = dims(end)-sframe+1;
+    else
+        num2read = round(varargin{3});
     end
     num2read = min(num2read,dims(end)-sframe+1);
-    imData = h5read(path_to_file,'/mov',[ones(1,length(dims)-1),sframe],[dims(1:end-1),num2read]);
+    sframemsg = ['Reading from frame ',num2str(sframe),' to frame ',num2str(num2read+sframe-1),' of ',num2str(dims(end)), ' total frames'];
+    
+    imData =squeeze( h5read(path_to_file,info.GroupHierarchy.Datasets.Name,[ones(1,length(dims)-1),sframe],[dims(1:end-1),num2read]));
+    display('Finished reading images')
 elseif strcmpi(ext,'.avi')
     obj = audiovideo.mmreader(path_to_file);
     

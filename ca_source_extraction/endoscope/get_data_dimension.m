@@ -31,7 +31,8 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');
     dims = [d1, d2, numFrames];
 elseif strcmpi(ext,'.hdf5') || strcmpi(ext,'.h5');
     info = hdf5info(path_to_file);
-    dims = info.GroupHierarchy.Datasets.Dims;
+    temp = squeeze(info.GroupHierarchy.Datasets.Dims);
+    dims = temp([2, 3, 5]); 
 elseif strcmpi(ext, '.avi')
     obj = audiovideo.mmreader(path_to_file);
     

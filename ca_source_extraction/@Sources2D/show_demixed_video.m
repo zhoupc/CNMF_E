@@ -1,4 +1,4 @@
-function show_demixed_video(obj,save_avi, kt, center_ac, range_ac, range_Y, multi_factor)
+function avi_filename = show_demixed_video(obj,save_avi, kt, frame_range, amp_ac, range_ac, range_Y, multi_factor)
 %% save the final results of source extraction.
 %% inputs:
 %   kt:  scalar, the number of frames to be skipped
@@ -12,21 +12,24 @@ if ~exist('kt', 'var')||isempty(kt)
     kt = 1;
 end
 %% load data
-frame_range = obj.frame_range;
+if ~exist('frame_range', 'var')||isempty(frame_range)
+    frame_range = obj.frame_range;
+end
 t_begin = frame_range(1);
 t_end = frame_range(2);
-%% data preparation
-Y = obj.load_patch_data([], obj.frame_range);
-Ybg = obj.reconstruct_background();
+
+tmp_range = [t_begin, min(t_begin+100*kt-1, t_end)]; 
+Y = obj.load_patch_data([], tmp_range);
+Ybg = obj.reconstruct_background(tmp_range);
 figure('position', [0,0, 600, 400]);
 
 %%
-if ~exist('center_ac', 'var') || isempty(center_ac)
-    center_ac = median(max(obj.A,[],1)'.*max(obj.C,[],2));
+if ~exist('amp_ac', 'var') || isempty(amp_ac)
+    amp_ac = median(max(obj.A,[],1)'.*max(obj.C,[],2))*2;
 end
-range_res = [-1,1]*center_ac;
+range_res = [-1,1]*amp_ac/2.0;
 if ~exist('range_ac', 'var') || isempty(range_ac)
-    range_ac = center_ac*1.01+range_res;
+    range_ac = amp_ac*1.05+range_res;
 end
 if ~exist('range_Y', 'var') || isempty(range_Y)
     if ~exist('multi_factor', 'var') || isempty(multiple_factor)
@@ -35,7 +38,7 @@ if ~exist('range_Y', 'var') || isempty(range_Y)
     else
         temp = quantile(Y(randi(numel(Y), 10000,1)), 0.01);
     end
-    center_Y = temp(1) + multi_factor*center_ac;
+    center_Y = temp(1) + multi_factor*amp_ac;
     range_Y = center_Y + range_res*multi_factor;
 end
 %% create avi file
@@ -46,6 +49,8 @@ if save_avi
         avi_file.FrameRate= obj.Fs/kt;
     end
     avi_file.open();
+else
+    avi_filename = []; 
 end
 
 %% add pseudo color to denoised signals
@@ -59,7 +64,7 @@ col = temp(randi(64, K,1), :);
 for m=1:3
     Y_mixed(:, :, m) = obj.A* (diag(col(:,m))*obj.C);
 end
-Y_mixed = uint16(Y_mixed/(1*center_ac)*65536);
+Y_mixed = uint16(Y_mixed/(1*amp_ac)*65536);
 %% play and save
 ax_y =   axes('position', [0.015, 0.51, 0.3, 0.42]);
 ax_bg=   axes('position', [0.015, 0.01, 0.3, 0.42]);
@@ -67,9 +72,13 @@ ax_signal=    axes('position', [0.345, 0.51, 0.3, 0.42]);
 ax_denoised =    axes('position', [0.345, 0.01, 0.3, 0.42]);
 ax_res =    axes('position', [0.675, 0.51, 0.3, 0.42]);
 ax_mix =     axes('position', [0.675, 0.01, 0.3, 0.42]);
-for m=1:kt:(t_end-t_begin+1)
+tt0 = (t_begin-1); 
+for tt=t_begin:kt:t_end
+    m = tt-tt0; 
+
     axes(ax_y); cla;
     imagesc(Y(:, :,m), range_Y);
+
     %     set(gca, 'children', flipud(get(gca, 'children')));
     title('Raw data');
     axis equal off tight;
@@ -87,7 +96,7 @@ for m=1:kt:(t_end-t_begin+1)
     axis equal off tight;
     
     axes(ax_denoised); cla;
-    img_ac = obj.reshape(obj.A*obj.C(:, m), 2);
+    img_ac = obj.reshape(obj.A*obj.C(:, tt), 2);
     imagesc(img_ac, range_ac);
     %     imagesc(Ybg(:, :, m), [-50, 50]);
     title(sprintf('Denoised X %d', multi_factor));
@@ -103,7 +112,7 @@ for m=1:kt:(t_end-t_begin+1)
     axes(ax_mix); cla;
     imagesc(obj.reshape(Y_mixed(:, m,:),2));  hold on;
     title('Demixed');
-    text(1, 10, sprintf('Time: %.2f second', (m+t_begin)/obj.Fs), 'color', 'w', 'fontweight', 'bold');
+    text(1, 10, sprintf('Time: %.2f second', (tt)/obj.Fs), 'color', 'w', 'fontweight', 'bold');
     
     axis equal tight off;
     %     box on; set(gca, 'xtick', []);
@@ -114,6 +123,31 @@ for m=1:kt:(t_end-t_begin+1)
         temp = getframe(gcf);
         temp = imresize(temp.cdata, [400, 600]);
         avi_file.writeVideo(temp);
+    end
+    
+    %% save more data
+    if mod(tt-tt0, kt*100)==(kt*100-kt+1)
+        tt0 = tt0+kt*100;
+        % load data
+        tmp_range = [tt0+1, min(tt0+100*kt, t_end)];
+        if isempty(tmp_range)
+            break; 
+        end
+        Y = obj.load_patch_data([], tmp_range);
+        Ybg = obj.reconstruct_background(tmp_range);
+        
+        %% add pseudo color to denoised signals
+        [d1, d2, Tp]=size(Y);
+        % draw random color for each neuron
+        % tmp = mod((1:K)', 6)+1;
+        Y_mixed = zeros(d1*d2, Tp, 3);
+        tmp_C = obj.C(:, tt0+(1:Tp));
+        temp = prism;
+        col = temp(randi(64, K,1), :);
+        for m=1:3
+            Y_mixed(:, :, m) = obj.A* (diag(col(:,m))*tmp_C);
+        end
+        Y_mixed = uint16(Y_mixed/(1*amp_ac)*65536);
     end
 end
 

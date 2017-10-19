@@ -10,11 +10,23 @@ function [W, b0] = fit_ring_model(Y, A, C, W_old, thresh_outlier, sn, ind_patch)
 %   sn: d*1 noise level 
 
 %% find pixels to be updated 
+[d, T] = size(Y); 
+if ~exist('A', 'var') || isempty(A)
+    A = ones(d,1); 
+    C = zeros(1, T); 
+end
 % check whether this is the first run 
 if length(unique(W_old(1,:)))==2
     ind_active = true(size(W_old(:,1))); 
 else
     ind_active = (abs(W_old)*sum(A,2)>0);
+end
+
+if ~exist('sn', 'var') || isempty(sn)
+    sn = GetSn(double(Y)); 
+end
+if ~exist('ind_patch', 'var') || isempty(ind_patch)
+    ind_patch = true(size(Y,1), 1); 
 end
 
 %% compute the fluctuating background 

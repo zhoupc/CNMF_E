@@ -1,8 +1,9 @@
-function update_spatial_parallel(obj, use_parallel)
+function update_spatial_parallel(obj, use_parallel, update_sn)
 %% update the the spatial components for all neurons
 % input:
 %   use_parallel: boolean, do initialization in patch mode or not.
 %       default(true); we recommend you to set it false only when you want to debug the code.
+%   update_sn:  boolean, update noise level for each pixel
 
 %% Author: Pengcheng Zhou, Columbia University, 2017
 %% email: zhoupc1988@gmail.com
@@ -47,10 +48,14 @@ T = diff(frame_range) + 1;
 if ~exist('use_parallel', 'var')||isempty(use_parallel)
     use_parallel = true; %don't save initialization procedure
 end
-
+% update sn or not
+if ~exist('update_sn', 'var')||isempty(update_sn)
+    update_sn = false; %don't save initialization procedure
+end
 % options
 options = obj.options;
 bg_model = options.background_model;
+method = options.spatial_algorithm;
 
 %% determine search location for each neuron
 search_method = options.search_method;
@@ -76,11 +81,14 @@ for mpatch=1:(nr_patch*nc_patch)
     mask = zeros(d1, d2);
     mask(tmp_block(1):tmp_block(2), tmp_block(3):tmp_block(4)) = 1;
     ind = (reshape(mask(:), 1, [])* obj.A>0);
-    A{mpatch}= obj.A(logical(mask), ind);   
-    IND_search{mpatch} = IND(logical(mask), ind); 
+    A{mpatch}= obj.A(logical(mask), ind);
+    IND_search{mpatch} = IND(logical(mask), ind);
     sn{mpatch} = obj.P.sn(logical(mask));
     C{mpatch} = obj.C(ind, :);
     ind_neurons{mpatch} = find(ind);    % indices of the neurons within each patch
+end
+if update_sn
+    sn_new = sn;
 end
 %% prepare for the variables for computing the background.
 bg_model = obj.options.background_model;
@@ -126,6 +134,9 @@ if use_parallel
             Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, false);
         end
         
+        % get the noise level
+        sn_patch = sn{mpatch};
+        
         % get background
         if strcmpi(bg_model, 'ring')
             W_ring = W{mpatch};
@@ -145,10 +156,28 @@ if use_parallel
         end
         
         % using HALS to update spatial components
-        A_patch = A_patch(ind_patch, :); 
-        IND_patch = IND_patch(ind_patch, :); 
-        temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);
-        A_new{mpatch} = tmp_obj.post_process_spatial(reshape(full(temp), nr, nc, [])); %#ok<PFBNS>
+        A_patch = A_patch(ind_patch, :);
+        IND_patch = IND_patch(ind_patch, :);
+        
+        sn_patch = sn_patch(ind_patch,:);
+        if update_sn
+            sn_patch = GetSn(Ypatch);
+            sn_new{mpatch} = reshape(sn_patch, nr, nc);
+        end
+        %         temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);
+        if strcmpi(method, 'hals')
+            temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);
+        elseif strcmpi(method, 'hals_thresh')
+            temp = HALS_spatial_thresh(Ypatch, A_patch, C_patch, IND_patch, 3, sn_patch);
+        elseif strcmpi(method, 'lars')
+            temp = lars_spatial(Ypatch, A_patch, C_patch, IND_patch, sn_patch);
+        elseif strcmpi(method, 'nnls_thresh')&&(~isempty(IND_thresh))
+            temp = nnls_spatial_thresh(Ypatch, A_patch, C_patch, IND_patch, 10, sn_patch);
+        else
+            temp = nnls_spatial(Ypatch, A_patch, C_patch, IND_patch, 20);
+        end
+        
+        A_new{mpatch} = tmp_obj.post_process_spatial(reshape(full(temp), nr, nc, []));
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
 else
@@ -184,6 +213,9 @@ else
             Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, false);
         end
         
+        % get the noise level
+        sn_patch = sn{mpatch};
+        
         % get background
         if strcmpi(bg_model, 'ring')
             W_ring = W{mpatch};
@@ -203,10 +235,28 @@ else
         end
         
         % using HALS to update spatial components
-        A_patch = A_patch(ind_patch, :); 
-        IND_patch = IND_patch(ind_patch, :); 
-        temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);
-        A_new{mpatch} = tmp_obj.post_process_spatial(reshape(full(temp), nr, nc, [])); %#ok<PFBNS>
+        A_patch = A_patch(ind_patch, :);
+        IND_patch = IND_patch(ind_patch, :);
+        
+        sn_patch = sn_patch(ind_patch,:);
+        if update_sn
+            sn_patch = GetSn(Ypatch);
+            sn_new{mpatch} = reshape(sn_patch, nr, nc);
+        end
+        %         temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);
+        if strcmpi(method, 'hals')
+            temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);
+        elseif strcmpi(method, 'hals_thresh')
+            temp = HALS_spatial_thresh(Ypatch, A_patch, C_patch, IND_patch, 3, sn_patch);
+        elseif strcmpi(method, 'lars')
+            temp = lars_spatial(Ypatch, A_patch, C_patch, IND_patch, sn_patch);
+        elseif strcmpi(method, 'nnls_thresh')&&(~isempty(IND_thresh))
+            temp = nnls_spatial_thresh(Ypatch, A_patch, C_patch, IND_patch, 10, sn_patch);
+        else
+            temp = nnls_spatial(Ypatch, A_patch, C_patch, IND_patch, 20);
+        end
+        
+        A_new{mpatch} = tmp_obj.post_process_spatial(reshape(full(temp), nr, nc, []));
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
 end
@@ -228,7 +278,9 @@ for mpatch=1:(nr_patch*nc_patch)
 end
 A_old = sparse(obj.A);
 A_new = sparse(obj.reshape(A_, 1));
-
+if update_sn
+    obj.P.sn = cell2mat(sn_new);
+end
 %% post-process results
 fprintf('Post-process spatial components of all neurons...\n');
 obj.A = obj.post_process_spatial(obj.reshape(A_new, 2));

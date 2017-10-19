@@ -1,4 +1,4 @@
-function A = HALS_spatial(Y, A, C, active_pixel, maxIter)
+function A = HALS_spatial_thresh(Y, A, C, active_pixel, maxIter, sn)
 %% run HALS by fixating all spatial components 
 % input: 
 %   Y:  d*T, fluorescence data
@@ -21,7 +21,10 @@ elseif isempty(active_pixel)
 else
     active_pixel = logical(active_pixel); 
 end     %determine nonzero pixels 
-
+if ~exist('sn', 'var')||isempty(sn)
+    sn = GetSn(Y); 
+end
+sn = reshape(sn, [], 1); 
 %% initialization 
 A(~active_pixel) = 0; 
 K = size(A, 2);     % number of components 
@@ -31,6 +34,7 @@ T = size(C,2);
 U = double(Y*C'-T*(Ymean*Cmean')); 
 V = double(C*C'-T*(Cmean*Cmean')); 
 cc = diag(V);   % squares of l2 norm all all components 
+cc_thr = 3.0./sqrt(cc); 
 
 %% updating 
 for miter=1:maxIter
@@ -39,7 +43,12 @@ for miter=1:maxIter
             continue; 
         end
         tmp_ind = active_pixel(:, k); 
-        ak = max(0, A(tmp_ind, k)+(U(tmp_ind, k)-A(tmp_ind,:)*V(:, k))/cc(k)); 
+        if sum(tmp_ind)==0
+            A(:, k) = 0; 
+            continue; 
+        end
+        ak = A(tmp_ind, k)+(U(tmp_ind, k)-A(tmp_ind,:)*V(:, k))/cc(k);
+        ak(ak<sn(tmp_ind)*cc_thr(k)) = 0; 
         A(tmp_ind, k) = ak; 
     end
 end
