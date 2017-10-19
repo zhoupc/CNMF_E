@@ -568,7 +568,7 @@ classdef Sources2D < handle
                     [~, srt] = sort(pnrs, 'descend');
                 elseif strcmpi(srt, 'snr')
                     snrs = var(obj.C, 0, 2)./var(obj.C_raw-obj.C, 0, 2);
-                    [~, srt] = sort(snrs, 'descend');
+                    [~, srt] = sort(snrs.*sum(obj.A, 1)', 'descend');
                 end
             end
             obj.A = obj.A(:, srt);

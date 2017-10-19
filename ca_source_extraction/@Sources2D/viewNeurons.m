@@ -188,7 +188,6 @@ else
     %     obj.Coor = obj.get_contours(0.9);
     
     
-    if isempty(ind(ind_trim))&&isempty(ind(ind_trim))
         return;
     end
     try
