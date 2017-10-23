@@ -18,7 +18,7 @@ end
 t_begin = frame_range(1);
 t_end = frame_range(2);
 
-tmp_range = [t_begin, min(t_begin+100*kt-1, t_end)]; 
+tmp_range = [t_begin, min(t_begin+100*kt-1, t_end)];
 Y = obj.load_patch_data([], tmp_range);
 Ybg = obj.reconstruct_background(tmp_range);
 figure('position', [0,0, 600, 400]);
@@ -50,7 +50,7 @@ if save_avi
     end
     avi_file.open();
 else
-    avi_filename = []; 
+    avi_filename = [];
 end
 
 %% add pseudo color to denoised signals
@@ -72,13 +72,13 @@ ax_signal=    axes('position', [0.345, 0.51, 0.3, 0.42]);
 ax_denoised =    axes('position', [0.345, 0.01, 0.3, 0.42]);
 ax_res =    axes('position', [0.675, 0.51, 0.3, 0.42]);
 ax_mix =     axes('position', [0.675, 0.01, 0.3, 0.42]);
-tt0 = (t_begin-1); 
+tt0 = (t_begin-1);
 for tt=t_begin:kt:t_end
-    m = tt-tt0; 
-
+    m = tt-tt0;
+    
     axes(ax_y); cla;
     imagesc(Y(:, :,m), range_Y);
-
+    
     %     set(gca, 'children', flipud(get(gca, 'children')));
     title('Raw data');
     axis equal off tight;
@@ -130,10 +130,11 @@ for tt=t_begin:kt:t_end
         tt0 = tt0+kt*100;
         % load data
         tmp_range = [tt0+1, min(tt0+100*kt, t_end)];
-        if isempty(tmp_range)
-            break; 
+        if isempty(tmp_range) || diff(tmp_range)<1
+            break;
         end
         Y = obj.load_patch_data([], tmp_range);
+        
         Ybg = obj.reconstruct_background(tmp_range);
         
         %% add pseudo color to denoised signals

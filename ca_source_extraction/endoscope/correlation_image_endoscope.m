@@ -1,4 +1,4 @@
-function [Cn, PNR] = correlation_image_endoscope(Y, options)
+function [Cn, PNR] = correlation_image_endoscope(Y, options, K)
 %% compute correlation image of endoscopic data. it has to spatially filter the data first
 %% Input:
 %   Y:  d X T matrx, imaging data
@@ -8,6 +8,8 @@ function [Cn, PNR] = correlation_image_endoscope(Y, options)
 %       gSiz:   maximum size of a neuron
 %       nb:     number of background
 %       min_corr: minimum threshold of correlation for segementing neurons
+%  K:  scalar, the rank of the random matrix for projection
+
 %% Output:
 %       Cn:  d1*d2, correlation image
 %       PNR: d1*d2, peak to noise ratio
@@ -26,6 +28,9 @@ Y(isnan(Y)) = 0;    % remove nan values
 Y = double(Y);
 T = size(Y, 3);
 
+if ~exist('K', 'var')
+    K = []; 
+end
 %% preprocessing data
 % create a spatial filter for removing background
 if gSig>0
@@ -84,7 +89,7 @@ for mr = 1:nr_patch
         
         %  compute loal correlation
         HY(bsxfun(@lt, HY, Ysig*sig)) = 0;
-        tmp_Cn = correlation_image(HY, [1,2], nrows, ncols);
+        tmp_Cn = correlation_image(HY, [1,2], nrows, ncols, [], K);
         Cn(r0:r1, c0:c1) = max(Cn(r0:r1, c0:c1), tmp_Cn);
     end
 end

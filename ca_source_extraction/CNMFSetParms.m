@@ -105,6 +105,7 @@ Names = [
     'gaussian_shape     ' % neurons have 2D gaussian shapes. 
     'ring_radius        ' % radius of the ring in CNMF-E background model 
     'bg_ssub            ' % spatial downsampling factor when estimating background
+    'bg_acceleration    ' % accelerating bg estimation using random projection
     'num_neighbors      ' % number of pixels on the ring 
     'dmin               ' %minum distances between two neurons 
     'method_dist        ' % method for computing distances of two neurons 
@@ -291,6 +292,7 @@ Values = [
     {true}
     {15}
     {1}
+    {true}
     {[]}
     {1}
     {'max'}

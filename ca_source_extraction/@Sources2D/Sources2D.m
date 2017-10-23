@@ -38,7 +38,7 @@ classdef Sources2D < handle
         % much smaller std than the raw data, which is uaually the case
         % when temporal traces are random noise
         % a4 = 1 indicates that the CNMF-E fails in deconvolving temporal
-        % traces. this usually happens when neurons are false positives. 
+        % traces. this usually happens when neurons are false positives.
         
         % a4 = 1 indicates that the neuron has small PNR
         %others
@@ -453,11 +453,11 @@ classdef Sources2D < handle
             obj.viewNeurons([], obj.C_raw, folder_nm);
         end
         
-        %% export the result as a video 
+        %% export the result as a video
         avi_filename = show_demixed_video(obj,save_avi, kt, frame_range, center_ac, range_ac, range_Y, multi_factor)        %% compute the residual
-%         function [Y_res] = residual(obj, Yr)
-%             Y_res = Yr - obj.A*obj.C - obj.b*obj.f;
-%         end
+        %         function [Y_res] = residual(obj, Yr)
+        %             Y_res = Yr - obj.A*obj.C - obj.b*obj.f;
+        %         end
         
         %% take the snapshot of current results
         function [A, C,  b, f, P, S] = snapshot(obj)
@@ -553,6 +553,12 @@ classdef Sources2D < handle
                         temp = mean(obj.C,2)'.*sum(obj.A)./obj.P.neuron.sn';
                     end
                     [~, srt] = sort(temp, 'descend');
+                elseif strcmp(srt, 'sparsity_spatial')
+                    temp = sqrt(sum(obj.A.^2, 1))./sum(abs(obj.A), 1);
+                    [~, srt] = sort(temp);
+                elseif strcmp(srt, 'sparsity_temporal')
+                    temp = sqrt(sum(obj.C_raw.^2, 2))./sum(abs(obj.C_raw), 2);
+                    [~, srt] = sort(temp, 'descend');
                 elseif strcmp(srt, 'circularity')
                     % order neurons based on its circularity
                     tmp_circularity = zeros(K,1);
@@ -566,9 +572,9 @@ classdef Sources2D < handle
                 elseif strcmpi(srt, 'pnr')
                     pnrs = max(obj.C, [], 2)./std(obj.C_raw-obj.C, 0, 2);
                     [~, srt] = sort(pnrs, 'descend');
-                elseif strcmpi(srt, 'snr')
+                else %if strcmpi(srt, 'snr')
                     snrs = var(obj.C, 0, 2)./var(obj.C_raw-obj.C, 0, 2);
-                    [~, srt] = sort(snrs.*sum(obj.A, 1)', 'descend');
+                    [~, srt] = sort(snrs, 'descend');
                 end
             end
             obj.A = obj.A(:, srt);
@@ -1394,8 +1400,8 @@ classdef Sources2D < handle
             if obj.options.deconv_flag
                 nz_spikes = full(sum(S_(:,2:end)>0, 2));
                 tags_ = tags_ + uint16(nz_spikes<1)*2;
-
-                tmp_std = std(obj.C_raw-obj.C, 0, 2); 
+                
+                tmp_std = std(obj.C_raw-obj.C, 0, 2);
                 % check the noise level, it shouldn't be 0
                 temp= tmp_std./GetSn(obj.C_raw);
                 tags_ = tags_ + uint16(temp<0.1)*4;
@@ -1681,7 +1687,7 @@ classdef Sources2D < handle
             if exist('ind_show', 'var')
                 A_ = A_(:, ind_show);
             else
-                ind_show = 1:size(A_, 2); 
+                ind_show = 1:size(A_, 2);
             end
             if ~exist('thr', 'var') || isempty(thr)
                 thr = 0.9;
@@ -1693,9 +1699,9 @@ classdef Sources2D < handle
             else
                 Coor = cell(num_neuron,1);
             end
-            d1 = obj.options.d1; 
-            d2 = obj.options.d2; 
-%             tmp_kernel = strel('square', 3); 
+            d1 = obj.options.d1;
+            d2 = obj.options.d2;
+            %             tmp_kernel = strel('square', 3);
             for m=1:num_neuron
                 % smooth the image with median filter
                 A_temp = obj.reshape(full(A_(:, m)),2);
@@ -1705,7 +1711,7 @@ classdef Sources2D < handle
                 [temp,ind] = sort(A_temp(:).^2,'ascend');
                 temp =  cumsum(temp);
                 ff = find(temp > (1-thr)*temp(end),1,'first');
-                A_temp(A_temp<A_temp(ind(ff))) = 0;
+                thr_a = A_temp(ind(ff));
                 A_temp = obj.reshape(A_temp,2);
                 
                 % crop a small region for computing contours
@@ -1719,13 +1725,16 @@ classdef Sources2D < handle
                 cmin = max(1, min(tmp2)-3);
                 cmax = min(d2, max(tmp2)+3);
                 A_temp = A_temp(rmin:rmax, cmin:cmax);
-%                 A_temp = imresize(A_temp, 3, 'bilinear');                
                 
-                l = bwlabel(A_temp>0);
+                l = bwlabel(medfilt2(A_temp>thr_a));
                 l_most = mode(l(l>0));
                 %                 temp = imdilate(l==l_most, tmp_kernel);
-                temp = medfilt2(double(l==l_most));
-                pvpairs = { 'LevelList' , 0.5, 'ZData', double(temp)};
+                tmp_ind = (l==l_most);
+                img = medfilt2(A_temp);
+                
+                img(tmp_ind) = max(thr_a, A_temp(tmp_ind));
+                img(~tmp_ind) = min(thr_a, A_temp(~tmp_ind));
+                pvpairs = { 'LevelList' , thr_a, 'ZData', img};
                 h = matlab.graphics.chart.primitive.Contour(pvpairs{:});
                 temp = h.ContourMatrix;
                 if isempty(temp)
@@ -1733,6 +1742,7 @@ classdef Sources2D < handle
                     Coor{m} = temp{1};
                     continue;
                 else
+                    temp(:, 1) = temp(:, 2);
                     temp = medfilt1(temp')';
                     temp(:, 1) = temp(:, end);
                     Coor{m} = bsxfun(@plus, temp, [cmin-1; rmin-1]);
@@ -1778,58 +1788,6 @@ classdef Sources2D < handle
         end
         %% determine nonzero pixels
         
-        %         function Coor = get_contours(obj, thr, ind)
-        %             A_ = obj.A;
-        %             if exist('ind', 'var')
-        %                 A_ = A_(:, ind);
-        %             end
-        %             if ~exist('thr', 'var') || isempty(thr)
-        %                 thr = 0.995;
-        %             end
-        %             num_neuron = size(A_,2);
-        %             if num_neuron==0
-        %                 Coor ={};
-        %                 return;
-        %             else
-        %                 Coor = cell(num_neuron,1);
-        %             end
-        %             for m=1:num_neuron
-        %                 % smooth the image with median filter
-        %                 img = medfilt2(obj.reshape(full(A_(:, m)),2), [3, 3]);
-        %                 % find the threshold for detecting nonzero pixels
-        %                 temp = sort(img(img>1e-9));
-        %                 if ~any(temp)
-        %                     Coor{m} = [];
-        %                     continue;
-        %                 end
-        %                 temp_sum = cumsum(temp);
-        %                 ind = find(temp_sum>=temp_sum(end)*(1-thr),1);
-        %                 v_thr = temp(ind);
-        %
-        %                 % find the connected components
-        %                 [~, ind_max] = max(img(:));
-        %                 temp = bwlabel(img>v_thr);
-        %                 img = double(temp==temp(ind_max));
-        %                 v_nonzero = imfilter(img, [0,-1/4,0;-1/4,1,-1/4; 0,-1/4,0]);
-        %                 vv = v_nonzero(v_nonzero>1e-9)';
-        %                 [y, x] = find(v_nonzero>1e-9);
-        %                 xmx = bsxfun(@minus, x, x');
-        %                 ymy = bsxfun(@minus, y, y');
-        %                 dist_pair = xmx.^2 + ymy.^2;
-        %                 dist_pair(diag(true(length(x),1))) = inf;
-        %                 seq = ones(length(x)+1,1);
-        %                 for mm=1:length(x)-1
-        %                     [v_min, seq(mm+1)] = min(dist_pair(seq(mm), :)+vv);
-        %                     dist_pair(:,seq(mm)) = inf;
-        %                     if v_min>3
-        %                         seq(mm+1) = 1;
-        %                         break;
-        %                     end
-        %                 end
-        %                 Coor{m} = [smooth(x(seq), 2)'; smooth(y(seq),2)'];
-        %             end
-        %
-        %         end
         
         %         %% update background
         %         function [Y, ind_bg, bg] = linearBG(obj, Y)

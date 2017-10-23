@@ -53,9 +53,10 @@ end
 options = obj.options;
 nb = options.nb;
 bg_ssub = options.bg_ssub;
-bg_model = obj.options.background_model;
+bg_model = options.background_model;
+with_projection = options.bg_acceleration;
 
-% previous estimation 
+% previous estimation
 A = cell(nr_patch, nc_patch);
 C = cell(nr_patch, nc_patch);
 sn = cell(nr_patch, nc_patch);
@@ -63,14 +64,14 @@ W = obj.W;
 b0 = obj.b0;
 b = obj.b;
 f = obj.f;
-%% check whether the bg_ssub was changed 
+%% check whether the bg_ssub was changed
 if strcmpi(bg_model, 'ring')
     tmp_block = block_pos{1};    % block position
     nr_block = diff(tmp_block(1:2))+1;
     nc_block = diff(tmp_block(3:4))+1;
-    [~, temp] = size(W{1}); 
-    [d1s, d2s] = size(imresize(zeros(nr_block, nc_block), 1/bg_ssub)); 
-    if temp~=d1s*d2s        
+    [~, temp] = size(W{1});
+    [d1s, d2s] = size(imresize(zeros(nr_block, nc_block), 1/bg_ssub));
+    if temp~=d1s*d2s
         rr = ceil(obj.options.ring_radius/bg_ssub);    % radius of the ring
         [r_shift, c_shift] = get_nhood(rr, obj.options.num_neighbors);    % shifts used for acquiring the neighboring pixels on the ring
         parfor mpatch=1:(nr_patch*nc_patch)
@@ -129,8 +130,8 @@ for mpatch=1:(nr_patch*nc_patch)
     if bg_ssub==1
         sn{mpatch} = temp;
     else
-        nr_block = diff(tmp_block(1:2))+1; 
-        nc_block = diff(tmp_block(3:4))+1; 
+        nr_block = diff(tmp_block(1:2))+1;
+        nc_block = diff(tmp_block(3:4))+1;
         sn{mpatch} = imresize(reshape(temp, nr_block, nc_block), 1/bg_ssub)*bg_ssub;
     end
 end
@@ -175,13 +176,13 @@ if use_parallel
             % run regression to get A, C, and W, b0
             if bg_ssub==1
                 sn_patch = sn_block(ind_patch);
-                [W{mpatch}, b0{mpatch}] = fit_ring_model(Ypatch, A_block, C_block, W_old, thresh_outlier, sn_patch, ind_patch);
+                [W{mpatch}, b0{mpatch}] = fit_ring_model(Ypatch, A_block, C_block, W_old, thresh_outlier, sn_patch, ind_patch, with_projection);
             else
                 % downsapmle data first
                 Ypatch = imresize(reshape(double(Ypatch)-A_block*C_block, nr_block, nc_block, T_block), 1./bg_ssub);
                 Ypatch = reshape(Ypatch, [], T_block);
                 
-                [W{mpatch}, tmp_b0] = fit_ring_model(Ypatch, [], [], W_old, thresh_outlier, sn_block(:));
+                [W{mpatch}, tmp_b0] = fit_ring_model(Ypatch, [], [], W_old, thresh_outlier, sn_block(:), [], with_projection);
                 tmp_b0 = imresize(reshape(tmp_b0, size(sn_block)), [nr_block, nc_block]);
                 b0{mpatch} = tmp_b0(ind_patch(:));
             end
@@ -234,13 +235,13 @@ else
             % run regression to get A, C, and W, b0
             if bg_ssub==1
                 sn_patch = sn_block(ind_patch);
-                [W{mpatch}, b0{mpatch}] = fit_ring_model(Ypatch, A_block, C_block, W_old, thresh_outlier, sn_patch, ind_patch);
+                [W{mpatch}, b0{mpatch}] = fit_ring_model(Ypatch, A_block, C_block, W_old, thresh_outlier, sn_patch, ind_patch, with_projection);
             else
                 % downsapmle data first
                 Ypatch = imresize(reshape(double(Ypatch)-A_block*C_block, nr_block, nc_block, T_block), 1./bg_ssub);
                 Ypatch = reshape(Ypatch, [], T_block);
                 
-                [W{mpatch}, tmp_b0] = fit_ring_model(Ypatch, [], [], W_old, thresh_outlier, sn_block(:));
+                [W{mpatch}, tmp_b0] = fit_ring_model(Ypatch, [], [], W_old, thresh_outlier, sn_block(:), with_projection);
                 tmp_b0 = imresize(reshape(tmp_b0, size(sn_block)), [nr_block, nc_block]);
                 b0{mpatch} = tmp_b0(ind_patch(:));
             end

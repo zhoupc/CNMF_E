@@ -1,4 +1,4 @@
-function [W, b0] = fit_ring_model(Y, A, C, W_old, thresh_outlier, sn, ind_patch)
+function [W, b0] = fit_ring_model(Y, A, C, W_old, thresh_outlier, sn, ind_patch, with_projection)
 %% fit a ring model Bf = W*Bf s.t. Bf = Y-AC-b0*1^T to reconstruct the background 
 %% inputs: 
 %   Y:  d*T matrix 
@@ -8,6 +8,7 @@ function [W, b0] = fit_ring_model(Y, A, C, W_old, thresh_outlier, sn, ind_patch)
 %   b0: d*1 vector 
 %   thresh_outlier 
 %   sn: d*1 noise level 
+%   with_projection: boolean 
 
 %% find pixels to be updated 
 [d, T] = size(Y); 
@@ -28,6 +29,9 @@ end
 if ~exist('ind_patch', 'var') || isempty(ind_patch)
     ind_patch = true(size(Y,1), 1); 
 end
+if ~exist('with_projection', 'var') || isempty(with_projection)
+    with_projection = true; 
+end
 
 %% compute the fluctuating background 
 Ymean = mean(Y,2); 
@@ -40,7 +44,7 @@ b0 = Ymean(ind_patch) - A(ind_patch,:)*Cmean;
 %% compute the previous estimatin and take care of the outliers. 
 Bf_old = W_old*Bf; 
 tmp_Bf = Bf(ind_patch, :); 
-ind_outlier = bsxfun(@gt, tmp_Bf, bsxfun(@plus, Bf_old, thresh_outlier*reshape(sn, [], 1))); 
+ind_outlier = bsxfun(@gt, tmp_Bf, bsxfun(@plus, B   f_old, thresh_outlier*reshape(sn, [], 1))); 
 tmp_Bf(ind_outlier) = Bf_old(ind_outlier);  
 Bf(ind_patch, :) = tmp_Bf; 
 
@@ -62,22 +66,45 @@ d = length(ind_pixels);
 W = W_old; 
 clear tmp_Bf Bf_old; 
 
-%% fit a regression model to get W 
-
-for m=1:d
-    if ~ind_active(m)
-        continue; 
+%% with prejection 
+if with_projection
+    nk = ceil(nnz(W)/size(W, 1) *4);
+    V = randn(size(Bf, 2), nk);
+    Bf_proj = Bf*V; 
+    vec_ones = ones(1, nk); 
+    for m=1:d
+        if ~ind_active(m)
+            continue;
+        end
+        idx = ind_pixels(m);
+        ind_ring = (W_old(m,:)~=0);
+        y = Bf_proj(idx, :);
+        X = [Bf_proj(ind_ring,:); vec_ones];
+        
+        tmpXX = X*X';
+        tmpXy = X*y';
+        
+        w = (tmpXX+eye(size(tmpXX))*sum(diag(tmpXX))*(1e-5)) \ tmpXy;
+        W(m, ind_ring) = w(1:(end-1))+(1e-100); % add a small value to keep those nonzero elements still nonzero
     end
-    idx = ind_pixels(m); 
-    ind_ring = (W_old(m,:)~=0); 
-    y = Bf(idx, :); 
-    X = [Bf(ind_ring,:); vec_ones]; 
+else
+    %% fit a regression model to get W
     
-    tmpXX = X*X'; 
-    tmpXy = X*y'; 
-
-    w = (tmpXX+eye(size(tmpXX))*sum(diag(tmpXX))*(1e-5)) \ tmpXy;
-    W(m, ind_ring) = w(1:(end-1))+(1e-100); % add a small value to keep those nonzero elements still nonzero
-end 
+    for m=1:d
+        if ~ind_active(m)
+            continue;
+        end
+        idx = ind_pixels(m);
+        ind_ring = (W_old(m,:)~=0);
+        y = Bf(idx, :);
+        X = [Bf(ind_ring,:); vec_ones];
+        
+        tmpXX = X*X';
+        tmpXy = X*y';
+        
+        w = (tmpXX+eye(size(tmpXX))*sum(diag(tmpXX))*(1e-5)) \ tmpXy;
+        W(m, ind_ring) = w(1:(end-1))+(1e-100); % add a small value to keep those nonzero elements still nonzero
+    end
+end
 %% 
 
