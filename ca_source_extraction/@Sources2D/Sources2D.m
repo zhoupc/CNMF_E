@@ -448,8 +448,18 @@ classdef Sources2D < handle
         [merged_ROIs, newIDs] = MergeNeighbors(obj, dmin, method)
         
         %------------------------------------------------------------------EXPORT---%
-        function save_neurons(obj)
-            folder_nm = [obj.P.log_folder, 'neurons'];
+        function save_neurons(obj, folder_nm)
+            if ~exist('folder_nm', 'var') || isempty(folder_nm) 
+                folder_nm = [obj.P.log_folder, 'neurons'];
+            end
+            if exist(folder_nm, 'dir')
+                temp = cd();
+                cd(folder_nm);
+                delete *;
+                cd(temp);
+            else
+                mkdir(folder_nm);
+            end
             obj.viewNeurons([], obj.C_raw, folder_nm);
         end
         

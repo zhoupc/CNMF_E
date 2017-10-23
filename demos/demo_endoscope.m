@@ -4,15 +4,15 @@ global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
     neuron_full Ybg_weights; %#ok<NUSED> % global variables, don't change them manually
 
 %% select data and map it to the RAM
-nam = './data_endoscope.tif';
+nam = './data_1p.tif';
 cnmfe_choose_data;
 
 %% create Source2D class object for storing results and parameters
-Fs = 6;             % frame rate
+Fs = 10;             % frame rate
 ssub = 1;           % spatial downsampling factor
 tsub = 1;           % temporal downsampling factor
 gSig = 3;           % width of the gaussian kernel, which can approximates the average neuron shape
-gSiz = 11;          % maximum diameter of neurons in the image plane. larger values are preferred.
+gSiz = 13;          % maximum diameter of neurons in the image plane. larger values are preferred.
 neuron_full = Sources2D('d1',d1,'d2',d2, ... % dimensions of datasets
     'ssub', ssub, 'tsub', tsub, ...  % downsampleing
     'gSig', gSig,...    % sigma of the 2D gaussian that approximates cell bodies
@@ -34,11 +34,12 @@ end
 merge_thr = [1e-1, 0.85, 0];     % thresholds for merging neurons; [spatial overlap ratio, temporal correlation of calcium traces, spike correlation]
 dmin = 1;
 %% options for running deconvolution 
-neuron_full.options.deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1', 'ar2'}
+neuron.options.deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1', 'ar2'}
     'method', 'foopsi', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
-    'smin', -3, ...         % minimum spike size. When the value is negative, the actual threshold is abs(smin)*noise level 
+    'smin', -5, ...         % minimum spike size. When the value is negative, the actual threshold is abs(smin)*noise level
     'optimize_pars', true, ...  % optimize AR coefficients
-    'optimize_b', true);% optimize the baseline); 
+    'optimize_b', true, ...% optimize the baseline);
+    'max_tau', 100);    % maximum decay time (unit: frame);
 
 %% downsample data for fast and better initialization
 sframe=1;						% user input: first frame to read (optional, default:1)
@@ -62,8 +63,8 @@ patch_par = [1,1]*1; %1;  % divide the optical field into m X n patches and do i
 K = []; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
 
 min_corr = 0.8;     % minimum local correlation for a seeding pixel
-min_pnr = 10;       % minimum peak-to-noise ratio for a seeding pixel
-min_pixel = 3^2;      % minimum number of nonzero pixels for each neuron
+min_pnr = 8;       % minimum peak-to-noise ratio for a seeding pixel
+min_pixel = gSig^2;      % minimum number of nonzero pixels for each neuron
 bd = 1;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
 neuron.updateParams('min_corr', min_corr, 'min_pnr', min_pnr, ...
     'min_pixel', min_pixel, 'bd', bd);
@@ -189,25 +190,17 @@ fprintf('Time cost in updating spatial & temporal components:     %.2f seconds\n
 
 b0 = mean(Y,2)-neuron.A*mean(neuron.C,2); 
 Ybg = bsxfun(@plus, Ybg, b0-mean(Ybg, 2)); 
+neuron.orderROIs('snr'); 
+
 %% display neurons
 dir_neurons = sprintf('%s%s%s_neurons%s', dir_nm, filesep, file_nm, filesep);
-if exist('dir_neurons', 'dir')
-    temp = cd();
-    cd(dir_neurons);
-    delete *;
-    cd(temp);
-else
-    mkdir(dir_neurons);
-end
-neuron.viewNeurons([], neuron.C_raw, dir_neurons);
-close(gcf); 
+neuron.save_neurons(dir_neurons); 
 
 %% display contours of the neurons
-neuron.Coor = neuron.get_contours(0.8); % energy within the contour is 80% of the total 
 figure;
 Cnn = correlation_image(neuron.reshape(Ysignal(:, 1:5:end), 2), 4);
-neuron.Coor = plot_contours(neuron.A, Cnn, 0.8, 0, [], neuron.Coor, 2);
-colormap winter;
+neuron.show_contours(0.6); 
+colormap gray;
 axis equal; axis off;
 title('contours of estimated neurons');
 
@@ -215,15 +208,15 @@ title('contours of estimated neurons');
 % [Cn, pnr] = neuron.correlation_pnr(Y(:, round(linspace(1, T, min(T, 1000)))));
 figure;
 Cn = imresize(Cn, [d1, d2]); 
-plot_contours(neuron.A, Cn, 0.8, 0, [], neuron.Coor, 2);
-colormap winter;
+neuron.show_contours(0.6); 
+colormap gray;
 title('contours of estimated neurons');
 
 %% check spatial and temporal components by playing movies
 save_avi = false;
 avi_name = 'play_movie.avi';
 neuron.Cn = Cn;
-neuron.runMovie(Ysignal, [0, 50], save_avi, avi_name);
+neuron.runMovie(Ysignal, [0, 150], save_avi, avi_name);
 
 %% save video
 kt = 3;     % play one frame in every kt frames
