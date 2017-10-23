@@ -44,7 +44,7 @@ b0 = Ymean(ind_patch) - A(ind_patch,:)*Cmean;
 %% compute the previous estimatin and take care of the outliers. 
 Bf_old = W_old*Bf; 
 tmp_Bf = Bf(ind_patch, :); 
-ind_outlier = bsxfun(@gt, tmp_Bf, bsxfun(@plus, B   f_old, thresh_outlier*reshape(sn, [], 1))); 
+ind_outlier = bsxfun(@gt, tmp_Bf, bsxfun(@plus, Bf_old, thresh_outlier*reshape(sn, [], 1))); 
 tmp_Bf(ind_outlier) = Bf_old(ind_outlier);  
 Bf(ind_patch, :) = tmp_Bf; 
 
