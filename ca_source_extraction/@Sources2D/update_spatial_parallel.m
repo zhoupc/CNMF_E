@@ -70,22 +70,21 @@ C = cell(nr_patch, nc_patch);
 sn = cell(nr_patch, nc_patch);
 ind_neurons = cell(nr_patch, nc_patch);
 IND_search = cell(nr_patch, nc_patch);
-
+with_neuron = cell(nr_patch, nc_patch);
 for mpatch=1:(nr_patch*nc_patch)
-    if strcmpi(bg_model, 'ring')
-        tmp_block = block_pos{mpatch};
-    else
-        tmp_block = patch_pos{mpatch};
-    end
+    tmp_patch = patch_pos{mpatch};
+    tmp_block = block_pos{mpatch};
     % find the neurons that are within the block
     mask = zeros(d1, d2);
     mask(tmp_block(1):tmp_block(2), tmp_block(3):tmp_block(4)) = 1;
-    ind = (reshape(mask(:), 1, [])* obj.A>0);
-    A{mpatch}= obj.A(logical(mask), ind);
-    IND_search{mpatch} = IND(logical(mask), ind);
-    sn{mpatch} = obj.P.sn(logical(mask));
+    mask(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4)) = 2;
+    ind = find(reshape(mask(:)==2, 1, [])* obj.A>0);
+    A{mpatch}= obj.A((mask>0), ind);
+    IND_search{mpatch} = IND(mask==2, ind);
+    sn{mpatch} = obj.P.sn(mask==2);
     C{mpatch} = obj.C(ind, :);
-    ind_neurons{mpatch} = find(ind);    % indices of the neurons within each patch
+    ind_neurons{mpatch} = ind;    % indices of the neurons within each patch
+    with_neuron{mpatch} = ~isempty(ind);
 end
 if update_sn
     sn_new = sn;
@@ -103,7 +102,15 @@ tmp_obj = Sources2D();
 tmp_obj.options = obj.options;
 if use_parallel
     parfor mpatch=1:(nr_patch*nc_patch)
-        % no neurons within the patch
+        [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
+        
+        % no neurons, no need to update sn
+        flag_neuron = with_neuron{mpatch};
+        if (~flag_neuron) && (~update_sn)
+            fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
+            continue;
+        end
+        % prepare for updating model variables
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         tmp_patch = patch_pos{mpatch};     %[r0, r1, c0, c1], patch location
         if strcmpi(bg_model, 'ring')
@@ -112,10 +119,6 @@ if use_parallel
             tmp_block = patch_pos{mpatch};
         end
         A_patch = A{mpatch};
-        if isempty(A_patch)
-            fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
-            continue;
-        end
         C_patch = C{mpatch};                % previous estimation of neural activity
         IND_patch = IND_search{mpatch};
         nr = diff(tmp_patch(1:2)) + 1;
@@ -156,14 +159,16 @@ if use_parallel
         end
         
         % using HALS to update spatial components
-        A_patch = A_patch(ind_patch, :);
-        IND_patch = IND_patch(ind_patch, :);
-        
-        sn_patch = sn_patch(ind_patch,:);
         if update_sn
             sn_patch = GetSn(Ypatch);
             sn_new{mpatch} = reshape(sn_patch, nr, nc);
         end
+        if ~flag_neuron
+            fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
+            continue;
+        end
+        A_patch = A_patch(ind_patch, :);
+        
         %         temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);
         if strcmpi(method, 'hals')
             temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);
@@ -182,8 +187,15 @@ if use_parallel
     end
 else
     for mpatch=1:(nr_patch*nc_patch)
-        % no neurons within the patch
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
+        
+        % no neurons, no need to update sn
+        flag_neuron = with_neuron{mpatch};
+        if (~flag_neuron) && (~update_sn)
+            fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
+            continue;
+        end
+        % prepare for updating model variables
         tmp_patch = patch_pos{mpatch};     %[r0, r1, c0, c1], patch location
         if strcmpi(bg_model, 'ring')
             tmp_block = block_pos{mpatch};
@@ -191,10 +203,6 @@ else
             tmp_block = patch_pos{mpatch};
         end
         A_patch = A{mpatch};
-        if isempty(A_patch)
-            fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
-            continue;
-        end
         C_patch = C{mpatch};                % previous estimation of neural activity
         IND_patch = IND_search{mpatch};
         nr = diff(tmp_patch(1:2)) + 1;
@@ -235,14 +243,16 @@ else
         end
         
         % using HALS to update spatial components
-        A_patch = A_patch(ind_patch, :);
-        IND_patch = IND_patch(ind_patch, :);
-        
-        sn_patch = sn_patch(ind_patch,:);
         if update_sn
             sn_patch = GetSn(Ypatch);
             sn_new{mpatch} = reshape(sn_patch, nr, nc);
         end
+        if ~flag_neuron
+            fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
+            continue;
+        end
+        A_patch = A_patch(ind_patch, :);
+        
         %         temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);
         if strcmpi(method, 'hals')
             temp = HALS_spatial(Ypatch, A_patch, C_patch, IND_patch, 3);

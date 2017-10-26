@@ -45,8 +45,7 @@ detrend_method = 'local_min';  % compute the local minimum as an estimation of t
 % -------------------------     BACKGROUND    -------------------------  %
 bg_model = 'svd';  % model of the background {'ring', 'svd'(default), 'nmf'}
 nb = 1;             % number of background sources for each patch (only be used in SVD and NMF model)
-bg_neuron_factor = 0.5;  
-ring_radius = round(bg_neuron_factor * gSiz);  % when the ring model used, it is the radius of the ring used in the background model. 
+ring_radius = 13;  % when the ring model used, it is the radius of the ring used in the background model. 
                     %otherwise, it's just the width of the overlapping area 
 
 % -------------------------      MERGING      -------------------------  %
@@ -169,7 +168,10 @@ neuron.save_workspace();
 Coor = neuron.show_contours(); 
 
 %% create a video for displaying the 
-neuron.show_demixed_video(save_demixed, kt); 
+amp_ac = 5000; 
+range_ac = [0, 5000]; 
+range_Y = [0, 10000]; 
+neuron.show_demixed_video(save_demixed, kt, [], amp_ac, range_ac, range_Y); 
 
 %% save neurons shapes 
 neuron.save_neurons(); 

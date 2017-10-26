@@ -43,6 +43,22 @@ d1 = options.d1;        % image height
 d2 = options.d2;        % image width
 gSig = options.gSig;    % width of the gaussian kernel approximating one neuron
 gSiz = options.gSiz;    % average size of neurons
+ssub = options.ssub;
+tsub = options.tsub;
+if (ssub~=1) || (tsub~=1)
+    d1_raw = d1;
+    d2_raw = d2;
+    T_raw = size(Y, ndims(Y));
+    Y = dsData(reshape(double(Y), d1_raw, d2_raw, T_raw), options);
+    [d1, d2, ~] = size(Y);
+    options.d1 = d1;
+    options.d2 = d2;
+    gSig = gSig/ssub;
+    gSiz = round(gSiz/ssub);
+    options.min_pixel = options.min_pixel/(ssub^2);
+    options.bd = round(options.bd/ssub); 
+    
+end
 min_corr = options.min_corr;    %minimum local correlations for determining seed pixels
 min_pnr = options.min_pnr;               % peak to noise ratio for determining seed pixels
 min_v_search = min_corr*min_pnr;
@@ -188,14 +204,14 @@ center = zeros(K, 2);   % center of the initialized components
 %% do initialization in a greedy way
 searching_flag = true;
 k = 0;      %number of found components
-[ii, jj] = meshgrid(1:d2, 1:d1); 
-pixel_v = (ii*100+jj)*(1e-9); 
+[ii, jj] = meshgrid(1:d2, 1:d1);
+pixel_v = (ii*10+jj)*(1e-10);
 while searching_flag
     %% find local maximum as initialization point
     %find all local maximum as initialization point
     
     tmp_d = max(3, round(gSiz/4));
-    v_search = medfilt2(v_search,3*[1, 1])+pixel_v; % add an extra value to avoid repeated seed pixels within one ROI. 
+    v_search = medfilt2(v_search,3*[1, 1])+pixel_v; % add an extra value to avoid repeated seed pixels within one ROI.
     v_search(ind_search) = 0;
     v_max = ordfilt2(v_search, tmp_d^2, true(tmp_d));
     % set boundary to be 0
@@ -443,7 +459,30 @@ end
 % Cin(Cin<0) = 0;
 Cn = Cn0;
 PNR = PNR0;
-if exist('avi_file', 'var');
+if ssub~=1
+    Ain = reshape(full(results.Ain), d1,d2, []);
+    if ~isempty(Ain)
+        results.Ain = sparse(reshape(imresize(Ain, [d1_raw, d2_raw]), d1_raw*d2_raw, []));
+    else
+        results.Ain = sparse(zeros(d1_raw*d2_raw, 0));
+    end
+    Cn =imresize(Cn, [d1_raw, d2_raw]);
+    PNR = imresize(PNR, [d1_raw, d2_raw]);
+end
+if tsub~=1
+    if k==0
+        results.Cin = zeros(0, T_raw);
+        results.Cin_raw = zeros(0, T_raw);
+        results.Sin = zeros(0, T_raw);
+    else
+        results.Cin = imresize(results.Cin, [k, T_raw], 'box');
+        results.Cin_raw = imresize(results.Cin_raw, [k, T_raw], 'box');
+        if deconv_flag
+            results.Sin = imresize(results.Sin, [k, T_raw]);
+        end
+    end
+end
+if exist('avi_file', 'var')
     close(gcf);
     if avi_file.Duration==0
         warning('off', 'MATLAB:audiovideo:VideoWriter:noFramesWritten')

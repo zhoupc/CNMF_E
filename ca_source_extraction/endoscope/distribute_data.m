@@ -183,7 +183,7 @@ while t_start<T
         end
     end
     t_start = t_start + num2read;
-    fprintf('load %d out of %d frames\n', t_start, T); 
+    fprintf('loaded %d out of %d frames\n', t_start, T); 
 end
 fprintf('\nThe data has been saved into \n%s\n', mat_file); 
 fprintf('\n-------- Done --------\n'); 

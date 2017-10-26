@@ -60,6 +60,10 @@ PNR = zeros(d1, d2);
 
 results = cell(nr_patch, nc_patch);
 
+for m=1:(nr_patch*nr_patch)
+    fprintf('|'); 
+end
+fprintf('\n'); 
 parfor mpatch=1:(nr_patch*nc_patch)
     % get the indices corresponding to the selected patch
     tmp_patch = patch_pos{mpatch}; 
@@ -84,8 +88,9 @@ parfor mpatch=1:(nr_patch*nc_patch)
     
     % put everthing into one struct variable
     results{mpatch} = struct('Cn', tmp_Cn, 'PNR', tmp_PNR);
+    fprintf('.'); 
 end
-
+fprintf('\n'); 
 
 %% collect results
 for mpatch=1:(nr_patch*nc_patch)

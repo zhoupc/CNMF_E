@@ -1686,7 +1686,7 @@ classdef Sources2D < handle
             plot_contours(obj.A(:, ind), img, thr,with_label, [], obj.Coor(ind), 2);
             colormap gray;
             try
-                file_path = [obj.P.log_folder,  'contours_%dneurons', strrep(get_date(), ' ', '_'), '.pdf'];
+                file_path = [obj.P.log_folder,  'contours_neurons', strrep(get_date(), ' ', '_'), '.pdf'];
                 saveas(gcf, file_path);
             end
         end

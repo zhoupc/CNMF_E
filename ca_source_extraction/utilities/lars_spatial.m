@@ -17,7 +17,11 @@ function A = lars_spatial(Y, A, C, active_pixel, sn)
 [d, T] = size(Y); 
 K = size(C, 1); 
 if isempty(A)
-    A = zeros(d, T); 
+    A = zeros(d, K); 
+end
+if isempty(C)
+    A = zeros(d, 0); 
+    return; 
 end
 if nargin<5
     % noise level 

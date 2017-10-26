@@ -48,8 +48,7 @@ detrend_method = 'spline';  % compute the local minimum as an estimation of tren
 % -------------------------     BACKGROUND    -------------------------  %
 bg_model = 'ring';  % model of the background {'ring', 'svd'(default), 'nmf'}
 nb = 1;             % number of background sources for each patch (only be used in SVD and NMF model)
-bg_neuron_factor = 1.4;
-ring_radius = round(bg_neuron_factor * gSiz);  % when the ring model used, it is the radius of the ring used in the background model.
+ring_radius = 18;  % when the ring model used, it is the radius of the ring used in the background model.
 %otherwise, it's just the width of the overlapping area
 num_neighbors = 50; % number of neighbors for each neuron
 

@@ -64,6 +64,7 @@ W = obj.W;
 b0 = obj.b0;
 b = obj.b;
 f = obj.f;
+
 %% check whether the bg_ssub was changed
 if strcmpi(bg_model, 'ring')
     tmp_block = block_pos{1};    % block position
@@ -153,7 +154,7 @@ if use_parallel
         sn_block = sn{mpatch};
         C_block = C{mpatch};
         
-        % stop the updating B because A&C doesn't change in this area
+        % stop updating B because A&C doesn't change in this area
         if isempty(A_block) && (~flag_first)
             [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);

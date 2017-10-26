@@ -25,12 +25,12 @@ figure('position', [0,0, 600, 400]);
 
 %%
 if ~exist('amp_ac', 'var') || isempty(amp_ac)
-    amp_ac = median(max(obj.A,[],1)'.*max(obj.C,[],2))*2;
+    amp_ac = median(max(obj.A,[],1)'.*max(obj.C,[],2));
 end
-range_res = [-1,1]*amp_ac/2.0;
 if ~exist('range_ac', 'var') || isempty(range_ac)
-    range_ac = amp_ac*1.05+range_res;
+    range_ac = amp_ac*[0.01, 1.01];
 end
+range_res = range_ac - mean(range_ac); 
 if ~exist('range_Y', 'var') || isempty(range_Y)
     if ~exist('multi_factor', 'var') || isempty(multiple_factor)
         temp = quantile(double(Y(randi(numel(Y), 10000,1))), [0.01, 0.98]);
@@ -40,6 +40,11 @@ if ~exist('range_Y', 'var') || isempty(range_Y)
     end
     center_Y = temp(1) + multi_factor*amp_ac;
     range_Y = center_Y + range_res*multi_factor;
+end
+
+if ~exist('multi_factor', 'var')
+    multi_factor = round(diff(range_Y)/diff(range_ac)); 
+    range_Y = (range_res-range_res(1)) * multi_factor +range_Y(1); 
 end
 %% create avi file
 if save_avi
@@ -126,7 +131,7 @@ for tt=t_begin:kt:t_end
     end
     
     %% save more data
-    if mod(tt-tt0, kt*100)==(kt*100-kt+1)
+    if tt== tt0+kt*99+1
         tt0 = tt0+kt*100;
         % load data
         tmp_range = [tt0+1, min(tt0+100*kt, t_end)];

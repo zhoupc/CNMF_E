@@ -301,7 +301,7 @@ Values = [
     {1}
     {'spline'}
     {struct('circular', true, 'connected', true)}
-    {'lars'}
+    {'hals'}
     ];
 
 for j = 1:m
