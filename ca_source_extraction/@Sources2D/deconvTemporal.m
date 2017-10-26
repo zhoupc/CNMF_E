@@ -4,6 +4,11 @@ if ~exist('use_parallel', 'var')||isempty(use_parallel)
 end
 C_raw_ = obj.C_raw;
 K = size(C_raw_, 1);
+if K==0
+    fprintf('Your got 0 neurons! there is no need for deconvolving temproal traces.\n'); 
+    C_ = []; 
+    return; 
+end
 C_raw_ = mat2cell(C_raw_, ones(K,1), size(C_raw_,2));
 C_ = cell(K,1);
 S_ = C_;

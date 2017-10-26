@@ -157,6 +157,13 @@ if use_parallel
         % stop updating B because A&C doesn't change in this area
         if isempty(A_block) && (~flag_first)
             [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
+            
+            % keep the current results. this step looks rediculous, but it
+            % is needed for some computer/matlab. very weird. 
+            W{mpatch} = W{mpatch}; 
+            b0{mpatch} = b0{mpatch}; 
+            b{mpatch} = b{mpatch}; 
+            f{mpatch} = f{mpatch}; 
             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
             continue;
         end
