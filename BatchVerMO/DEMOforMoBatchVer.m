@@ -22,7 +22,7 @@ K = [];                                            % maximum number of neurons t
 neuron_full = Sources2D('ssub',1, 'tsub',1, ...   % downsampling
     'gSig',10,...                                 % sigma of the 2D gaussian (width of the gaussian kernel) that approximates cell bodies
     'gSiz',17,...                                 % maximum diameter of neurons in the image plane. larger values are preferred.
-    'min_corr',0.8,'min_pnr',10, ...
+    'min_corr',0.8,'min_pnr',14, ...
     'min_pixel',50,...                            % minimum number of nonzero pixels for each neuron
     'bd',1,...                                    % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
     'center_psf',true);                          
@@ -72,14 +72,15 @@ workersnum=4;
 
 % II code directory and output directory
 
-Version='MoBatchVer';               %with motion: MoBatchVer; without motion: BatchVer.
+Version='BatchVer';               %with motion: MoBatchVer; without motion: BatchVer.
 % ---- /1/----------------------------------------------------------------
 codeDir='/home/shijiegu/cnmf_e/';   %where code is on the cluster
 % ------------------------------------------------------------------------
 
 % ---- /2/Output directory, local and on cluster--------------------------
-outputdir_local='/Volumes/shared-2/EmilyShijieShared_old/6922_moBatchVerNYVersion/';
-outputdir=strrep(outputdir_local,'/Volumes/shared-2/','/net/feevault/data0/shared/');
+outputdir_local='/Volumes/shared/EmilyShijieShared/CaExtraction/6938JustSinging/';
+outputdir='/net/feevault/data0/shared/EmilyShijieShared/CaExtraction/6938JustSinging/';
+%outputdir=strrep(outputdir_local,'/Volumes/data0-shared/elm/ProcessedCalciumData/','/net/feevault/data0/shared/EmilyShijieShared/CaExtraction/6701/');
 % ------------------------------------------------------------------------
 
 % -----------------------------ignore this auto area----------------------
@@ -88,28 +89,35 @@ if ~exist(outputdir_local,'dir')
 end
 % ------------------------------------------------------------------------
 
-% ---- /3/ "Motion batch", within batch, no motion, between batch, motion.-
-totaldays=[20170713,20170714,20170715,20170716,20170717,20170718,20170719];
+% ---- /3/ "Motion batch", within batch, no motion, between batch there can be motion.-
+% If using BatchVer, you can just input one element in totaldays.
+%totaldays=6938;
+totaldays_act=[6938];
+totaldays=6938; %[0612 0613 0614 0615 0617 0618 0620 0621];
 % -------------------------------------------------------------------------
 
 % -----/4/ Fill in datadir on local machine, datakind----------------------
-for i=1:length(totaldays)    
-    daynum=totaldays(i);    
-    outputdirDetails = [outputdir, num2str(totaldays(i)), '/'];
+for i=1:length(totaldays_act)    
+    daynum=totaldays_act(i);
+    if strcmp(Version,'MoBatchVer')
+        outputdirDetails = [outputdir, num2str(totaldays_act(i)), '/'];
+    elseif strcmp(Version,'BatchVer')
+        outputdirDetails = [outputdir, 'details', '/'];
+    end
     
     [datadir,sampledir,~,filelist,samplelist]=...
-           InputOutput('datadir','/Volumes/shared-2/EmilyShijieShared/ProcessedCalciumData/6991FirstFewDaysForBatch/ActuallyUsedInCNMFE/',...
-                       'datakind',['*' num2str(totaldays(i)) '*'],...
+           InputOutput('datadir','/Volumes/shared/EmilyShijieShared/ProcessedCalciumData/6938FirstFewDaysForBatch/Singing/',...
+                       'datakind',['*' num2str(totaldays_act(i)) '*'],...
                        'DataMethod','auto');
     % if there is any motion within a day
                        %Add another day in totaldays, use ('DataMethod','manual');
     % replace for actual dir on cluster
-    datadir=strrep(datadir,'/Volumes/shared-2/','/net/feevault/data0/shared/');
-    sampledir=strrep(sampledir,'/Volumes/shared-2/','/net/feevault/data0/shared/');
+    datadir=strrep(datadir,'/Volumes/','/net/feevault/data0/');
+    sampledir=strrep(sampledir,'/Volumes/','/net/feevault/data0/');
     
    % Finally, save all these parameters/variables into LogisticscnmfeBatchVer.mat
     ininame='LogisticscnmfeBatchVer';
-    save([outputdir_local ininame num2str(totaldays(i)) '.mat'])     
+    save([outputdir_local ininame num2str(totaldays_act(i)) '.mat'])     
 end
 % ----------------------------------------------------------------------------------------
 
@@ -120,9 +128,9 @@ end
 
 % (1) jobdir folder, shellname
 % ---- /1/ ----------------------------------------------------------------
-jobdir='6922BatchVerMo_NYBos';
+jobdir='BatchVer6938';
 local_jobdir=['/Users/gushijie/Documents/MATLAB/Jobs/' jobdir '/'];
-shellname='BatchVerMO6922_NYBos';
+shellname=jobdir;
 % -------------------------------------------------------------------------
 
 % -----------------------------ignore this auto area-----------------------
@@ -165,4 +173,31 @@ forloop=['cd %s\n',...
          'sbatch %s_${file}.sbatch\n',...
          'sleep 1\n',...
          'done'];
-fprintf(fileID,forloop,jobdir,num2str(totaldays),shellname);    
+fprintf(fileID,forloop,jobdir,num2str(totaldays),shellname);
+
+%% B3. (MoBatchVer only) for cnmfeMoBatchVer_ClusterPart2
+scriptname=sprintf([shellname '_part2.sbatch']);
+fileID = fopen(scriptname,'w');
+request=['#!/bin/bash\n',...
+    '\n',...
+    '#SBATCH -n 1\n',...
+    '#SBATCH --cpus-per-task=8\n',...
+    '#SBATCH --mem=200000\n',...
+    '#SBATCH -t 0-20:00\n',...
+    '#SBATCH --time-min=0-01:00\n'];
+fprintf(fileID, request);
+
+errorANDoutAndcd= ['#SBATCH -o %sjob_%%A.out\n',...
+    '#SBATCH -e %sjob_%%A.err\n',...
+    '\n'];
+fprintf(fileID,errorANDoutAndcd,outputdir,outputdir);
+
+MATLABcommands=['cd %s\n',...
+    'module add mit/matlab/2016b\n',...
+    'matlab -nodisplay -singleCompThread -r "addpath(genpath(''%s''));addpath(genpath(''/home/shijiegu/caprocessing/''));\\\n',...
+    'outputdir=''%s'';',...
+    'load(fullfile(outputdir,''%s''));load(fullfile(outputdir,''cnmfe_BatchVer_PartII_MotionCorrection.mat''));\\\n',...
+    'cnmfeMoBatchVer_ClusterPart2"'];
+fprintf(fileID,MATLABcommands,outputdir,codeDir,outputdir,['LogisticscnmfeBatchVer',num2str(totaldays(1)),'.mat']);
+
+fclose(fileID);

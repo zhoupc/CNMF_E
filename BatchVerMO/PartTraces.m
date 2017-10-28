@@ -8,7 +8,7 @@ function [PartC, AllC,kernel_pars, tmp_sn, boundary,neuron_batch,boundary_raw]=P
 %   PartC: all the neurons' temporal traces concatenated, 
 %       neuron_batch.signal. neurons are put in rows.
 %   AllC: all the neurons' temporal traces concatenated. 
-%       Similar to PartC, but no devolved, only rescaled(normalized by noise)
+%       Similar to PartC, but no deconvolved, only rescaled(normalized by noise)
 %       Neurons are put in rows.
 %   kernel_pars: cell array, length of neuron number. Each cell has the
 %       parameters, 1*N parameter, based on your choice of deconvolution.
