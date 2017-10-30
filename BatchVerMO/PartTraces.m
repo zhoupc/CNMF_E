@@ -73,7 +73,8 @@ for ni=1:K
     for fi=1:length(neuron_batch)        
         [sig_tmp, DeconvSpiketrain, ~]= deconvolveCa(neuron_batch(fi).rawsignal(ni,:), deconv_options_0,'pars', (kernel_pars{ni})','sn', tmp_sn{ni}{fi}, 'maxIter', 2);
         neuron_batch(fi).signal(ni,:)=sig_tmp./tmp_sn{ni}{fi};
-        neuron_batch(fi).DeconvSpiketrain(ni,:) = DeconvSpiketrain; 
+        neuron_batch(fi).DeconvSpiketrain(ni,:) = DeconvSpiketrain;
+        neuron_batch(fi).neuron.S(ni,:)=DeconvSpiketrain;
         tmp=[tmp neuron_batch(fi).signal(ni,:)];
         bound_raw=[bound_raw size(neuron_batch(fi).signal(ni,:),2)];
     end
