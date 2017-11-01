@@ -79,6 +79,7 @@ if ischar(handles.normco.cnmfedir)
     end
     handles.normco.AsfromDaysPic=AsfromDaysPic;
     handles.normco.AsfromDaysCell=AsfromDaysCell;
+
     handles=Update_Plot_Raw(1,handles);
     
     % Opening look if M does not exist
