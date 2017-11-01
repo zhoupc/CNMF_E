@@ -124,7 +124,7 @@ parfor i= 1:length(samplelist)
                                    thresh_detecting_frames);
     neuron_batch(i).FileOrigin=filelist(i); % save origin(filelist)
 end
-neuron_batchMO = rmfield(neuron_batchMO,{'C','C_raw'});
+neuron_batch = rmfield(neuron_batch,{'C','C_raw'});
 fprintf('Massive extraction in each file done.');
 
 %% 6 Save A*C
