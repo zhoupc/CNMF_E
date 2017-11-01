@@ -36,7 +36,7 @@ for i=1:numel(AandSample_list) %go through days
         filelist_fulllist=AandSample_temponeday.samplelist;
         File_fulllist=File_temp;
     else
-        filelist_fulllist=[filelist_fulllist; AandSample_temponeday.samplelist];
+        filelist_fulllist=[filelist_fulllist, AandSample_temponeday.samplelist];
         File_fulllist=[File_fulllist File_temp];
     end   
 end
@@ -117,7 +117,7 @@ eval(sprintf('save %sAfinalcnmfeBatchVerMotion %s -v7.3', outputdir, strjoin(Var
 save([outputdir 'NiceAfinalcnmfeBatchVerMOTION.mat'],'-v7.3')
 
 %% 5 "massive" procedure: Extract A from each file
-neuron_batchMO(length(filelist_fulllist)) = struct('ind_del',[],'rawsignal',[],'signal',[],'FileOrigin',[],'neuron',[],'C',[],'C_raw',[]);
+neuron_batchMO(length(filelist_fulllist)) = struct('ind_del',[],'rawsignal',[],'signal',[],'DeconvSpiketrain',[],'FileOrigin',[],'neuron',[],'C',[],'C_raw',[]);
 
 parfor i= 1:length(filelist_fulllist)
     mode='massive';
