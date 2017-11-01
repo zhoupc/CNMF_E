@@ -71,8 +71,8 @@ flag_merge2 = (dist_v<=dmin);
 flag_merge=or(flag_merge1,flag_merge2);
 
 MC=merge_detail(flag_merge);
-MC=MC(:,sum(MC,1)>=numel(M));
-MC=merge_with_eachday(M,MC);
+MC=MC(:,sum(MC,1)>=numel(M));% rough sift
+MC=merge_with_eachday(M,MC); % detailed sift
 
 MC1=merge_detail(flag_merge1);
 MC1=MC1(:,sum(MC1,1)>=numel(M));
@@ -120,8 +120,8 @@ for i=1:numel(M)
         IDs = find(MC(:, m));
         ind_del(IDs(1))= false;
         
-        A_temp=A(:,MC(:,m));
-        STD_temp=STD(MC(:,m));
+        A_temp=A(:,logical(MC(:,m)));
+        STD_temp=STD(logical(MC(:,m)));
         catSTD=STD_temp./sum(STD_temp);
 
         weightedA=A_temp*catSTD;
