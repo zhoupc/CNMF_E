@@ -448,9 +448,12 @@ classdef Sources2D < handle
         [merged_ROIs, newIDs] = MergeNeighbors(obj, dmin, method)
         
         %------------------------------------------------------------------EXPORT---%
-        function save_neurons(obj, folder_nm)
-            if ~exist('folder_nm', 'var') || isempty(folder_nm) 
+        function save_neurons(obj, folder_nm, with_craw)
+            if ~exist('folder_nm', 'var') || isempty(folder_nm)
                 folder_nm = [obj.P.log_folder, 'neurons'];
+            end
+            if ~exist('with_craw', 'var')||isempty(with_craw)
+                with_craw = true;
             end
             if exist(folder_nm, 'dir')
                 temp = cd();
@@ -460,7 +463,11 @@ classdef Sources2D < handle
             else
                 mkdir(folder_nm);
             end
-            obj.viewNeurons([], obj.C_raw, folder_nm);
+            if with_craw
+                obj.viewNeurons([], obj.C_raw, folder_nm);
+            else
+                obj.viewNeurons([], [], folder_nm);
+            end
         end
         
         %% export the result as a video
@@ -828,7 +835,7 @@ classdef Sources2D < handle
                 pause(t_pause);
                 if avi_flag
                     temp = getframe(gcf);
-                    temp.cdata = imresize(temp.cdata, [width, height]);
+                    temp.cdata = imresize(temp.cdata, [height, width]);
                     avi_file.writeVideo(temp);
                 end
             end
@@ -1682,7 +1689,8 @@ classdef Sources2D < handle
             else
                 Coor = obj.Coor;
             end
-            figure;
+            figure('papersize', [obj.options.d2, obj.options.d1]/40);
+            init_fig; 
             plot_contours(obj.A(:, ind), img, thr,with_label, [], obj.Coor(ind), 2);
             colormap gray;
             try

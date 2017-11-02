@@ -85,7 +85,8 @@ f = obj.f;
 
 %% start updating temporal components
 C_raw_new = C;
-if obj.options.deconv_flag
+deconv_flag = obj.options.deconv_flag;
+if options.deconv_flag
     deconv_options = obj.options.deconv_options;
 else
     deconv_options = [];
@@ -141,7 +142,7 @@ if use_parallel
         % using HALS to update temporal components
         [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 2, deconv_options);
         AA{mpatch}= sum(A_patch(ind_patch,:).^2, 1);
-
+        
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
 else
@@ -217,7 +218,9 @@ end
 aa(aa==0) = 1;
 obj.C_raw = bsxfun(@times, C_new, 1./aa);
 fprintf('Deconvolve and denoise all temporal traces again...\n');
-C_new = obj.deconvTemporal();
+if deconv_flag
+    C_new = obj.deconvTemporal();
+end
 fprintf('Done!\n');
 
 %% upadte b0

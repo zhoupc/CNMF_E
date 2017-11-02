@@ -468,6 +468,7 @@ if ssub~=1
     end
     Cn =imresize(Cn, [d1_raw, d2_raw]);
     PNR = imresize(PNR, [d1_raw, d2_raw]);
+    center = center*ssub; 
 end
 if tsub~=1
     if k==0

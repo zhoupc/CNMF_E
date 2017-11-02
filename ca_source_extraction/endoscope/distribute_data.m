@@ -152,7 +152,7 @@ patch_pos = cell(nr_patch, nc_patch);
 block_pos = cell(nr_patch, nc_patch); 
 for m=1:nr_patch 
     for n=1:nc_patch 
-        patch_pos{m, n} = [patch_idx_r(m:(m+1))+[0, -1*(m~=nr_patch)], patch_idx_c(n:(n+1))+[0, -1*(n~=nr_patch)]]; 
+        patch_pos{m, n} = [patch_idx_r(m:(m+1))+[0, -1*(m~=nr_patch)], patch_idx_c(n:(n+1))+[0, -1*(n~=nc_patch)]]; 
         block_pos{m, n} = [max(1, patch_idx_r(m)-w_overlap-1), min(d1, patch_idx_r(m+1)+w_overlap), ...
             max(1, patch_idx_c(n)-w_overlap-1), min(d2, patch_idx_c(n+1)+w_overlap)]; 
     end 

@@ -59,15 +59,15 @@ else
 end
 
 %% add pseudo color to denoised signals
-[K, T]=size(obj.C);
+[K, ~]=size(obj.C);
 % draw random color for each neuron
 % tmp = mod((1:K)', 6)+1;
-Y_mixed = zeros(obj.options.d1*obj.options.d2, T, 3);
+Y_mixed = zeros(obj.options.d1*obj.options.d2, diff(tmp_range)+1, 3);
 temp = prism;
 % temp = bsxfun(@times, temp, 1./sum(temp,2));
 col = temp(randi(64, K,1), :);
 for m=1:3
-    Y_mixed(:, :, m) = obj.A* (diag(col(:,m))*obj.C);
+    Y_mixed(:, :, m) = obj.A* (diag(col(:,m))*obj.C(:, tmp_range(1):tmp_range(2)));
 end
 Y_mixed = uint16(Y_mixed/(1*amp_ac)*65536);
 %% play and save

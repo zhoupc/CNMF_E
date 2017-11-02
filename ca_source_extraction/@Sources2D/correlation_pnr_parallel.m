@@ -29,6 +29,9 @@ block_pos = mat_data.block_pos;
 % number of patches
 [nr_patch, nc_patch] = size(patch_pos);
 
+% downsampling
+ssub = obj.options.ssub;
+tsub = obj.options.tsub;
 
 % frames to be loaded for initialization
 if ~exist('frame_range', 'var')
@@ -49,35 +52,41 @@ if isfield(obj.options, 'nk') % number of knots for creating spline basis
 else
     nk = 1;
 end
-detrend_method = obj.options.detrend_method; 
+detrend_method = obj.options.detrend_method;
 
 % parameter for avoiding using boundaries pixels as seed pixels
 options = obj.options;
 
-%% compute correlation image and pnr image in parallel 
+%% compute correlation image and pnr image in parallel
 Cn = zeros(d1, d2);
 PNR = zeros(d1, d2);
 
 results = cell(nr_patch, nc_patch);
 
 for m=1:(nr_patch*nr_patch)
-    fprintf('|'); 
+    fprintf('|');
 end
-fprintf('\n'); 
+fprintf('\n');
 parfor mpatch=1:(nr_patch*nc_patch)
     % get the indices corresponding to the selected patch
-    tmp_patch = patch_pos{mpatch}; 
-    tmp_block = block_pos{mpatch}; 
+    tmp_patch = patch_pos{mpatch};
+    tmp_block = block_pos{mpatch};
     
     % boundaries pixels to be avoided for detecting seed pixels
     tmp_options = options;
-
+    
     % patch dimension
-    tmp_options.d1 = diff(tmp_block(1:2))+1;
-    tmp_options.d2 = diff(tmp_block(3:4))+1;
+    tmp_d1 = diff(tmp_block(1:2))+1;
+    tmp_d2 = diff(tmp_block(3:4))+1;
+    tmp_options.gSig = tmp_options.gSig/ssub; 
+    tmp_options.gSiz = ceil(tmp_options.gSiz/ssub); 
     
     % load the patch data
     Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, true);
+    if (ssub~=1)||(tsub~=1)
+        Ypatch = dsData(Ypatch, tmp_options);
+    end
+    [tmp_options.d1, tmp_options.d2, T] = size(Ypatch);
     Ypatch = double(reshape(Ypatch, [], T));
     if nk>1
         Ypatch_dt = detrend_data(Ypatch, nk, detrend_method); % detrend data
@@ -85,12 +94,15 @@ parfor mpatch=1:(nr_patch*nc_patch)
     else
         [tmp_Cn, tmp_PNR] = correlation_image_endoscope(Ypatch, tmp_options);
     end
-    
+    if (ssub~=1)
+        tmp_Cn = imresize(tmp_Cn, [tmp_d1, tmp_d2]);
+        tmp_PNR = imresize(tmp_PNR, [tmp_d1, tmp_d2]);
+    end
     % put everthing into one struct variable
     results{mpatch} = struct('Cn', tmp_Cn, 'PNR', tmp_PNR);
-    fprintf('.'); 
+    fprintf('.');
 end
-fprintf('\n'); 
+fprintf('\n');
 
 %% collect results
 for mpatch=1:(nr_patch*nc_patch)
