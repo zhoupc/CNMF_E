@@ -1365,7 +1365,7 @@ classdef Sources2D < handle
         
         %% find neurons from the residual
         % you can do it in either manual or automatic way
-        function [center, Cn, pnr] = pickNeurons(obj, Y, patch_par, seed_method, debug_on)
+        function [center, Cn, pnr] = pickNeurons(obj, Y, patch_par, seed_method, debug_on, K)
             if ~exist('patch_par', 'var')||isempty(patch_par)
                 patch_par = [3,3];
             end
@@ -1375,11 +1375,14 @@ classdef Sources2D < handle
             if ~exist('debug_on', 'var')||isempty(debug_on)
                 debug_on = false;
             end
+            if ~exist('K', 'var') || isempty(K)
+                K = []; 
+            end
             neuron = obj.copy();
             neuron.options.seed_method = seed_method;
             neuron.options.gSig = 1;
             neuron.options.center_psf = 0;
-            [center, Cn, pnr] = neuron.initComponents_endoscope(Y, [], patch_par, debug_on, false);
+            [center, Cn, pnr] = neuron.initComponents_endoscope(Y, K, patch_par, debug_on, false);
             obj.A = [obj.A, neuron.A];
             obj.C = [obj.C; neuron.C];
             obj.C_raw = [obj.C_raw; neuron.C_raw];
