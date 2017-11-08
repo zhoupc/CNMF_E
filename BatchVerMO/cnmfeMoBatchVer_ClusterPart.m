@@ -98,7 +98,7 @@ newIDs=newIDs(nz_ind);
 
 Apicname=sprintf('%.0fAfinal',daynum);
 if strcmp(Version,'MoBatchVer')
-    ColorAllNeurons(Afinal,File(1).options.d1,File(1).options.d2,Apicname,outputdirDetails);
+    ColorAllNeurons(Afinal,File(1).options.d1,File(1).options.d2,[Apicname ' PNR=' num2str(neuron_full.options.min_pnr)],outputdirDetails);
     Vars = {'Afinal';'samplelist'}; Vars=Vars';
     eval(sprintf('save %s%0.f_cnmfe_BatchVer_PartI_Afinalsam.mat %s -v7.3', outputdir, daynum, strjoin(Vars)));
     fprintf('cnmfe_BatchVer_for motion Part1 data saved, check them out!');
