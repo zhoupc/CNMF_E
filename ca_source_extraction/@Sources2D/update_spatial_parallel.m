@@ -78,7 +78,7 @@ for mpatch=1:(nr_patch*nc_patch)
     mask = zeros(d1, d2);
     mask(tmp_block(1):tmp_block(2), tmp_block(3):tmp_block(4)) = 1;
     mask(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4)) = 2;
-    ind = find(reshape(mask(:)==2, 1, [])* obj.A>0);
+    ind = find(reshape(mask(:)==2, 1, [])* full(double(IND))>0);
     A{mpatch}= obj.A((mask>0), ind);
     IND_search{mpatch} = IND(mask==2, ind);
     sn{mpatch} = obj.P.sn(mask==2);
@@ -96,7 +96,7 @@ b0 = obj.b0;
 b = obj.b;
 f = obj.f;
 
-%% start updating temporal components
+%% start updating spatial components
 A_new = A;
 tmp_obj = Sources2D();
 tmp_obj.options = obj.options;
@@ -176,13 +176,14 @@ if use_parallel
             temp = HALS_spatial_thresh(Ypatch, A_patch, C_patch, IND_patch, 3, sn_patch);
         elseif strcmpi(method, 'lars')
             temp = lars_spatial(Ypatch, A_patch, C_patch, IND_patch, sn_patch);
-        elseif strcmpi(method, 'nnls_thresh')&&(~isempty(IND_thresh))
-            temp = nnls_spatial_thresh(Ypatch, A_patch, C_patch, IND_patch, 10, sn_patch);
+            %         elseif strcmpi(method, 'nnls_thresh')&&(~isempty(IND_patch))
+            %             temp = nnls_spatial_thresh(Ypatch, A_patch, C_patch, IND_patch, 5, sn_patch);
         else
             temp = nnls_spatial(Ypatch, A_patch, C_patch, IND_patch, 20);
         end
         
-        A_new{mpatch} = tmp_obj.post_process_spatial(reshape(full(temp), nr, nc, []));
+        %         A_new{mpatch} = tmp_obj.post_process_spatial(reshape(full(temp), nr, nc, []));
+        A_new{mpatch} = full(temp);
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
 else
@@ -260,13 +261,14 @@ else
             temp = HALS_spatial_thresh(Ypatch, A_patch, C_patch, IND_patch, 3, sn_patch);
         elseif strcmpi(method, 'lars')
             temp = lars_spatial(Ypatch, A_patch, C_patch, IND_patch, sn_patch);
-        elseif strcmpi(method, 'nnls_thresh')&&(~isempty(IND_thresh))
-            temp = nnls_spatial_thresh(Ypatch, A_patch, C_patch, IND_patch, 10, sn_patch);
+            %         elseif strcmpi(method, 'nnls_thresh')&&(~isempty(IND_patch))
+            %             temp = nnls_spatial_thresh(Ypatch, A_patch, C_patch, IND_patch, 5, sn_patch);
         else
             temp = nnls_spatial(Ypatch, A_patch, C_patch, IND_patch, 20);
         end
         
-        A_new{mpatch} = tmp_obj.post_process_spatial(reshape(full(temp), nr, nc, []));
+        %         A_new{mpatch} = tmp_obj.post_process_spatial(reshape(full(temp), nr, nc, []));
+        A_new{mpatch} = full(temp);
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
 end
@@ -283,7 +285,12 @@ for mpatch=1:(nr_patch*nc_patch)
     ind_patch = ind_neurons{mpatch};
     for m=1:length(ind_patch)
         k = ind_patch(m);
+        try
         A_(tmp_pos(1):tmp_pos(2), tmp_pos(3):tmp_pos(4), k) = reshape(A_patch(:, m), nr, nc, 1);
+        catch
+            pause; 
+        end
+        
     end
 end
 A_old = sparse(obj.A);

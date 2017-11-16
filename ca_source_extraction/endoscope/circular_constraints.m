@@ -39,7 +39,7 @@ if rmin==1 && rmax==nr && cmin==1 && cmax==nc
     l = bwlabel(img, 4);
     ind = imdilate(l==l(ind_max), strel('square', 3)); 
     img(~ind) = 0;
-%     img = medfilt2(img); 
+    img = medfilt2(img); 
     
     if show_imgs
         subplot(122);

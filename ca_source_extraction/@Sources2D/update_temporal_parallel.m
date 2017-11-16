@@ -1,8 +1,9 @@
-function update_temporal_parallel(obj, use_parallel)
+function update_temporal_parallel(obj, use_parallel, use_c_hat)
 %% update the the temporal components for all neurons
 % input:
 %   use_parallel: boolean, do initialization in patch mode or not.
 %       default(true); we recommend you to set it false only when you want to debug the code.
+%   use_c_hat: use the previous estimation of C
 
 %% Author: Pengcheng Zhou, Columbia University, 2017
 %% email: zhoupc1988@gmail.com
@@ -49,9 +50,14 @@ if ~exist('use_parallel', 'var')||isempty(use_parallel)
     use_parallel = true; %don't save initialization procedure
 end
 
+% use previous estimation of C
+if ~exist('use_c_hat', 'var') || isempty(use_c_hat)
+    use_c_hat = true;
+end
 % options
 options = obj.options;
 bg_model = options.background_model;
+maxIter = options.maxIter;
 
 %% identify existing neurons within each patch
 A = cell(nr_patch, nc_patch);
@@ -102,6 +108,7 @@ if use_parallel
             tmp_block = patch_pos{mpatch};
         end
         C_patch = C{mpatch};                % previous estimation of neural activity
+        
         if isempty(C_patch)
             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
             continue;
@@ -140,8 +147,13 @@ if use_parallel
         end
         
         % using HALS to update temporal components
-        [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 2, deconv_options);
-        AA{mpatch}= sum(A_patch(ind_patch,:).^2, 1);
+        if ~use_c_hat
+            [AA{mpatch}, C_raw_new{mpatch}] = fast_temporal(Ypatch, A_patch(ind_patch,:));
+        else
+            [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, maxIter, deconv_options);
+            AA{mpatch}= sum(A_patch(ind_patch,:).^2, 1);
+        end
+        
         
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
@@ -155,7 +167,9 @@ else
         else
             tmp_block = patch_pos{mpatch};
         end
+        
         C_patch = C{mpatch};                % previous estimation of neural activity
+        
         if isempty(C_patch)
             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
             continue;
@@ -194,8 +208,12 @@ else
         end
         
         % using HALS to update temporal components
-        [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, 2, deconv_options);
-        AA{mpatch}= sum(A_patch(ind_patch,:).^2, 1);
+        if ~use_c_hat
+            [AA{mpatch}, C_raw_new{mpatch}] = fast_temporal(Ypatch, A_patch(ind_patch,:));
+        else
+            [~, C_raw_new{mpatch}] = HALS_temporal(Ypatch, A_patch(ind_patch,:), C_patch, maxIter, deconv_options);
+            AA{mpatch}= sum(A_patch(ind_patch,:).^2, 1);
+        end
         
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
@@ -251,3 +269,46 @@ fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, 'Finished updating temporal components.\n');
 fprintf(flog, '\tThe results were saved as intermediate_results.temporal_%s\n\n', tmp_str);
 fclose(flog);
+
+function [aa, C_raw] = fast_temporal(Y, A)
+%% estimate temporal components using the mean fluorescence
+% input:
+%   Y:  d*T, fluorescence data
+%   A:  d*K, spatial components
+% output:
+%   aa: K*1, energy of each Ai
+%   C_raw: K*T, the temporal components before thresholded or being
+%   denoised.
+% Author: Pengcheng Zhou, Columbia University, 2017
+% zhoupc1988@gmail.com
+
+%% options
+
+%% initialization
+% roughly initialize C
+tmpA = bsxfun(@times, A, 1./max(A, [], 1));
+ind_max = bsxfun(@ge, tmpA, 0.5); %max(tmpA, [], 2));
+tmp_A = A.*double(ind_max);
+aa = sum(tmp_A.^2, 1);
+ind = (aa==0);
+aa(ind) = inf;
+C_raw = bsxfun(@times, tmp_A'*Y, 1./aa');
+aa(ind) = 0; 
+% if any(ind)  % explain the residual using weak neurons
+%     tmp_A = A(:, ind);
+%     C_raw(ind, :) = (tmp_A'*tmp_A)\(tmp_A'*Y - tmp_A'*A*C_raw);
+%     aa(ind) = sum(tmp_A.^2, 1); 
+% end
+
+
+
+
+
+
+
+
+
+
+
+
+

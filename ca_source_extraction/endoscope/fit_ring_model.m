@@ -42,17 +42,19 @@ Bf = Y - A*C;
 b0 = Ymean(ind_patch) - A(ind_patch,:)*Cmean;
 
 %% compute the previous estimatin and take care of the outliers. 
-Bf_old = W_old*Bf; 
-tmp_Bf = Bf(ind_patch, :); 
-ind_outlier = bsxfun(@gt, tmp_Bf, bsxfun(@plus, Bf_old, thresh_outlier*reshape(sn, [], 1))); 
-tmp_Bf(ind_outlier) = Bf_old(ind_outlier);  
-Bf(ind_patch, :) = tmp_Bf; 
+if ~isnan(thresh_outlier)
+    Bf_old = W_old*Bf;
+    tmp_Bf = Bf(ind_patch, :);
+    ind_outlier = bsxfun(@gt, tmp_Bf, bsxfun(@plus, Bf_old, thresh_outlier*reshape(sn, [], 1)));
+    tmp_Bf(ind_outlier) = Bf_old(ind_outlier);
+    Bf(ind_patch, :) = tmp_Bf;
+end
 
-%% we don't need all frames for weights estimation. 
-T = size(Y, 2); 
+%% we don't need all frames for weights estimation.
+T = size(Y, 2);
 pmax = max(sum(W_old>0, 2)); 
 nmax = pmax*50; 
-if nmax<T
+if (~isnan(thresh_outlier)) && (nmax<T)
     temp = sum(ind_outlier);
     ind_frames = (temp<=quantile(temp, nmax/T)); 
     nmax = nnz(ind_frames); 
@@ -68,10 +70,12 @@ clear tmp_Bf Bf_old;
 
 %% with prejection 
 if with_projection
-    nk = ceil(nnz(W)/size(W, 1) *4);
-    V = randn(size(Bf, 2), nk);
-    Bf_proj = Bf*V; 
-    vec_ones = ones(1, nk); 
+    nk = min(ceil(nnz(W)/size(W, 1) *10), T);
+    %     V = randn(size(Bf, 2), nk);
+    %     Bf_proj = Bf*V;
+    k = floor(T/nk); 
+    Bf_proj = squeeze( mean(reshape(Bf(:, 1:(k*nk)), [], k, nk), 2)); %imresize(Bf, [size(Bf, 1), nk]);
+    vec_ones = ones(1, nk);
     for m=1:d
         if ~ind_active(m)
             continue;

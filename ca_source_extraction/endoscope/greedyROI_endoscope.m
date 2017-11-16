@@ -56,7 +56,7 @@ if (ssub~=1) || (tsub~=1)
     gSig = gSig/ssub;
     gSiz = round(gSiz/ssub);
     options.min_pixel = options.min_pixel/(ssub^2);
-    options.bd = round(options.bd/ssub); 
+    options.bd = round(options.bd/ssub);
     
 end
 min_corr = options.min_corr;    %minimum local correlations for determining seed pixels
@@ -104,11 +104,13 @@ T = size(Y, 2);
 %% preprocessing data
 % create a spatial filter for removing background
 if gSig>0
-    psf = fspecial('gaussian', round(gSiz), gSig);
     if options.center_psf
+        psf = fspecial('gaussian', ceil(gSig*4+1), gSig);
         ind_nonzero = (psf(:)>=max(psf(:,1)));
         psf = psf-mean(psf(ind_nonzero));
         psf(~ind_nonzero) = 0;
+    else
+        psf = fspecial('gaussian', round(gSiz), gSig);
     end
 else
     psf = [];
@@ -468,7 +470,7 @@ if ssub~=1
     end
     Cn =imresize(Cn, [d1_raw, d2_raw]);
     PNR = imresize(PNR, [d1_raw, d2_raw]);
-    center = center*ssub; 
+    center = center*ssub;
 end
 if tsub~=1
     if k==0

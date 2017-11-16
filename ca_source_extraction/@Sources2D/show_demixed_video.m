@@ -25,7 +25,7 @@ figure('position', [0,0, 600, 400]);
 
 %%
 if ~exist('amp_ac', 'var') || isempty(amp_ac)
-    amp_ac = median(max(obj.A,[],1)'.*max(obj.C,[],2));
+    amp_ac = median(max(obj.A,[],1)'.*max(obj.C,[],2))*2;
 end
 if ~exist('range_ac', 'var') || isempty(range_ac)
     range_ac = amp_ac*[0.01, 1.01];

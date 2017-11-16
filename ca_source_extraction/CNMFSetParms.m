@@ -115,6 +115,7 @@ Names = [
     'detrend_method     ' % method for detrending {'spline', 'local_min'}
     'spatial_constraints' % spatial constraints {'circular'}
     'spatial_algorithm  ' % method for updating spatial components 
+    'with_overlap_init  ' % initialize repeat neurons across different patch 
     ];
 
 [m,n] = size(Names);
@@ -296,12 +297,13 @@ Values = [
     {[]}
     {1}
     {'max'}
-    {10} 
+    {nan} 
     {'svd'}
     {1}
     {'spline'}
     {struct('circular', true, 'connected', true)}
     {'hals'}
+    {false}
     ];
 
 for j = 1:m

@@ -34,11 +34,13 @@ end
 %% preprocessing data
 % create a spatial filter for removing background
 if gSig>0
-    psf = fspecial('gaussian', round(gSiz), gSig);
     if options.center_psf
+        psf = fspecial('gaussian', ceil(gSig*4+1), gSig);
         ind_nonzero = (psf(:)>=max(psf(:,1)));
         psf = psf-mean(psf(ind_nonzero));
         psf(~ind_nonzero) = 0;
+    else
+        psf = fspecial('gaussian', round(gSiz), gSig);
     end
 else
     psf = [];

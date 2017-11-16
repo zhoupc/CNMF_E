@@ -132,7 +132,7 @@ while m <= n2merge
         catch 
             h_fig = figure(1); 
         end
-        [tmp_img, col, ~] = obj_bk.overlapA(IDs);
+        [tmp_img, col, ~] = obj_bk.overlapA(IDs, 0.1);
         subplot(221);
         imagesc(tmp_img);
         axis equal off tight;
@@ -140,8 +140,13 @@ while m <= n2merge
         imagesc(tmp_img);
         axis equal off tight;
         [tmp_r, tmp_c, ~] = find(sum(tmp_img, 3)>0);
+        try 
         xlim([min(tmp_c)-10, max(tmp_c)+10]);
+        
         ylim([min(tmp_r)-10, max(tmp_r)+10]);
+        catch 
+            pause; 
+        end
         axis off;
         subplot(2,2,3:4); cla;
         aa = sum(obj_bk.A(:, IDs),1); 
@@ -151,6 +156,7 @@ while m <= n2merge
             hold on;
             plot(tmp_C(mm,:)*aa(mm), 'color', cols(col(mm), :),  'linewidth', 2);
         end
+        title(num2str(reshape(IDs, 1, [])));
         temp = input('keep this merge? (y(default)/n(cancel)/back(b)/merge&delete(md)/end showing(e): ', 's');
         if strcmpi(temp, 'n')
             m = m+1;

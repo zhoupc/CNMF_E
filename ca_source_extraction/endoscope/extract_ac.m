@@ -57,12 +57,12 @@ X = [ones(T,1), y_bg', ci'];
 temp = (X'*X)\(X'*Y'); 
 ai = max(0, temp(3,:)'); 
 
-if spatial_constraints.circular
-    ai = circular_constraints(reshape(ai, nr, nc)); % assume neuron shapes are spatially convex
-end
+% if spatial_constraints.circular
+ai = circular_constraints(reshape(ai, nr, nc)); % assume neuron shapes are spatially convex
+% end
 
 if spatial_constraints.connected
-    ai = connectivity_constraint(reshape(ai, nr, nc)); 
+    ai = connectivity_constraint(reshape(ai, nr, nc));
 end
 ai = ai(:); 
 
