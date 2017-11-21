@@ -84,6 +84,7 @@ for mpatch=1:(nr_patch*nc_patch)
 end
 %% prepare for the variables for computing the background.
 bg_model = obj.options.background_model;
+bg_ssub = obj.options.bg_ssub;
 W = obj.W;
 b0 = obj.b0;
 b = obj.b;
@@ -127,6 +128,7 @@ if use_parallel
         else
             Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, false);
         end
+        [nr_block, nc_block, ~] = size(Ypatch);
         
         % get background
         if strcmpi(bg_model, 'ring')
@@ -134,7 +136,20 @@ if use_parallel
             b0_ring = b0{mpatch};
             Ypatch = reshape(Ypatch, [], T);
             tmp_Y = double(Ypatch)-A_patch*C_patch;
-            Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*tmp_Y, b0_ring-W_ring*mean(tmp_Y, 2));
+            if bg_ssub==1
+                Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*tmp_Y, b0_ring-W_ring*mean(tmp_Y, 2));
+            else
+                % get the dimension of the downsampled data
+                [d1s, d2s] = size(imresize(zeros(nr_block, nc_block), 1/bg_ssub));
+                % downsample data and reconstruct B^f
+                temp = reshape(bsxfun(@minus, tmp_Y, mean(tmp_Y, 2)), nr_block, nc_block, []);
+                temp = imresize(temp, 1./bg_ssub);
+                Bf = reshape(W_ring*reshape(temp, [], T), d1s, d2s, T);
+                Bf = imresize(Bf, [nr_block, nc_block]);
+                Bf = reshape(Bf, [], T);
+                
+                Ypatch = bsxfun(@minus, double(Ypatch(ind_patch, :)) - Bf(ind_patch, :), b0_ring);
+            end
         elseif strcmpi(bg_model, 'nmf')
             b_nmf = b{mpatch};
             f_nmf = f{mpatch};
@@ -188,6 +203,7 @@ else
         else
             Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, false);
         end
+        [nr_block, nc_block, ~] = size(Ypatch);
         
         % get background
         if strcmpi(bg_model, 'ring')
@@ -195,7 +211,20 @@ else
             b0_ring = b0{mpatch};
             Ypatch = reshape(Ypatch, [], T);
             tmp_Y = double(Ypatch)-A_patch*C_patch;
-            Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*tmp_Y, b0_ring-W_ring*mean(tmp_Y, 2));
+            if bg_ssub==1
+                Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*tmp_Y, b0_ring-W_ring*mean(tmp_Y, 2));
+            else
+                % get the dimension of the downsampled data
+                [d1s, d2s] = size(imresize(zeros(nr_block, nc_block), 1/bg_ssub));
+                % downsample data and reconstruct B^f
+                temp = reshape(bsxfun(@minus, tmp_Y, mean(tmp_Y, 2)), nr_block, nc_block, []);
+                temp = imresize(temp, 1./bg_ssub);
+                Bf = reshape(W_ring*reshape(temp, [], T), d1s, d2s, T);
+                Bf = imresize(Bf, [nr_block, nc_block]);
+                Bf = reshape(Bf, [], T);
+                
+                Ypatch = bsxfun(@minus, double(Ypatch(ind_patch, :)) - Bf(ind_patch, :), b0_ring);
+            end
         elseif strcmpi(bg_model, 'nmf')
             b_nmf = b{mpatch};
             f_nmf = f{mpatch};
@@ -293,11 +322,11 @@ aa = sum(tmp_A.^2, 1);
 ind = (aa==0);
 aa(ind) = inf;
 C_raw = bsxfun(@times, tmp_A'*Y, 1./aa');
-aa(ind) = 0; 
+aa(ind) = 0;
 % if any(ind)  % explain the residual using weak neurons
 %     tmp_A = A(:, ind);
 %     C_raw(ind, :) = (tmp_A'*tmp_A)\(tmp_A'*Y - tmp_A'*A*C_raw);
-%     aa(ind) = sum(tmp_A.^2, 1); 
+%     aa(ind) = sum(tmp_A.^2, 1);
 % end
 
 

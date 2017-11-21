@@ -50,7 +50,7 @@ bg_model = 'ring';  % model of the background {'ring', 'svd'(default), 'nmf'}
 nb = 1;             % number of background sources for each patch (only be used in SVD and NMF model)
 ring_radius = 18;  % when the ring model used, it is the radius of the ring used in the background model.
 %otherwise, it's just the width of the overlapping area
-num_neighbors = 50; % number of neighbors for each neuron
+num_neighbors = []; % number of neighbors for each neuron
 
 % -------------------------      MERGING      -------------------------  %
 show_merge = false;  % if true, manually verify the merging step

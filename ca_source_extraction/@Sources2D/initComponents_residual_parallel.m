@@ -45,14 +45,14 @@ end
 fprintf('\n---------------PICK NEURONS FROM THE RESIDUAL----------------\n');
 
 if exist('min_corr', 'var') && ~isempty(min_corr)
-    obj.options.min_corr = min_corr; 
-end 
+    obj.options.min_corr = min_corr;
+end
 if exist('min_pnr', 'var') && ~isempty(min_pnr)
-    obj.options.min_pnr = min_pnr; 
-end 
+    obj.options.min_pnr = min_pnr;
+end
 if exist('seed_method', 'var') && ~isempty(seed_method)
-    obj.options.seed_method = seed_method; 
-end 
+    obj.options.seed_method = seed_method;
+end
 % frames to be loaded for initialization
 frame_range = obj.frame_range;
 T = diff(frame_range) + 1;
@@ -83,13 +83,14 @@ end
 bd = options.bd;
 
 if strcmpi(obj.options.seed_method, 'manual')
-    use_parallel = false; 
+    use_parallel = false;
 end
 % no centering of the raw video
 % options.center_psf = false;
 
 %% prepare for the variables for computing the background.
 bg_model = obj.options.background_model;
+bg_ssub = obj.options.bg_ssub; 
 W = obj.W;
 b0 = obj.b0;
 b = obj.b;
@@ -153,7 +154,7 @@ if use_parallel
         end
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         
-        % use ind_patch to indicate pixels within the patch 
+        % use ind_patch to indicate pixels within the patch
         ind_patch = false(diff(tmp_block(1:2))+1, diff(tmp_block(3:4))+1);
         ind_patch((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1) = true;
         
@@ -193,13 +194,28 @@ if use_parallel
         else
             Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, false);
         end
+        [nr_block, nc_block, ~] = size(Ypatch);
         
         Ypatch = double(reshape(Ypatch, [], T)) - A_patch*C_patch;
         % get background
         if strcmpi(bg_model, 'ring')
             W_ring = W{mpatch};
             b0_ring = b0{mpatch};
-            Ypatch = bsxfun(@minus, Ypatch(ind_patch,:)- W_ring*Ypatch, b0_ring-W_ring*mean(Ypatch, 2)); 
+            %             Ypatch = bsxfun(@minus, Ypatch(ind_patch,:)- W_ring*Ypatch, b0_ring-W_ring*mean(Ypatch, 2));
+            if bg_ssub==1
+                Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*Ypatch, b0_ring-W_ring*mean(Ypatch, 2));
+            else
+                % get the dimension of the downsampled data
+                [d1s, d2s] = size(imresize(zeros(nr_block, nc_block), 1/bg_ssub));
+                % downsample data and reconstruct B^f
+                temp = reshape(bsxfun(@minus, Ypatch, mean(Ypatch, 2)), nr_block, nc_block, []);
+                temp = imresize(temp, 1./bg_ssub);
+                Bf = reshape(W_ring*reshape(temp, [], T), d1s, d2s, T);
+                Bf = imresize(Bf, [nr_block, nc_block]);
+                Bf = reshape(Bf, [], T);
+                
+                Ypatch = bsxfun(@minus, double(Ypatch(ind_patch, :)) - Bf(ind_patch, :), b0_ring);
+            end
         elseif strcmpi(bg_model, 'nmf')
             b_nmf = b{mpatch};
             f_nmf = f{mpatch};
@@ -236,7 +252,7 @@ else
         end
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         
-        % use ind_patch to indicate pixels within the patch 
+        % use ind_patch to indicate pixels within the patch
         ind_patch = false(diff(tmp_block(1:2))+1, diff(tmp_block(3:4))+1);
         ind_patch((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1) = true;
         
@@ -276,13 +292,29 @@ else
         else
             Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, false);
         end
+        [nr_block, nc_block, ~] = size(Ypatch);
         
         Ypatch = double(reshape(Ypatch, [], T)) - A_patch*C_patch;
         % get background
         if strcmpi(bg_model, 'ring')
             W_ring = W{mpatch};
             b0_ring = b0{mpatch};
-            Ypatch = bsxfun(@minus, Ypatch(ind_patch,:)- W_ring*Ypatch, b0_ring-W_ring*mean(Ypatch, 2)); 
+            %             Ypatch = bsxfun(@minus, Ypatch(ind_patch,:)- W_ring*Ypatch, b0_ring-W_ring*mean(Ypatch, 2));
+            if bg_ssub==1
+                Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*Ypatch, b0_ring-W_ring*mean(Ypatch, 2));
+            else
+                % get the dimension of the downsampled data
+                [d1s, d2s] = size(imresize(zeros(nr_block, nc_block), 1/bg_ssub));
+                % downsample data and reconstruct B^f
+                temp = reshape(bsxfun(@minus, Ypatch, mean(Ypatch, 2)), nr_block, nc_block, []);
+                temp = imresize(temp, 1./bg_ssub);
+                Bf = reshape(W_ring*reshape(temp, [], T), d1s, d2s, T);
+                Bf = imresize(Bf, [nr_block, nc_block]);
+                Bf = reshape(Bf, [], T);
+                
+                Ypatch = bsxfun(@minus, double(Ypatch(ind_patch, :)) - Bf(ind_patch, :), b0_ring);
+            end
+            
         elseif strcmpi(bg_model, 'nmf')
             b_nmf = b{mpatch};
             f_nmf = f{mpatch};

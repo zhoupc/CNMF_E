@@ -5,7 +5,7 @@ function [center, Cn, PNR] = initComponents_parallel(obj, K, frame_range, save_a
 %   frame_range: 1 X 2 vector indicating the starting and ending frames
 %   save_avi: save the video of initialization procedure
 %   use_parallel: boolean, do initialization in patch mode or not.
-%       default(true); we recommend you to set it false only when you want to debug the code. 
+%       default(true); we recommend you to set it false only when you want to debug the code.
 
 %% Output:
 %   center: d*2 matrix, centers of all initialized neurons.
@@ -43,7 +43,7 @@ try
     % folders and files for saving the results
     tmp_dir = sprintf('%s%sframes_%d_%d%s', fileparts(mat_file),filesep, frame_range(1), frame_range(2), filesep);
     if ~exist(tmp_dir, 'dir')
-        mkdir(tmp_dir); 
+        mkdir(tmp_dir);
     end
     log_folder = [tmp_dir,  'LOGS_', get_date(), filesep];
     log_file = [log_folder, 'logs.txt'];
@@ -85,7 +85,7 @@ try
             if (choice>0) && (choice<=k)
                 % reuse this folder and stop the initialization
                 try
-                    % copy the previous log file 
+                    % copy the previous log file
                     log_old = fopen(fullfile(tmp_dir, previous_folder{choice}, 'logs.txt'), 'r');
                     flog = fopen(log_file, 'a');
                     
@@ -99,8 +99,8 @@ try
                         end
                     end
                     fclose(flog);
-
-                    % copy the previous results 
+                    
+                    % copy the previous results
                     data = matfile(fullfile(tmp_dir, previous_folder{1}, 'intermediate_results.mat'));
                     log_data.initialization = data.initialization;
                     log_data.options_0 = data.options_0;
@@ -122,8 +122,8 @@ try
                     obj.P.log_folder = log_folder;
                     obj.P.log_file = log_file;
                     obj.P.log_data = log_data_file;
-                    obj.ids = neuron.ids; 
-                    obj.tags = neuron.tags; 
+                    obj.ids = neuron.ids;
+                    obj.tags = neuron.tags;
                 catch
                     continue;
                 end
@@ -177,10 +177,10 @@ end
 if ~exist('save_avi', 'var')||isempty(save_avi)
     save_avi = false; %don't save initialization procedure
 elseif save_avi
-    use_parallel = false; 
+    use_parallel = false;
 end
 
-% use parallel or not 
+% use parallel or not
 if ~exist('use_parallel', 'var')||isempty(use_parallel)
     use_parallel = true; %don't save initialization procedure
 end
@@ -191,7 +191,7 @@ if isfield(obj.options, 'nk') % number of knots for creating spline basis
 else
     nk = 1;
 end
-detrend_method = obj.options.detrend_method; 
+detrend_method = obj.options.detrend_method;
 
 % parameter for avoiding using boundaries pixels as seed pixels
 options = obj.options;
@@ -199,7 +199,7 @@ if ~isfield(options, 'bd') || isempty(options.bd')
     options.bd = options.gSiz;   % boundary pixesl to be ignored during the process of detecting seed pixels
 end
 bd = options.bd;
-bg_ssub = options.bg_ssub; 
+bg_ssub = options.bg_ssub;
 
 %% preallocate spaces for saving model variables relating to background components
 bg_model = obj.options.background_model;
@@ -219,7 +219,7 @@ if strcmpi(bg_model, 'ring')
         nr_block = diff(tmp_block(1:2))+1;
         nc_block = diff(tmp_block(3:4))+1;
         b0{mpatch} = zeros(nr*nc, 1);
-
+        
         if bg_ssub==1
             [csub, rsub] = meshgrid(tmp_patch(3):tmp_patch(4), tmp_patch(1):tmp_patch(2));
             csub = reshape(csub, [], 1);
@@ -233,7 +233,7 @@ if strcmpi(bg_model, 'ring')
             temp = sparse(ii(ind), jj(ind), 1, nr*nc, nr_block*nc_block);
             W{mpatch} = bsxfun(@times, temp, 1./sum(temp, 2));
         else
-            d1s = ceil(nr_block/bg_ssub); 
+            d1s = ceil(nr_block/bg_ssub);
             d2s = ceil(nc_block/bg_ssub);
             
             [csub, rsub] = meshgrid(1:d2s, 1:d1s);
@@ -277,7 +277,7 @@ obj.W = W;
 obj.b0 = b0;
 obj.b = b;
 obj.f = f;
-clear W b0 b f;    % remove these variables for saving RAM space 
+clear W b0 b f;    % remove these variables for saving RAM space
 
 %% start initialization
 % save the log infomation
@@ -286,7 +286,7 @@ obj.P.k_options = 1;
 obj.P.k_neurons = 0;
 flog = fopen(log_file, 'w');
 fprintf(flog, 'Data: %s\n\n', mat_file);
-fprintf(flog, '--------%s--------\n', get_date()); 
+fprintf(flog, '--------%s--------\n', get_date());
 fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, 'Start running source extraction......\nThe collection of options are saved as intermediate_results.options_0\n\n');
 
@@ -307,13 +307,14 @@ results = cell(nr_patch*nc_patch, 1);
 if use_parallel
     parfor mpatch=1:(nr_patch*nc_patch)
         % get the indices corresponding to the selected patch
-        tmp_patch = patch_pos{mpatch}; 
-        tmp_block = block_pos{mpatch}; 
+        tmp_patch = patch_pos{mpatch};
+        tmp_block = block_pos{mpatch};
         
         % boundaries pixels to be avoided for detecting seed pixels
         tmp_options = options;
         tmp_options.visible_off = true;
-        tmp_options.bd = max([(tmp_patch-tmp_block).*[1, -1, 1, -1]; bd, bd, bd, bd], [], 1);
+        tmp_options.bd = (tmp_patch==tmp_block).*([bd, bd, bd, bd]);
+        %         tmp_options.bd = max([(tmp_patch-tmp_block).*[1, -1, 1, -1]; bd, bd, bd, bd], [], 1);
         
         % patch dimension
         tmp_options.d1 = diff(tmp_block(1:2))+1;
@@ -359,7 +360,8 @@ else
         % boundaries pixels to be avoided for detecting seed pixels
         tmp_options = options;
         tmp_options.visible_off = true;
-        tmp_options.bd = max([(tmp_patch-tmp_block).*[1, -1, 1, -1]; bd, bd, bd, bd], [], 1);
+        tmp_options.bd = (tmp_patch==tmp_block).*([bd, bd, bd, bd]);
+        %         tmp_options.bd = max([(tmp_patch-tmp_block).*[1, -1, 1, -1]; bd, bd, bd, bd], [], 1);
         
         % patch dimension
         tmp_options.d1 = diff(tmp_block(1:2))+1;
@@ -393,7 +395,7 @@ else
         results{mpatch} = tmp_results;
         %     eval(sprintf('results_patch_%d=tmp_results;', mpatch));  %#ok<PFBFN>
         % display initialization progress
-        [r, c] = ind2sub([nr_patch, nc_patch], mpatch); 
+        [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
     end
 end
@@ -413,11 +415,18 @@ for mpatch=1:(nr_patch*nc_patch)
     
     % unpack results
     tmp_results = results{mpatch};
+    
     %     eval(sprintf('tmp_results=results_patch_%d;', mpatch));
-    tmp_Ain = tmp_results.Ain;
-    tmp_Ain(ind_patch, :) = 0;
-    tmp_ind = (sum(tmp_Ain, 1)>0); 
-    tmp_Ain = tmp_Ain(:, tmp_ind); 
+    %     tmp_Ain = tmp_results.Ain;
+    %     tmp_Ain(ind_patch, :) = 0;
+    %     tmp_ind = (sum(tmp_Ain, 1)>0);
+    
+    % keep neurons whose seed pixel is within the patch
+    ctr = round( tmp_results.center);
+    ind= sub2ind(size(ind_patch), ctr(:, 1), ctr(:,2));
+    tmp_ind = (~ind_patch(ind));
+    
+    tmp_Ain = tmp_results.Ain(:, tmp_ind);
     tmp_Cin = tmp_results.Cin(tmp_ind,:);
     tmp_Cin_raw = tmp_results.Cin_raw(tmp_ind,:);
     tmp_center = tmp_results.center(tmp_ind,:) ;
@@ -461,10 +470,10 @@ else
     obj.S = zeros(size(obj.C));
 end
 obj.Cn = Cn;
-K = size(obj.A, 2); 
+K = size(obj.A, 2);
 obj.P.k_ids = K;
-obj.ids = (1:K); 
-obj.tags = zeros(K,1, 'like', uint16(0)); 
+obj.ids = (1:K);
+obj.tags = zeros(K,1, 'like', uint16(0));
 
 %% save the results to log
 initialization.neuron = obj.obj2struct();
