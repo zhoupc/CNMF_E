@@ -52,7 +52,12 @@ for miter=1:maxIter
         temp = C(k, :) + (U(k, :)-V(k, :)*C)/aa(k);
         %remove baseline and estimate noise level
         if range(temp)/std(temp)>10
-            [b, tmp_sn] = estimate_baseline_noise(temp);
+            try
+                [b, tmp_sn] = estimate_baseline_noise(temp);
+            catch
+                b = mean(temp(temp<median(temp)));
+                tmp_sn = GetSn(temp);
+            end
         else
             b = mean(temp(temp<median(temp)));
             tmp_sn = GetSn(temp);
