@@ -5,6 +5,16 @@ if running_on_cluster % some procedures making cluster use robust
     [~, ~, ~] = maybe_spawn_workers(workersnum); 
     init_par_rng(2016);
 end
+
+if strcmp(Version,'MoBatchVer')
+    eval(sprintf('save %s%0.f_cnmfe_BatchVer_PartI_File.mat %s -v7.3', outputdir, daynum, 'File'));
+    fprintf('Variable ''File'', which includes fields of ''options'' ''Ysignal'' ''neuron'' ''Ybg'' saved.');
+elseif strcmp(Version,'BatchVer')
+    Vars = {'File'}; Vars=Vars';
+    eval(sprintf('save %s%0.f_cnmfe_BatchVer_ClusterPartI.mat %s -v7.3', outputdir, daynum, strjoin(Vars)));
+end
+File = rmfield(File,{'Ybg','neuron'});
+
 %% 2. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
 ACS(length(samplelist)) = struct('Cin',[],'Cin_raw',[],'STD',[]);
 S_R=length(samplelist);
