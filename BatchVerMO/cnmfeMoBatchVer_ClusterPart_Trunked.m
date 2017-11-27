@@ -6,71 +6,6 @@ if running_on_cluster % some procedures making cluster use robust
     init_par_rng(2016);
 end
 
-if strcmp(Version,'MoBatchVer')
-    eval(sprintf('save %s%0.f_cnmfe_BatchVer_PartI_File.mat %s -v7.3', outputdir, daynum, 'File'));
-    fprintf('Variable ''File'', which includes fields of ''options'' ''Ysignal'' ''neuron'' ''Ybg'' saved.');
-elseif strcmp(Version,'BatchVer')
-    Vars = {'File'}; Vars=Vars';
-    eval(sprintf('save %s%0.f_cnmfe_BatchVer_ClusterPartI.mat %s -v7.3', outputdir, daynum, strjoin(Vars)));
-end
-File = rmfield(File,{'Ybg','neuron'});
-
-%% 2. Next, Use this A, in each file i, find C's corresponding to each A's found in file j.
-ACS(length(samplelist)) = struct('Cin',[],'Cin_raw',[],'STD',[]);
-S_R=length(samplelist);
-parfor i= 1:S_R
-    Cin=[]; Cin_raw=[]; STD=[];
-    for j=1:S_R % parfor needs S_R rather than length(samplelist)
-        Aj=A0s{j};
-        ACS_temp=A2C(File(i).Ysignal, Aj, File(i).options);
-        Cin = [Cin; ACS_temp.Cin]; STD=[STD ACS_temp.STD]; Cin_raw=[Cin_raw; ACS_temp.Cin_raw];
-    end
-    ACS(i).Cin=Cin; ACS(i).Cin_raw=Cin_raw; ACS(i).STD=STD;
-end
-save([outputdirDetails 'ACScnmfeBatchVer.mat'],'-v7.3')
-
-%% 3 Merge similar neurons
-
-A_temp=cat(2,A0s{:});
-%Amask_temp=bsxfun(@gt,Amask_temp,quantile(Amask_temp,0.3)); %only use central part for merging.
-[Afinal,MC,newIDs,merged_ROIs,close_ind,real_ind] = mergeAC(A_temp,ACS,merge_thr_2,dmin,File(1).options.d1,File(1).options.d2);
-
-if strcmp(Version,'MoBatchVer'); save([outputdirDetails 'commonAcnmfeBatchVer.mat'],'-v7.3')
-elseif strcmp(Version,'BatchVer');save([outputdir 'commonAcnmfeBatchVer.mat'],'-v7.3')
-end
-
-%% 4 Determine Afinal that will be used to extract C's in each file.
-
-%%% Some processes making Afinal nicer, modified from Pengcheng Zhou's
-%%% idea.
-for i=1:size(Afinal,2)
-    ai=Afinal(:,i);
-    temp = full(ai>quantile(ai, 0.5, 1));
-    ai(~temp(:)) = 0;
-    Afinal(:,i)=ai;
-end
-
-% Just in case some all zero A's got passed to this stage.
-nz_ind=any(Afinal);
-Afinal=Afinal(:,nz_ind);
-newIDs=newIDs(nz_ind);
-
-
-Apicname=sprintf('%.0fAfinal',daynum);
-if strcmp(Version,'MoBatchVer')
-    ColorAllNeurons(Afinal,File(1).options.d1,File(1).options.d2,Apicname,outputdirDetails);
-    Vars = {'Afinal';'samplelist'}; Vars=Vars';
-    eval(sprintf('save %s%0.f_cnmfe_BatchVer_PartI_Afinalsam.mat %s -v7.3', outputdir, daynum, strjoin(Vars)));
-    fprintf('cnmfe_BatchVer_for motion Part1 data saved, check them out!');
-    return
-elseif strcmp(Version,'BatchVer')
-    ColorAllNeurons(Afinal,File(1).options.d1,File(1).options.d2,Apicname,outputdir);
-    Vars = {'Afinal';'samplelist'}; Vars=Vars';
-    eval(sprintf('save %s%0.f_cnmfe_BatchVer_ClusterPartI.mat %s -append', outputdir, daynum, strjoin(Vars)));
-end
-
-% The following will be executed for cnmf_e(BatchVer), without motion
-% correction.
 %% 5 "massive" procedure: Extract A from each file
 neuron_batch(length(samplelist)) = struct('ind_del',[],'rawsignal',[],'signal',[],'DeconvSpiketrain',[],'FileOrigin',[],'neuron',[],'C',[],'C_raw',[]);
 
@@ -84,7 +19,7 @@ parfor i= 1:length(samplelist)
                                    thresh_detecting_frames);
     neuron_batch(i).FileOrigin=filelist(i); % save origin(filelist)
 end
-neuron_batchMO = rmfield(neuron_batchMO,{'C','C_raw'});
+neuron_batch = rmfield(neuron_batch,{'C','C_raw'});
 fprintf('Massive extraction in each file done.');
 
 %% 6 Save A*C
