@@ -3,7 +3,7 @@ if ~exist('use_parallel', 'var')||isempty(use_parallel)
     use_parallel = true;
 end
 if ~exist('method_noise', 'var') || isempty(method_noise)
-    method_noise = 'psd'; 
+    method_noise = 'psd';
 end
 C_raw_ = obj.C_raw;
 K = size(C_raw_, 1);
@@ -40,11 +40,11 @@ if use_parallel
             C_raw_{k} = zeros(size(ck_raw));
         else
             if strcmpi(method_noise, 'histogram')
-                [~, tmp_sn] = estimate_baseline_noise(ck_raw); 
+                [~, tmp_sn] = estimate_baseline_noise(ck_raw);
             else
-                tmp_sn = GetSn(ck_raw); 
+                tmp_sn = GetSn(ck_raw);
             end
-                        % subtract the baseline
+            % subtract the baseline
             sn{k} = tmp_sn;
             
             % deconvolution
@@ -72,11 +72,11 @@ else
             C_raw_{k} = zeros(size(ck_raw));
         else
             if strcmpi(method_noise, 'histogram')
-                [~, tmp_sn] = estimate_baseline_noise(ck_raw); 
+                [~, tmp_sn] = estimate_baseline_noise(ck_raw);
             else
-                tmp_sn = GetSn(ck_raw); 
+                tmp_sn = GetSn(ck_raw);
             end
-                        % subtract the baseline
+            % subtract the baseline
             sn{k} = tmp_sn;
             
             % deconvolution
@@ -99,7 +99,7 @@ end
 fprintf('\n');
 C_ = cell2mat(C_);
 obj.C = C_;
-obj.C_raw = cell2mat(C_raw_); 
+obj.C_raw = cell2mat(C_raw_);
 obj.S = cell2mat(S_);
 obj.P.kernel_pars = cell2mat(kernel_pars);
 obj.P.neuron_sn = cell2mat(sn);

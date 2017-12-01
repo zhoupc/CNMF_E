@@ -718,7 +718,7 @@ classdef Sources2D < handle
             end
         end
         %% quick view
-        viewNeurons(obj, ind, C2, folder_nm);
+        ind_del = viewNeurons(obj, ind, C2, folder_nm);
         displayNeurons(obj, ind, C2, folder_nm);
         
         %% function remove false positives

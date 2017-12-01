@@ -1,4 +1,4 @@
-function viewNeurons(obj, ind, C2, folder_nm)
+function ind_del = viewNeurons(obj, ind, C2, folder_nm)
 %% view all components and delete components manually. it shows spatial
 %   components in the full-frame and zoomed-in view. It also shows temporal
 %   components
