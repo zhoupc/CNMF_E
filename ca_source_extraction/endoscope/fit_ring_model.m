@@ -36,10 +36,10 @@ end
 %% compute the fluctuating background 
 Ymean = mean(Y,2); 
 Cmean = mean(C, 2); 
+b0 = Ymean(ind_patch) - A(ind_patch,:)*Cmean;
 Y = bsxfun(@minus, double(Y), Ymean); 
 C = bsxfun(@minus, C, Cmean);
 Bf = Y - A*C; 
-b0 = Ymean(ind_patch) - A(ind_patch,:)*Cmean;
 
 %% compute the previous estimation and take care of the outliers. 
 if ~isnan(thresh_outlier)
@@ -53,7 +53,7 @@ end
 %% we don't need all frames for weights estimation.
 T = size(Y, 2);
 pmax = max(sum(W_old>0, 2));
-nmax = pmax*50;
+nmax = pmax*100;
 if (~isnan(thresh_outlier)) && (nmax<T)
     temp = sum(ind_outlier);
     ind_frames = (temp<=quantile(temp, nmax/T));
@@ -66,26 +66,34 @@ end
 ind_pixels = find(ind_patch);
 d = length(ind_pixels);
 W = W_old;
+T = size(Bf, 2); 
 clear tmp_Bf Bf_old;
 
 %% with prejection 
 if with_projection
-    nk = min(ceil(nnz(W)/size(W, 1) *100), T);
+%     % subsampling data 
+%     ind = linspace(1,T , min(nmax, T/2)); 
+%     Bf = Bf(:, ind_k); 
     %     V = randn(size(Bf, 2), nk);
     %     Bf_proj = Bf*V;
-    k = floor(size(Bf, 2)/nk); 
-    Bf_proj = squeeze( mean(reshape(Bf(:, 1:(k*nk)), [], k, nk), 2)); %imresize(Bf, [size(Bf, 1), nk]);
-    vec_ones = ones(1, nk);
+    nk = min(round(T/1), nmax); 
+    k = floor(T/nk);
+    if k~=1
+        Bf = Bf(:, 1:k:end);
+%         Bf = imresize(Bf, [size(Bf, 1), nk], 'nearest'); 
+%         Bf = squeeze( mean(reshape(Bf(:, 1:(k*nk)), [], k, nk), 2)); %imresize(Bf, [size(Bf, 1), nk]);
+    end
+    vec_ones = ones(1, size(Bf, 2));
     for m=1:d
         if ~ind_active(m)
             continue;
         end
         idx = ind_pixels(m);
-        % choose neighbors with low neural activity 
-
+        % choose neighbors with low neural activity
+        
         ind_ring = (W_old(m,:)~=0);
-        y = Bf_proj(idx, :);
-        X = [Bf_proj(ind_ring,:); vec_ones];
+        y = Bf(idx, :);
+        X = [Bf(ind_ring,:); vec_ones];
         
         tmpXX = X*X';
         tmpXy = X*y';

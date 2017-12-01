@@ -33,7 +33,7 @@ end
 
 % obj.delete(sum(obj.A>0, 1)<max(obj.options.min_pixel, 1));
 
-Amask = (obj.A>0);
+Amask = (obj.A~=0);
 ind_trim = false(size(ind));    % indicator of trimming neurons
 ind_del = false(size(ind));     % indicator of deleting neurons
 ctr = obj.estCenter();      %neuron's center

@@ -70,7 +70,7 @@ if isempty(options.sn)
     options.sn = GetSn(y);
 end
 % estimate time constant
-if isempty(options.pars)
+if isempty(options.pars) || all(options.pars==0)
     switch options.type
         case 'ar1'
             try

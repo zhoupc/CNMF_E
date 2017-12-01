@@ -99,6 +99,7 @@ end
 fprintf('\n');
 C_ = cell2mat(C_);
 obj.C = C_;
+obj.C_raw = cell2mat(C_raw_); 
 obj.S = cell2mat(S_);
 obj.P.kernel_pars = cell2mat(kernel_pars);
 obj.P.neuron_sn = cell2mat(sn);

@@ -66,8 +66,12 @@ end
 IND = sparse(logical(determine_search_location(obj.A, search_method, options)));
 
 %% identify existing neurons within each patch
-A = cell(nr_patch, nc_patch);
+A = cell(nr_patch, nc_patch); 
 C = cell(nr_patch, nc_patch);
+if strcmpi(bg_model, 'ring')
+    A_prev = A; 
+    C_prev = C; 
+end
 sn = cell(nr_patch, nc_patch);
 ind_neurons = cell(nr_patch, nc_patch);
 IND_search = cell(nr_patch, nc_patch);
@@ -79,6 +83,7 @@ for mpatch=1:(nr_patch*nc_patch)
     mask = zeros(d1, d2);
     mask(tmp_block(1):tmp_block(2), tmp_block(3):tmp_block(4)) = 1;
     mask(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4)) = 2;
+    % find neurons within the patch 
     ind = find(reshape(mask(:)==2, 1, [])* full(double(IND))>0);
     A{mpatch}= obj.A((mask>0), ind);
     IND_search{mpatch} = IND(mask==2, ind);
@@ -86,6 +91,12 @@ for mpatch=1:(nr_patch*nc_patch)
     C{mpatch} = obj.C(ind, :);
     ind_neurons{mpatch} = ind;    % indices of the neurons within each patch
     with_neuron{mpatch} = ~isempty(ind);
+    
+    if strcmpi(bg_model, 'ring')
+        ind = find(reshape(mask(:)==1, 1, [])* full(obj.A_prev)>0);
+        A_prev{mpatch}= obj.A_prev((mask>0), ind);
+        C_prev{mpatch} = obj.C_prev(ind, :);
+    end
 end
 if update_sn
     sn_new = sn;
@@ -144,10 +155,12 @@ if use_parallel
         
         % get background
         if strcmpi(bg_model, 'ring')
+            A_patch_prev = A_prev{mpatch};
+            C_patch_prev = C_prev{mpatch};
             W_ring = W{mpatch};
             b0_ring = b0{mpatch};
             Ypatch = reshape(Ypatch, [], T);
-            tmp_Y = double(Ypatch)-A_patch*C_patch;
+            tmp_Y = double(Ypatch)-A_patch_prev*C_patch_prev;
             
             if bg_ssub==1
                 Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*tmp_Y, b0_ring-W_ring*mean(tmp_Y, 2));
@@ -197,7 +210,6 @@ if use_parallel
         else
             temp = nnls_spatial(Ypatch, A_patch, C_patch, IND_patch, 20);
         end
-        
         %         A_new{mpatch} = tmp_obj.post_process_spatial(reshape(full(temp), nr, nc, []));
         A_new{mpatch} = full(temp);
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
@@ -244,10 +256,12 @@ else
         
         % get background
         if strcmpi(bg_model, 'ring')
+            A_patch_prev = A_prev{mpatch}; 
+            C_patch_prev = C_prev{mpatch}; 
             W_ring = W{mpatch};
             b0_ring = b0{mpatch};
             Ypatch = reshape(Ypatch, [], T);
-            tmp_Y = double(Ypatch)-A_patch*C_patch;
+            tmp_Y = double(Ypatch)-A_patch_prev*C_patch_prev;
             
             if bg_ssub==1
                 Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*tmp_Y, b0_ring-W_ring*mean(tmp_Y, 2));
@@ -297,7 +311,6 @@ else
         else
             temp = nnls_spatial(Ypatch, A_patch, C_patch, IND_patch, 20);
         end
-        
         %         A_new{mpatch} = tmp_obj.post_process_spatial(reshape(full(temp), nr, nc, []));
         A_new{mpatch} = full(temp);
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
@@ -316,15 +329,9 @@ for mpatch=1:(nr_patch*nc_patch)
     ind_patch = ind_neurons{mpatch};
     for m=1:length(ind_patch)
         k = ind_patch(m);
-        try
             A_(tmp_pos(1):tmp_pos(2), tmp_pos(3):tmp_pos(4), k) = reshape(A_patch(:, m), nr, nc, 1);
-        catch
-            pause;
-        end
-        
     end
 end
-A_old = sparse(obj.A);
 A_new = sparse(obj.reshape(A_, 1));
 if update_sn
     obj.P.sn = cell2mat(sn_new);
@@ -332,25 +339,20 @@ end
 %% post-process results
 fprintf('Post-process spatial components of all neurons...\n');
 obj.A = obj.post_process_spatial(obj.reshape(A_new, 2));
+% obj.A = A_new; 
 fprintf('Done!\n');
 fprintf('Done!\n');
 
 %% upadte b0
-fprintf('Update the constant baselines for all pixels..\n');
-C_mean = mean(obj.C, 2);
-db = (A_old-A_new)*C_mean;
-db = obj.reshape(db, 2);
-b0 = obj.b0;
-for mpatch = 1:(nr_patch*nc_patch)
-    tmp_patch = patch_pos{mpatch};     %[r0, r1, c0, c1], patch location
-    db_patch = db(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4));
-    b0{mpatch} = b0{mpatch} + reshape(db_patch, [],1);
+if strcmpi(bg_model, 'ring')
+    fprintf('Update the constant baselines for all pixels..\n');
+    obj.b0_new = cell2mat(obj.P.Ymean)-obj.reshape(obj.A*mean(obj.C,2), 2); %-obj.reconstruct();
+    fprintf('Done!\n');
 end
-obj.b0 = b0;
-fprintf('Done!\n');
 
 %% save the results to log
 spatial.A = obj.A;
+spatial.ids = obj.ids; 
 temporal.b0 = obj.b0;
 tmp_str = get_date();
 tmp_str=strrep(tmp_str, '-', '_');

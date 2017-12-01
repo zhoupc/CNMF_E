@@ -62,6 +62,10 @@ maxIter = options.maxIter;
 %% identify existing neurons within each patch
 A = cell(nr_patch, nc_patch);
 C = cell(nr_patch, nc_patch);
+if strcmpi(bg_model, 'ring')
+    A_prev = A; 
+    C_prev = C; 
+end
 sn = cell(nr_patch, nc_patch);
 ind_neurons = cell(nr_patch, nc_patch);
 
@@ -81,6 +85,12 @@ for mpatch=1:(nr_patch*nc_patch)
     sn{mpatch} = obj.P.sn(logical(mask));
     C{mpatch} = obj.C(ind, :);
     ind_neurons{mpatch} = find(ind);    % indices of the neurons within each patch
+    
+    if strcmpi(bg_model, 'ring')
+        ind = find(reshape(mask(:)==1, 1, [])* full(obj.A_prev)>0);
+        A_prev{mpatch}= obj.A_prev((mask>0), ind);
+        C_prev{mpatch} = obj.C_prev(ind, :);
+    end
 end
 %% prepare for the variables for computing the background.
 bg_model = obj.options.background_model;
@@ -131,11 +141,13 @@ if use_parallel
         [nr_block, nc_block, ~] = size(Ypatch);
         
         % get background
-        if strcmpi(bg_model, 'ring')
+        if strcmpi(bg_model, 'ring')     
+            A_patch_prev = A_prev{mpatch};
+            C_patch_prev = C_prev{mpatch};
             W_ring = W{mpatch};
             b0_ring = b0{mpatch};
             Ypatch = reshape(Ypatch, [], T);
-            tmp_Y = double(Ypatch)-A_patch*C_patch;
+            tmp_Y = double(Ypatch)-A_patch_prev*C_patch_prev;
             if bg_ssub==1
                 Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*tmp_Y, b0_ring-W_ring*mean(tmp_Y, 2));
             else
@@ -206,11 +218,13 @@ else
         [nr_block, nc_block, ~] = size(Ypatch);
         
         % get background
-        if strcmpi(bg_model, 'ring')
+        if strcmpi(bg_model, 'ring')           
+            A_patch_prev = A_prev{mpatch};
+            C_patch_prev = C_prev{mpatch};
             W_ring = W{mpatch};
             b0_ring = b0{mpatch};
             Ypatch = reshape(Ypatch, [], T);
-            tmp_Y = double(Ypatch)-A_patch*C_patch;
+            tmp_Y = double(Ypatch)-A_patch_prev*C_patch_prev;
             if bg_ssub==1
                 Ypatch = bsxfun(@minus, double(Ypatch(ind_patch,:))- W_ring*tmp_Y, b0_ring-W_ring*mean(tmp_Y, 2));
             else
@@ -271,21 +285,15 @@ end
 fprintf('Done!\n');
 
 %% upadte b0
-fprintf('Update the constant baselines for all pixels..\n');
-C_old = obj.C;
-db = obj.A*(mean(C_old, 2)-mean(C_new,2));
-db = obj.reshape(db, 2);
-b0 = obj.b0;
-for mpatch = 1:(nr_patch*nc_patch)
-    tmp_patch = patch_pos{mpatch};     %[r0, r1, c0, c1], patch location
-    db_patch = db(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4));
-    b0{mpatch} = b0{mpatch} + reshape(db_patch, [],1);
+if strcmpi(bg_model, 'ring')
+    fprintf('Update the constant baselines for all pixels..\n');
+    obj.b0_new = cell2mat(obj.P.Ymean)-obj.reshape(obj.A*mean(obj.C,2), 2); -obj.reconstruct_b0();
+    fprintf('Done!\n');
 end
-obj.b0 = b0;
-fprintf('Done!\n');
 
 %% save the results to log
 temporal.C_raw = obj.C_raw;
+temporal.ids = obj.ids; 
 temporal.C = obj.C;
 temporal.S = obj.S;
 temporal.P.kernel_pars = obj.P.kernel_pars;

@@ -228,7 +228,7 @@ end
 tmp_str = get_date();
 tmp_str=strrep(tmp_str, '-', '_');
 eval(sprintf('log_data.merge_%s = merge_results;', tmp_str));
-fprintf(flog, '\tThe spatial and temporal components of the merged neurons were saved as intermediate_results.spatial_%s\n', tmp_str);
+fprintf(flog, '\tThe spatial and temporal components of the merged neurons were saved as intermediate_results.merge_%s\n', tmp_str);
 fprintf(flog, '\tNow the old neurons will be deleted and the merged new ones will replace them.\n\n');
 fclose(flog);
 

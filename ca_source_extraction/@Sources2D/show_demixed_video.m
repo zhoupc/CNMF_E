@@ -1,4 +1,4 @@
-function avi_filename = show_demixed_video(obj,save_avi, kt, frame_range, amp_ac, range_ac, range_Y, multi_factor)
+function avi_filename = show_demixed_video(obj,save_avi, kt, frame_range, amp_ac, range_ac, range_Y, multi_factor, use_craw)
 %% save the final results of source extraction.
 %% inputs:
 %   kt:  scalar, the number of frames to be skipped
@@ -11,6 +11,15 @@ end
 if ~exist('kt', 'var')||isempty(kt)
     kt = 1;
 end
+if ~exist('use_craw', 'var')||isempty(use_craw)
+    use_craw = false; 
+end
+if use_craw
+    CC = obj.C_raw; 
+else
+    CC = obj.C; 
+end
+
 %% load data
 if ~exist('frame_range', 'var')||isempty(frame_range)
     frame_range = obj.frame_range;
@@ -25,7 +34,7 @@ figure('position', [0,0, 600, 400]);
 
 %%
 if ~exist('amp_ac', 'var') || isempty(amp_ac)
-    amp_ac = median(max(obj.A,[],1)'.*max(obj.C,[],2))*2;
+    amp_ac = median(max(obj.A,[],1)'.*max(CC,[],2))*2;
 end
 if ~exist('range_ac', 'var') || isempty(range_ac)
     range_ac = amp_ac*[0.01, 1.01];
@@ -38,7 +47,7 @@ if ~exist('range_Y', 'var') || isempty(range_Y)
     else
         temp = quantile(Y(randi(numel(Y), 10000,1)), 0.01);
     end
-    center_Y = temp(1) + multi_factor*amp_ac;
+    center_Y = temp(1) + multi_factor*amp_ac/2;
     range_Y = center_Y + range_res*multi_factor;
 end
 
@@ -59,7 +68,7 @@ else
 end
 
 %% add pseudo color to denoised signals
-[K, ~]=size(obj.C);
+[K, ~]=size(CC);
 % draw random color for each neuron
 % tmp = mod((1:K)', 6)+1;
 Y_mixed = zeros(obj.options.d1*obj.options.d2, diff(tmp_range)+1, 3);
@@ -67,9 +76,9 @@ temp = prism;
 % temp = bsxfun(@times, temp, 1./sum(temp,2));
 col = temp(randi(64, K,1), :);
 for m=1:3
-    Y_mixed(:, :, m) = obj.A* (diag(col(:,m))*obj.C(:, tmp_range(1):tmp_range(2)));
+    Y_mixed(:, :, m) = obj.A* (diag(col(:,m))*CC(:, tmp_range(1):tmp_range(2)));
 end
-Y_mixed = uint16(Y_mixed/(1*amp_ac)*65536);
+Y_mixed = uint16(Y_mixed*2/(amp_ac)*65536);
 %% play and save
 ax_y =   axes('position', [0.015, 0.51, 0.3, 0.42]);
 ax_bg=   axes('position', [0.015, 0.01, 0.3, 0.42]);
@@ -101,7 +110,7 @@ for tt=t_begin:kt:t_end
     axis equal off tight;
     
     axes(ax_denoised); cla;
-    img_ac = obj.reshape(obj.A*obj.C(:, tt), 2);
+    img_ac = obj.reshape(obj.A*CC(:, tt), 2);
     imagesc(img_ac, range_ac);
     %     imagesc(Ybg(:, :, m), [-50, 50]);
     title(sprintf('Denoised X %d', multi_factor));
@@ -147,13 +156,13 @@ for tt=t_begin:kt:t_end
         % draw random color for each neuron
         % tmp = mod((1:K)', 6)+1;
         Y_mixed = zeros(d1*d2, Tp, 3);
-        tmp_C = obj.C(:, tt0+(1:Tp));
+        tmp_C = CC(:, tt0+(1:Tp));
         temp = prism;
         col = temp(randi(64, K,1), :);
         for m=1:3
             Y_mixed(:, :, m) = obj.A* (diag(col(:,m))*tmp_C);
         end
-        Y_mixed = uint16(Y_mixed/(1*amp_ac)*65536);
+        Y_mixed = uint16(Y_mixed*2/(amp_ac)*65536);
     end
 end
 

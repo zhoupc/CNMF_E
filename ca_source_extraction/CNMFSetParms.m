@@ -301,7 +301,7 @@ Values = [
     {'svd'}
     {1}
     {'spline'}
-    {struct('circular', true, 'connected', true)}
+    {struct('circular', false, 'connected', true)}
     {'hals'}
     {false}
     ];

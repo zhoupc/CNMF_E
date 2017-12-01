@@ -5,7 +5,7 @@ end
 %% find neighbors of each neurons
 A_ = obj.A;
 S_ = full(obj.S);
-neuron_sn = GetSn(S_);
+neuron_sn = GetSn(obj.C_raw);
 pvals = obj.P.kernel_pars;
 S_ = bsxfun(@times, S_, 1./neuron_sn);
 ctr = obj.estCenter(); 
@@ -29,7 +29,7 @@ fprintf('\n');
 model = obj.options.deconv_options.type;
 
 %% remove small spikes
-Tk = 200; 
+Tk = 500; 
 for k=1:K
     s = S_(k, :);
     tmpS = S_(ind_neigh(k, :), :);
