@@ -486,14 +486,14 @@ obj.P.Ymean = Ymean;
 %% save the results to log
 fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, '\tIn total, %d neurons were initialized. \n', size(Ain,2));
-if obj.options.save_intermediate
+%if obj.options.save_intermediate
     initialization.neuron = obj.obj2struct();
     initialization.center = center;
     initialization.Cn = Cn;
     initialization.PNR = PNR;
     log_data.initialization = initialization;
     fprintf(flog, '\tThe initialization results were saved as intermediate_results.initialization\n\n');
-end
+%end
 fprintf(flog, 'Finished the initialization procedure.\n');
 
 fclose(flog);
