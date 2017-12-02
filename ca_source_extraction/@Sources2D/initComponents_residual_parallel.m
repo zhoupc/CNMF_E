@@ -90,7 +90,7 @@ end
 
 %% prepare for the variables for computing the background.
 bg_model = obj.options.background_model;
-bg_ssub = obj.options.bg_ssub; 
+bg_ssub = obj.options.bg_ssub;
 W = obj.W;
 b0 = obj.b0;
 b = obj.b;
@@ -412,17 +412,21 @@ obj.tags = [obj.tags;zeros(K,1, 'like', uint16(0))];
 obj.P.k_ids = K+k_ids;
 
 %% save the results to log
-initialization_res.Ain = sparse(Ain);
-initialization_res.Cin = Cin;
-initialization_res.Cin_raw = Cin_raw;
-initialization_res.options = options;  %#ok<STRNU>
-
-tmp_str = get_date();
-tmp_str=strrep(tmp_str, '-', '_');
-eval(sprintf('log_data.initialization_res_%s = initialization_res;', tmp_str));
 
 fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, 'Finished the initialization of neurons from the residual video.\n');
 fprintf(flog, '\tIn total, %d neurons were detected. \n', size(Ain,2));
-fprintf(flog, '\tThe  results were saved as intermediate_results.initialization_res_%s\n\n', tmp_str);
+
+if obj.options.save_intermediate
+    initialization_res.Ain = sparse(Ain);
+    initialization_res.Cin = Cin;
+    initialization_res.Cin_raw = Cin_raw;
+    initialization_res.options = options;  %#ok<STRNU>
+    
+    tmp_str = get_date();
+    tmp_str=strrep(tmp_str, '-', '_');
+    eval(sprintf('log_data.initialization_res_%s = initialization_res;', tmp_str));
+    
+    fprintf(flog, '\tThe  results were saved as intermediate_results.initialization_res_%s\n\n', tmp_str);
+end
 fclose(flog);

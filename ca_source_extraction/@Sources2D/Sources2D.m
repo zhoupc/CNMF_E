@@ -756,10 +756,7 @@ classdef Sources2D < handle
                     fclose(flog);
                     return;
                 end
-                tmp_str = get_date();
-                tmp_str=strrep(tmp_str, '-', '_');
-                eval(sprintf('log_data.ids_del_%s = ids_del;', tmp_str));
-                
+
                 fprintf(flog, '[%s]\b', get_minute());
                 fprintf('Deleted %d neurons: ', length(ids_del));
                 fprintf(flog, 'Deleted %d neurons: \n', length(ids_del));
@@ -769,7 +766,13 @@ classdef Sources2D < handle
                 end
                 fprintf(flog, '\n');
                 fprintf('\nThe IDS of these neurons were saved as intermediate_results.ids_del_%s\n\n', tmp_str);
-                fprintf(flog, '\tThe IDS of these neurons were saved as intermediate_results.ids_del_%s\n\n', tmp_str);
+                if obj.options.save_intermediate
+                    tmp_str = get_date();
+                    tmp_str=strrep(tmp_str, '-', '_');
+                    eval(sprintf('log_data.ids_del_%s = ids_del;', tmp_str));
+                    
+                    fprintf(flog, '\tThe IDS of these neurons were saved as intermediate_results.ids_del_%s\n\n', tmp_str);
+                end
                 fclose(flog);
             end
             

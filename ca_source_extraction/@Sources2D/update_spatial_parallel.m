@@ -66,11 +66,11 @@ end
 IND = sparse(logical(determine_search_location(obj.A, search_method, options)));
 
 %% identify existing neurons within each patch
-A = cell(nr_patch, nc_patch); 
+A = cell(nr_patch, nc_patch);
 C = cell(nr_patch, nc_patch);
 if strcmpi(bg_model, 'ring')
-    A_prev = A; 
-    C_prev = C; 
+    A_prev = A;
+    C_prev = C;
 end
 sn = cell(nr_patch, nc_patch);
 ind_neurons = cell(nr_patch, nc_patch);
@@ -83,7 +83,7 @@ for mpatch=1:(nr_patch*nc_patch)
     mask = zeros(d1, d2);
     mask(tmp_block(1):tmp_block(2), tmp_block(3):tmp_block(4)) = 1;
     mask(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4)) = 2;
-    % find neurons within the patch 
+    % find neurons within the patch
     ind = find(reshape(mask(:)==2, 1, [])* full(double(IND))>0);
     A{mpatch}= obj.A((mask>0), ind);
     IND_search{mpatch} = IND(mask==2, ind);
@@ -256,8 +256,8 @@ else
         
         % get background
         if strcmpi(bg_model, 'ring')
-            A_patch_prev = A_prev{mpatch}; 
-            C_patch_prev = C_prev{mpatch}; 
+            A_patch_prev = A_prev{mpatch};
+            C_patch_prev = C_prev{mpatch};
             W_ring = W{mpatch};
             b0_ring = b0{mpatch};
             Ypatch = reshape(Ypatch, [], T);
@@ -329,7 +329,7 @@ for mpatch=1:(nr_patch*nc_patch)
     ind_patch = ind_neurons{mpatch};
     for m=1:length(ind_patch)
         k = ind_patch(m);
-            A_(tmp_pos(1):tmp_pos(2), tmp_pos(3):tmp_pos(4), k) = reshape(A_patch(:, m), nr, nc, 1);
+        A_(tmp_pos(1):tmp_pos(2), tmp_pos(3):tmp_pos(4), k) = reshape(A_patch(:, m), nr, nc, 1);
     end
 end
 A_new = sparse(obj.reshape(A_, 1));
@@ -339,7 +339,7 @@ end
 %% post-process results
 fprintf('Post-process spatial components of all neurons...\n');
 obj.A = obj.post_process_spatial(obj.reshape(A_new, 2));
-% obj.A = A_new; 
+% obj.A = A_new;
 fprintf('Done!\n');
 fprintf('Done!\n');
 
@@ -351,14 +351,16 @@ if strcmpi(bg_model, 'ring')
 end
 
 %% save the results to log
-spatial.A = obj.A;
-spatial.ids = obj.ids; 
-temporal.b0 = obj.b0;
-tmp_str = get_date();
-tmp_str=strrep(tmp_str, '-', '_');
-eval(sprintf('log_data.spatial_%s = spatial;', tmp_str));
 
 fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, 'Finished updating spatial components.\n');
-fprintf(flog, '\tThe results were saved as intermediate_results.spatial_%s\n\n', tmp_str);
+if obj.options.save_intermediate
+    spatial.A = obj.A;
+    spatial.ids = obj.ids;
+    temporal.b0 = obj.b0;
+    tmp_str = get_date();
+    tmp_str=strrep(tmp_str, '-', '_');
+    eval(sprintf('log_data.spatial_%s = spatial;', tmp_str));
+    fprintf(flog, '\tThe results were saved as intermediate_results.spatial_%s\n\n', tmp_str);
+end
 fclose(flog);

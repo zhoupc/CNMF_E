@@ -63,8 +63,8 @@ maxIter = options.maxIter;
 A = cell(nr_patch, nc_patch);
 C = cell(nr_patch, nc_patch);
 if strcmpi(bg_model, 'ring')
-    A_prev = A; 
-    C_prev = C; 
+    A_prev = A;
+    C_prev = C;
 end
 sn = cell(nr_patch, nc_patch);
 ind_neurons = cell(nr_patch, nc_patch);
@@ -141,7 +141,7 @@ if use_parallel
         [nr_block, nc_block, ~] = size(Ypatch);
         
         % get background
-        if strcmpi(bg_model, 'ring')     
+        if strcmpi(bg_model, 'ring')
             A_patch_prev = A_prev{mpatch};
             C_patch_prev = C_prev{mpatch};
             W_ring = W{mpatch};
@@ -218,7 +218,7 @@ else
         [nr_block, nc_block, ~] = size(Ypatch);
         
         % get background
-        if strcmpi(bg_model, 'ring')           
+        if strcmpi(bg_model, 'ring')
             A_patch_prev = A_prev{mpatch};
             C_patch_prev = C_prev{mpatch};
             W_ring = W{mpatch};
@@ -292,19 +292,20 @@ if strcmpi(bg_model, 'ring')
 end
 
 %% save the results to log
-temporal.C_raw = obj.C_raw;
-temporal.ids = obj.ids; 
-temporal.C = obj.C;
-temporal.S = obj.S;
-temporal.P.kernel_pars = obj.P.kernel_pars;
-temporal.b0 = obj.b0;
-tmp_str = get_date();
-tmp_str=strrep(tmp_str, '-', '_');
-eval(sprintf('log_data.temporal_%s = temporal;', tmp_str));
-
 fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, 'Finished updating temporal components.\n');
-fprintf(flog, '\tThe results were saved as intermediate_results.temporal_%s\n\n', tmp_str);
+if obj.options.save_intermediate
+    temporal.C_raw = obj.C_raw;
+    temporal.ids = obj.ids;
+    temporal.C = obj.C;
+    temporal.S = obj.S;
+    temporal.P.kernel_pars = obj.P.kernel_pars;
+    temporal.b0_new = obj.b0_new;
+    tmp_str = get_date();
+    tmp_str=strrep(tmp_str, '-', '_');
+    eval(sprintf('log_data.temporal_%s = temporal;', tmp_str));
+    fprintf(flog, '\tThe results were saved as intermediate_results.temporal_%s\n\n', tmp_str);
+end
 fclose(flog);
 
 function [aa, C_raw] = fast_temporal(Y, A)

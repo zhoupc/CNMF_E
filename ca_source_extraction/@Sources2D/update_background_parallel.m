@@ -64,7 +64,7 @@ W = obj.W;
 b0 = obj.b0;
 b = obj.b;
 f = obj.f;
-RSS = cell(nr_patch, nc_patch); 
+RSS = cell(nr_patch, nc_patch);
 
 %% check whether the bg_ssub was changed
 if strcmpi(bg_model, 'ring')
@@ -146,37 +146,37 @@ else
 end
 
 if use_parallel
-    % load data before running parfor 
-%     data_patch = cell(nr_patch, nc_patch); 
-%     flag_ignore = cell(nr_patch, nc_patch); 
-%     for mpatch=1:(nr_patch*nc_patch)
-%         tmp_patch = patch_pos{mpatch};        
-%         A_block = A{mpatch};
-%         
-%         % stop updating B because A&C doesn't change in this area
-%         if isempty(A_block) && (~flag_first)
-%             flag_ignore{mpatch} = true; 
-%             [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
-%             
-%             % keep the current results. this step looks rediculous, but it
-%             % is needed for some computer/matlab. very weird. 
-%             W{mpatch} = W{mpatch}; 
-%             b0{mpatch} = b0{mpatch}; 
-%             b{mpatch} = b{mpatch}; 
-%             f{mpatch} = f{mpatch}; 
-%             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
-%             continue;
-%         else
-%             flag_ignore{mpatch} = false; 
-%             % pull data
-%             data_patch{mpatch} = get_patch_data(mat_data, tmp_patch, frame_range, true);
-%         end
-%     end
-    % do the actual computation 
+    % load data before running parfor
+    %     data_patch = cell(nr_patch, nc_patch);
+    %     flag_ignore = cell(nr_patch, nc_patch);
+    %     for mpatch=1:(nr_patch*nc_patch)
+    %         tmp_patch = patch_pos{mpatch};
+    %         A_block = A{mpatch};
+    %
+    %         % stop updating B because A&C doesn't change in this area
+    %         if isempty(A_block) && (~flag_first)
+    %             flag_ignore{mpatch} = true;
+    %             [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
+    %
+    %             % keep the current results. this step looks rediculous, but it
+    %             % is needed for some computer/matlab. very weird.
+    %             W{mpatch} = W{mpatch};
+    %             b0{mpatch} = b0{mpatch};
+    %             b{mpatch} = b{mpatch};
+    %             f{mpatch} = f{mpatch};
+    %             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
+    %             continue;
+    %         else
+    %             flag_ignore{mpatch} = false;
+    %             % pull data
+    %             data_patch{mpatch} = get_patch_data(mat_data, tmp_patch, frame_range, true);
+    %         end
+    %     end
+    % do the actual computation
     parfor mpatch=1:(nr_patch*nc_patch)
-%         if flag_ignore{mpatch}
-%             continue; 
-%         end
+        %         if flag_ignore{mpatch}
+        %             continue;
+        %         end
         tmp_patch = patch_pos{mpatch};
         tmp_block = block_pos{mpatch};
         
@@ -189,11 +189,11 @@ if use_parallel
             [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
             
             % keep the current results. this step looks rediculous, but it
-            % is needed for some computer/matlab. very weird. 
-            W{mpatch} = W{mpatch}; 
-            b0{mpatch} = b0{mpatch}; 
-            b{mpatch} = b{mpatch}; 
-            f{mpatch} = f{mpatch}; 
+            % is needed for some computer/matlab. very weird.
+            W{mpatch} = W{mpatch};
+            b0{mpatch} = b0{mpatch};
+            b{mpatch} = b{mpatch};
+            f{mpatch} = f{mpatch};
             fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
             continue;
         end
@@ -204,7 +204,7 @@ if use_parallel
         ind_patch((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1) = true;
         
         % pull data
-%         Ypatch = data_patch{mpatch}; 
+        %         Ypatch = data_patch{mpatch};
         Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, true);
         [nr_block, nc_block, T_block] = size(Ypatch);
         if strcmpi(bg_model, 'ring')
@@ -217,16 +217,16 @@ if use_parallel
                 sn_patch = sn_block(ind_patch);
                 [W{mpatch}, b0{mpatch}] = fit_ring_model(Ypatch, A_block, C_block, W_old, thresh_outlier, sn_patch, ind_patch, with_projection);
             else
-               % downsapmle data first
-                temp = reshape(double(Ypatch)-A_block*C_block, nr_block, nc_block, T_block); 
-                tmp_b0 = mean(temp, 3); 
-                b0{mpatch} = tmp_b0(ind_patch); 
+                % downsapmle data first
+                temp = reshape(double(Ypatch)-A_block*C_block, nr_block, nc_block, T_block);
+                tmp_b0 = mean(temp, 3);
+                b0{mpatch} = tmp_b0(ind_patch);
                 Ypatch = imresize(temp, 1./bg_ssub, 'nearest');
                 Ypatch = reshape(Ypatch, [], T_block);
                 
                 [W{mpatch}, ~] = fit_ring_model(Ypatch, [], [], W_old, thresh_outlier, sn_block(:), [],  with_projection);
-%                 tmp_b0 = imresize(reshape(tmp_b0, size(sn_block)), [nr_block, nc_block]);
-%                 b0{mpatch} = tmp_b0(ind_patch(:));
+                %                 tmp_b0 = imresize(reshape(tmp_b0, size(sn_block)), [nr_block, nc_block]);
+                %                 b0{mpatch} = tmp_b0(ind_patch(:));
             end
         elseif strcmpi(bg_model, 'nmf')
             b_old = b{mpatch};
@@ -280,15 +280,15 @@ else
                 [W{mpatch}, b0{mpatch}] = fit_ring_model(Ypatch, A_block, C_block, W_old, thresh_outlier, sn_patch, ind_patch, with_projection);
             else
                 % downsapmle data first
-                temp = reshape(double(Ypatch)-A_block*C_block, nr_block, nc_block, T_block); 
-                tmp_b0 = mean(temp, 3); 
-                b0{mpatch} = tmp_b0(ind_patch); 
+                temp = reshape(double(Ypatch)-A_block*C_block, nr_block, nc_block, T_block);
+                tmp_b0 = mean(temp, 3);
+                b0{mpatch} = tmp_b0(ind_patch);
                 Ypatch = imresize(temp, 1./bg_ssub, 'nearest');
                 Ypatch = reshape(Ypatch, [], T_block);
                 
                 [W{mpatch}, ~] = fit_ring_model(Ypatch, [], [], W_old, thresh_outlier, sn_block(:), [],  with_projection);
-%                 tmp_b0 = imresize(reshape(tmp_b0, size(sn_block)), [nr_block, nc_block]);
-%                 b0{mpatch} = tmp_b0(ind_patch(:));
+                %                 tmp_b0 = imresize(reshape(tmp_b0, size(sn_block)), [nr_block, nc_block]);
+                %                 b0{mpatch} = tmp_b0(ind_patch(:));
             end
         elseif strcmpi(bg_model, 'nmf')
             b_old = b{mpatch};
@@ -312,21 +312,23 @@ obj.b = b;
 obj.f = f;
 obj.b0 = b0;
 obj.W = W;
-obj.b0_new = obj.reconstruct_b0(); 
-obj.A_prev = obj.A; 
-obj.C_prev = obj.C; 
+obj.b0_new = obj.reconstruct_b0();
+obj.A_prev = obj.A;
+obj.C_prev = obj.C;
 
 %% save the results to log
-bg.b = obj.b;
-bg.f = obj.f;
-bg.b0 = obj.b0;
-bg.W = obj.W;
-tmp_str = get_date();
-tmp_str=strrep(tmp_str, '-', '_');
-eval(sprintf('log_data.bg_%s = bg;', tmp_str));
 fprintf('Finished updating background using %s model.\n', bg_model);
 
 fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, 'Finished updating background using %s model.\n', bg_model);
-fprintf(flog, '\tThe results were saved as intermediate_results.bg_%s\n\n', tmp_str);
+if obj.options.save_intermediate
+    bg.b = obj.b;
+    bg.f = obj.f;
+    bg.b0 = obj.b0;
+    bg.W = obj.W;
+    tmp_str = get_date();
+    tmp_str=strrep(tmp_str, '-', '_');
+    eval(sprintf('log_data.bg_%s = bg;', tmp_str));
+    fprintf(flog, '\tThe results were saved as intermediate_results.bg_%s\n\n', tmp_str);
+end
 fclose(flog);

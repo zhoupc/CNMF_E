@@ -188,18 +188,21 @@ else
     %     obj.Coor = obj.get_contours(0.9);
     
     
-        return;
-    end
-    try
+    return;
+end
+try
+    fprintf(flog, '[%s]\b', get_minute());
+    fprintf(flog, 'Finished the manual intervention.\n');
+    fprintf(flog, '[%s]\b', get_minute());
+    if obj.options.save_intermediate
         manual_intervention.after = obj.obj2struct(); %#ok<STRNU>
         tmp_str = get_date();
         tmp_str=strrep(tmp_str, '-', '_');
         eval(sprintf('log_data.manual_%s = manual_intervention;', tmp_str));
-        fprintf(flog, '[%s]\b', get_minute());
-        fprintf(flog, 'Finished the manual intervention.\n');
-        fprintf(flog, '[%s]\b', get_minute());
+        
         fprintf(flog, '\tThe results were saved as intermediate_results.manual%s\n\n', tmp_str);
-        fclose(flog);
     end
+    fclose(flog);
+end
 end
 
