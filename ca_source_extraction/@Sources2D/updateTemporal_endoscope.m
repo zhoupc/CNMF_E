@@ -51,7 +51,7 @@ for miter=1:maxIter
         end
         temp = C(k, :) + (U(k, :)-V(k, :)*C)/aa(k);
         %remove baseline and estimate noise level
-        s=warning('error',MATLAB:nearlySingularMatrix);
+        s=warning('error','MATLAB:nearlySingularMatrix');
         if range(temp)/std(temp)>10
             try
                 [b, tmp_sn] = estimate_baseline_noise(temp);
