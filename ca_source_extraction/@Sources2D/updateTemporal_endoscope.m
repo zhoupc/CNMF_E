@@ -51,10 +51,12 @@ for miter=1:maxIter
         end
         temp = C(k, :) + (U(k, :)-V(k, :)*C)/aa(k);
         %remove baseline and estimate noise level
+        s=warning('error',MATLAB:nearlySingularMatrix);
         if range(temp)/std(temp)>10
             try
                 [b, tmp_sn] = estimate_baseline_noise(temp);
             catch
+                fprintf('Can''t use estimate_baseline_noise to estimate noise (reason: %s)\n', lasterr);
                 b = mean(temp(temp<median(temp)));
                 tmp_sn = GetSn(temp);
             end
@@ -62,6 +64,7 @@ for miter=1:maxIter
             b = mean(temp(temp<median(temp)));
             tmp_sn = GetSn(temp);
         end
+        warning(s);
         % we use two methods for estimating the noise level
         %         psd_sn = GetSn(temp);
         %         if tmp_sn>psd_sn
