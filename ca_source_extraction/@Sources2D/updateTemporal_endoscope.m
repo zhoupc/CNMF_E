@@ -9,7 +9,7 @@ function [C_offset,ind_del] = updateTemporal_endoscope(obj, Y, allow_deletion)
 % Author: Pengcheng Zhou, Carnegie Mellon University, adapted from Johannes
 
 % options
-global mode
+global mode nam
 if strcmp(mode,'initiation')
     maxIter = obj.options.maxIter;
 else
@@ -57,8 +57,11 @@ for miter=1:maxIter
                 [b, tmp_sn] = estimate_baseline_noise(temp);
             catch
                 fprintf('Can''t use estimate_baseline_noise to estimate noise (reason: %s)\n', lasterr);
-                b = mean(temp(temp<median(temp)));
-                tmp_sn = GetSn(temp);
+                warning(['File ',nam,' might have inherent defects. Please check.\n'])
+                obj.A=[]; % the current finding is that if estimate_baseline_noise does not work, then there is something
+                          % wrong with the dataset. Using obj.A=[] to cause
+                          % cnmfe(BatchVer) to skip the file.
+                return
             end
         else
             b = mean(temp(temp<median(temp)));
