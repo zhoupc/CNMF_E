@@ -170,7 +170,7 @@ while miter <= maxIter
             neuron.updateTemporal_endoscope(Ysignal,true);
             if isempty(neuron.A); 
                 A0s=neuron.A;
-                clear global; break; end
+                clear global; return; end
             cnmfe_quick_merge;              % run neuron merges
             if isempty(neuron.A); break; end
         elseif strcmp(mode,'massive')
