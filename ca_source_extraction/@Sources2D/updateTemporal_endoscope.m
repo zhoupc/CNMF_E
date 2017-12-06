@@ -58,10 +58,8 @@ for miter=1:maxIter
             catch
                 fprintf('Can''t use estimate_baseline_noise to estimate noise (reason: %s)\n', lasterr);
                 warning(['File ',nam,' might have inherent defects. Please check.\n'])
-                obj.A=[]; % the current finding is that if estimate_baseline_noise does not work, then there is something
-                          % wrong with the dataset. Using obj.A=[] to cause
-                          % cnmfe(BatchVer) to skip the file.
-                return
+                b = mean(temp(temp<median(temp)));
+                tmp_sn = GetSn(temp);
             end
         else
             b = mean(temp(temp<median(temp)));
