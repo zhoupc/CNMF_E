@@ -36,7 +36,7 @@ for i=1:numel(AandSample_list) %go through days
         filelist_fulllist=AandSample_temponeday.samplelist;
         File_fulllist=File_temp;
     else
-        filelist_fulllist=[filelist_fulllist, AandSample_temponeday.samplelist];
+        filelist_fulllist=[filelist_fulllist; AandSample_temponeday.samplelist];
         File_fulllist=[File_fulllist File_temp];
     end   
 end
