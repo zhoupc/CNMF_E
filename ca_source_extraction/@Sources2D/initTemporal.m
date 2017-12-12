@@ -92,6 +92,7 @@ A = cell(nr_patch, nc_patch);
 C = cell(nr_patch, nc_patch);
 sn = cell(nr_patch, nc_patch);
 ind_neurons = cell(nr_patch, nc_patch);
+Ymean = cell(nr_patch, nc_patch);
 
 AA = cell(nr_patch, nc_patch);   % save the ai^T*ai for each neuron
 
@@ -154,6 +155,8 @@ if use_parallel
         else
             Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, false);
         end
+        temp = mean(Ypatch, 3);
+        Ymean{mpatch} = temp((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1);
         Ypatch = reshape(Ypatch, [], T);
         
         % get background
@@ -222,6 +225,8 @@ else
         else
             Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, false);
         end
+        temp = mean(Ypatch, 3);
+        Ymean{mpatch} = temp((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1);
         Ypatch = reshape(Ypatch, [], T);
         
         % get background
@@ -265,6 +270,7 @@ end
 obj.b0 = b0;
 obj.b=b;
 obj.f=f;
+obj.P.Ymean = Ymean;
 
 %% collect results
 C_new = zeros(K, T);
@@ -287,10 +293,11 @@ obj.deconvTemporal();
 fprintf('Done!\n');
 
 %% save the results to log
-initialization.neuron = obj.obj2struct();
-log_data.initialization = initialization;
-
 fprintf(flog, '[%s]\b', get_minute());
-fprintf(flog, '\tThe initialization results were saved as intermediate_results.initialization\n\n');
+if obj.options.save_intermediate
+    initialization.neuron = obj.obj2struct();
+    log_data.initialization = initialization;
+    fprintf(flog, '\tThe initialization results were saved as intermediate_results.initialization\n\n');
+end
 fprintf(flog, 'Finished the initialization procedure.\n');
 fclose(flog);
