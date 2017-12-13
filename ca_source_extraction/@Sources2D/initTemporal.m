@@ -137,15 +137,9 @@ if use_parallel
         end
         A_patch = A{mpatch};
         
-        if isempty(A_patch)
-            fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
-            continue;
-        end
-        
         % use ind_patch to indicate pixels within the patch
         ind_patch = false(diff(tmp_block(1:2))+1, diff(tmp_block(3:4))+1);
         ind_patch((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1) = true;
-        AA{mpatch}= sum(A_patch(ind_patch,:).^2, 1);
         
         % get data
         if strcmpi(bg_model, 'ring')
@@ -158,6 +152,12 @@ if use_parallel
         temp = mean(Ypatch, 3);
         Ymean{mpatch} = temp((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1);
         Ypatch = reshape(Ypatch, [], T);
+        
+        if isempty(A_patch)
+            fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
+            continue;
+        end
+        AA{mpatch}= sum(A_patch(ind_patch,:).^2, 1);
         
         % get background
         if strcmpi(bg_model, 'ring')
@@ -207,15 +207,9 @@ else
         end
         A_patch = A{mpatch};
         
-        if isempty(A_patch)
-            fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
-            continue;
-        end
-        
         % use ind_patch to indicate pixels within the patch
         ind_patch = false(diff(tmp_block(1:2))+1, diff(tmp_block(3:4))+1);
         ind_patch((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1) = true;
-        AA{mpatch}= sum(A_patch(ind_patch,:).^2, 1);
         
         % get data
         if strcmpi(bg_model, 'ring')
@@ -228,6 +222,12 @@ else
         temp = mean(Ypatch, 3);
         Ymean{mpatch} = temp((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1);
         Ypatch = reshape(Ypatch, [], T);
+        
+        if isempty(A_patch)
+            fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
+            continue;
+        end
+        AA{mpatch}= sum(A_patch(ind_patch,:).^2, 1);
         
         % get background
         if strcmpi(bg_model, 'ring')
