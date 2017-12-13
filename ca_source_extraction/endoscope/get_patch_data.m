@@ -13,7 +13,11 @@ if ~exist('with_overlap', 'var') || isempty(with_overlap)
 end
 
 % check whether the code is running on a worker (for parallel processing)
-isOnWorker = ~isempty(getCurrentTask()); 
+try
+    isOnWorker = ~isempty(getCurrentTask());
+catch
+    isOnWorker = false;
+end
 
 %% check whether the mat_data has been loaded into the base space 
 mat_file = mat_data.Properties.Source();
