@@ -20,6 +20,8 @@ function [A,C] = update_spatial_components_nb(Y,C,A_,P,options)
 % C:    temporal components (updated only when spatial components are completely removed)
 
 % Written by:
+% Pengcheng Zhou, Columbia University, 2015, 
+% with modifications from update_spatial_components.m
 % Eftychios A. Pnevmatikakis, Simons Foundation, 2015
 
 warning('off', 'MATLAB:maxNumCompThreads:Deprecated');

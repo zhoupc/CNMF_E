@@ -1,4 +1,4 @@
-function [Cn, PNR] = correlation_image_endoscope(Y, options)
+function [Cn, PNR] = correlation_image_endoscope(Y, options, K)
 %% compute correlation image of endoscopic data. it has to spatially filter the data first
 %% Input:
 %   Y:  d X T matrx, imaging data
@@ -8,6 +8,8 @@ function [Cn, PNR] = correlation_image_endoscope(Y, options)
 %       gSiz:   maximum size of a neuron
 %       nb:     number of background
 %       min_corr: minimum threshold of correlation for segementing neurons
+%  K:  scalar, the rank of the random matrix for projection
+
 %% Output:
 %       Cn:  d1*d2, correlation image
 %       PNR: d1*d2, peak to noise ratio
@@ -19,28 +21,42 @@ d1 = options.d1;        % image height
 d2 = options.d2;        % image width
 gSig = options.gSig;    % width of the gaussian kernel approximating one neuron
 gSiz = options.gSiz;    % average size of neurons
-sig = 5;    % thresholding noise by sig*std()
+sig = 3;    % thresholding noise by sig*std()
 
 if ismatrix(Y); Y = reshape(Y, d1, d2, []); end;  % convert the 3D movie to a matrix
 Y(isnan(Y)) = 0;    % remove nan values
 Y = double(Y);
 T = size(Y, 3);
 
+if ~exist('K', 'var')
+    K = []; 
+end
 %% preprocessing data
 % create a spatial filter for removing background
-psf = fspecial('gaussian', round(gSiz), gSig);
-if options.center_psf
-    ind_nonzero = (psf(:)>=max(psf(:,1)));
-    psf = psf-mean(psf(ind_nonzero));
-    psf(~ind_nonzero) = 0;
+if gSig>0
+    if options.center_psf
+        psf = fspecial('gaussian', ceil(gSig*4+1), gSig);
+        ind_nonzero = (psf(:)>=max(psf(:,1)));
+        psf = psf-mean(psf(ind_nonzero));
+        psf(~ind_nonzero) = 0;
+    else
+        psf = fspecial('gaussian', round(gSiz), gSig);
+    end
+else
+    psf = [];
 end
 
 % divide data into multiple patches
-patch_sz = [3, 3];
+if numel(Y) < 500^3
+    patch_sz = [1, 1];
+else
+    x = sqrt(500^3/T);
+    patch_sz = ceil([d1/x, d2/x]);
+end
 r0_patch = round(linspace(1, d1, 1+patch_sz(1)));
 c0_patch = round(linspace(1, d2, 1+patch_sz(2)));
-nr_patch = length(r0_patch)-1; 
-nc_patch = length(c0_patch)-1; 
+nr_patch = length(r0_patch)-1;
+nc_patch = length(c0_patch)-1;
 Cn = zeros(d1, d2);
 PNR = zeros(d1,d2);
 
@@ -59,21 +75,23 @@ for mr = 1:nr_patch
         Ypatch = double(Y(r0:r1, c0:c1, :));
         
         % spatially filter the data
-        HY = imfilter(Ypatch, psf, 'replicate');
-        
+        if ~isempty(psf)
+            HY = imfilter(Ypatch, psf, 'replicate');
+        else
+            HY = Ypatch;
+        end
         % copute signal to noise ratio
         HY = reshape(HY, [], T);
         HY = bsxfun(@minus, HY, median(HY, 2));
         HY_max = max(HY, [], 2);
-        Ysig = get_noise_fft(HY, options);
+        Ysig = GetSn(HY);
         tmp_PNR = reshape(HY_max./Ysig, nrows, ncols);
         PNR(r0:r1, c0:c1) = max(PNR(r0:r1, c0:c1), tmp_PNR);
         
         
         %  compute loal correlation
         HY(bsxfun(@lt, HY, Ysig*sig)) = 0;
-        tmp_Cn = correlation_image(HY, [1,2], nrows, ncols);
+        tmp_Cn = correlation_image(HY, [1,2], nrows, ncols, [], K);
         Cn(r0:r1, c0:c1) = max(Cn(r0:r1, c0:c1), tmp_Cn);
-        
     end
 end

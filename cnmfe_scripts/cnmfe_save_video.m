@@ -10,7 +10,7 @@ end
 
 %% data preparation
 Y = neuron.reshape(Y, 2); 
-Yac = neuron.reshape(neuron.A*neuron.C_raw, 2);
+Yac = neuron.reshape(neuron.A*neuron.C, 2);
 Ybg = neuron.reshape(Ybg, 2);
 Ysignal = neuron.reshape(Ysignal, 2);
 figure('position', [0,0, 600, 400]);

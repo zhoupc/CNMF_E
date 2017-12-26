@@ -51,29 +51,16 @@ for miter=1:maxIter
         end
         temp = C(k, :) + (U(k, :)-V(k, :)*C)/aa(k);
         %remove baseline and estimate noise level
-        s=warning('error','MATLAB:nearlySingularMatrix');
-        if range(temp)/std(temp)>10
-            try
-                [b, tmp_sn] = estimate_baseline_noise(temp);
-            catch
-                fprintf('Can''t use estimate_baseline_noise to estimate noise (reason: %s)\n', lasterr);
-                warning(['File ',nam,' might have inherent defects. Please check.\n'])
-                b = mean(temp(temp<median(temp)));
-                tmp_sn = GetSn(temp);
-            end
+        [b_hist, sn_hist] = estimate_baseline_noise(temp);
+        b = mean(temp(temp<median(temp)));
+        sn_psd = GetSn(temp);
+        if sn_psd<sn_hist
+            tmp_sn = sn_psd;
         else
-            b = mean(temp(temp<median(temp)));
-            tmp_sn = GetSn(temp);
+            tmp_sn = sn_hist;
+            b = b_hist;
         end
-        warning(s);
-        % we use two methods for estimating the noise level
-        %         psd_sn = GetSn(temp);
-        %         if tmp_sn>psd_sn
-        %             tmp_sn =psd_sn;
-        %             [temp, ~] = remove_baseline(temp, tmp_sn);
-        %         else
-        %             temp = temp - b;
-        %         end
+
         temp = temp -b;
         sn(k) = tmp_sn;
         % deconvolution
@@ -105,6 +92,7 @@ for miter=1:maxIter
                 end
                 ind_del(k) = true;
             end
+            temp = temp - deconv_options.b; 
         else
             ck = max(0, temp);
         end                        

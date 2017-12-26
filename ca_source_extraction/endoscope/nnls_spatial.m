@@ -12,10 +12,12 @@ function A = nnls_spatial(Y, A, C, active_pixel, maxN)
 % Author: Pengcheng Zhou, Carnegie Mellon University, adapted from Johannes
 
 %% options for HALS
+d = size(Y, 1); 
+K = size(C, 1); 
 if nargin<5;    maxN = 5;    end;    %maximum iteration number
-if nargin<4;    active_pixel=true(size(A));
+if nargin<4;    active_pixel=true(d, K);
 elseif isempty(active_pixel)
-    active_pixel = true(size(A));
+    active_pixel = true(d, K);
 else
     active_pixel = logical(active_pixel);
 end;     %determine nonzero pixels

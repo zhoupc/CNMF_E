@@ -52,9 +52,10 @@ end
 if ~(nargin < 6 || isempty(Coor))
     CC = Coor;
     for i = 1:size(Aor,2)
-        cont = medfilt1(Coor{i}')';
+%         cont = medfilt1(Coor{i}')';
+        cont = Coor{i}; 
         if size(cont,2) > 1
-            plot(cont(1,2:end),cont(2,2:end),'Color',cmap(i+size(Aor,2),:), 'linewidth', ln_wd); hold on;
+            plot(cont(1,1:end),cont(2,1:end),'Color',cmap(i+size(Aor,2),:), 'linewidth', ln_wd); hold on;
         end
     end
 else
@@ -80,7 +81,7 @@ end
 cm = com(Aor(:,1:end),d1,d2);
 if display_numbers
     lbl = strtrim(cellstr(num2str((1:size(Aor,2))')));
-    text(round(cm(1:max_number,2)),round(cm(1:max_number,1)),lbl(1:max_number),'color',[0,0,0],'fontsize',16,'fontname',fontname,'fontweight','bold');
+    text((cm(1:max_number,2)),(cm(1:max_number,1)),lbl(1:max_number),'color',[0,0,0],'fontsize',16,'fontname',fontname,'fontweight','bold');
 end
 axis off;
 if ~(nargin < 6 || isempty(Coor))

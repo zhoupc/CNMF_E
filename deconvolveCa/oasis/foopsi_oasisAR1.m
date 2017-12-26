@@ -1,5 +1,5 @@
 function [c, s, b, g, active_set] = foopsi_oasisAR1(y, g, lam, smin, optimize_b,...
-    optimize_g, decimate, maxIter)
+    optimize_g, decimate, maxIter, gmax)
 %% Infer the most likely discretized spike train underlying an AR(1) fluorescence trace
 % Solves the sparse non-negative deconvolution problem
 %  min 1/2|c-y|^2 + lam |s|_1 subject to s_t = c_t-g c_{t-1} >= 0
@@ -17,6 +17,7 @@ function [c, s, b, g, active_set] = foopsi_oasisAR1(y, g, lam, smin, optimize_b,
 %       on decimated data
 %   maxIter:  int, maximum number of iterations
 %   active_set: npool x 4 matrix, warm stared active sets
+%   gmax:  scalar, maximum value of g
 
 %% outputs
 %   c: T*1 vector, the inferred denoised fluorescence signal at each time-bin.
@@ -40,7 +41,11 @@ if ~exist('g', 'var') || isempty(g)
     g = estimate_time_constant(y, 1);
 end
 if ~exist('lam', 'var') || isempty(lam);   lam = 0; end
-if ~exist('smin', 'var') || isempty(smin);   smin = 0; end
+if ~exist('smin', 'var') || isempty(smin)
+    smin = 0;
+elseif smin<0
+    smin = abs(smin) * GetSn(y);     % use a threshold that is proportional to the noise level
+end
 if ~exist('optimize_b', 'var') || isempty(optimize_b)
     optimize_b = false;
 end
@@ -87,6 +92,11 @@ else
         b = mean(y-solution);
         if  optimize_g     % update g
             g0 = g;
+            if g>gmax  % spike counts are too small. stop
+                g = estimate_time_constant(y, 1);
+                [solution, spks, active_set] = oasisAR1(y-b, g, lam, smin);
+                break;
+            end
             [solution, active_set, g, spks] = update_g(y-b, active_set,lam, smin);
             if abs(g-g0)/g0 < 1e-3  % g is converged
                 optimize_g = false;

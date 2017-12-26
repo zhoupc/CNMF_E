@@ -23,6 +23,8 @@ if isfield(obj.options, 'nk') % number of knots for creating spline basis
 else
     nk = 1;
 end
+detrend_method = obj.options.detrend_method; 
+
 % maximum neuron number in each patch
 if (~exist('K', 'var')) || (isempty(K))
     % if K is not specified, use a very large number as default
@@ -49,7 +51,7 @@ options = obj.options;
 if (~exist('patch_sz', 'var'))||(isempty(patch_sz))||(max(patch_sz(:))==1)
     % use the whole optical field directly
     if nk>1  % detrend data
-        Ydt = detrend_data(obj.reshape(double(Y), 1), nk); % detrend data
+        Ydt = detrend_data(obj.reshape(double(Y), 1), nk, detrend_method); % detrend data
         [results, center, Cn, PNR] = greedyROI_endoscope(Ydt, K, options, debug_on, save_avi);
     else    % without detrending
         [results, center, Cn, PNR] = greedyROI_endoscope(Y, K, options, debug_on, save_avi);

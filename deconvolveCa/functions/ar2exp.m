@@ -1,5 +1,9 @@
 function tau_dr = ar2exp(g)
 %% get parameters of the convolution kernel for AR2 process 
+if length(g)==1
+    g(2) = 0; 
+end 
+
 temp = roots([1, -g(1), -g(2)]);
 d = max(temp); 
 r = min(temp);
