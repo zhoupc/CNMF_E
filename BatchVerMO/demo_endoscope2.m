@@ -168,7 +168,9 @@ while miter <= maxIter
     %temporal
         if strcmp(mode,'initiation')
             neuron.updateTemporal_endoscope(Ysignal,true);
-            if isempty(neuron.A); break; end
+            if isempty(neuron.A); 
+                A0s=neuron.A;
+                clear global; return; end
             cnmfe_quick_merge;              % run neuron merges
             if isempty(neuron.A); break; end
         elseif strcmp(mode,'massive')
@@ -226,7 +228,7 @@ end
 %% for 'massive' mode,  save results
 if strcmp(mode,'massive')
     A0s=[];
-    File.neuron=neuron;
+    File.neuron=neuron.copy();
 end
 %% for 'initiation' mode see and save results
 resultstring=sprintf('%s_results', Picname);

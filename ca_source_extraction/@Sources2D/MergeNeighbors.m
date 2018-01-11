@@ -1,8 +1,9 @@
 function  [merged_ROIs, newIDs] = MergeNeighbors(obj, dmin, method)
 %% merge neurons based on simple spatial and temporal correlation
 % input:
-%   merge_thr: 1X3 vector, threshold for three metrics {'C', 'S', 'A'}, it merge neurons based
-%   on correlations of spatial shapes ('A'),  calcium traces ('C') and  spike counts ('S').
+%   dmin: scalar or 1*2 vector. If it's a scalar, it's the minimum distance
+%   between two pixels; elsewise, it means [minimum distance, maximum
+%   difference between two time constances of decaying]
 
 % output:
 %   merged_ROIs: cell arrarys, each element contains indices of merged
@@ -38,7 +39,23 @@ end
 dist_v = sqrt(bsxfun(@minus, xx, xx').^2 + bsxfun(@minus, yy, yy').^2); 
 
 %% using merging criterion to detect paired neurons
-flag_merge = (dist_v<=dmin);
+flag_merge = (dist_v<=dmin(1));
+
+% neurons should have similar decaying time constant if we want to merge
+% them. 
+if length(dmin)>1
+    max_decay_diff = dmin(2);
+else
+    max_decay_diff = 2;
+end
+K = size(obj.C,1); 
+taud = zeros(K, 1);
+for m=1:K
+    temp = ar2exp(obj.P.kernel_pars(m));
+    taud(m) = temp(1);
+end
+decay_diff = abs(bsxfun(@minus, taud, taud'));
+flag_merge = flag_merge & (decay_diff<max_decay_diff);
 
 [l,c] = graph_connected_comp(sparse(flag_merge));     % extract connected components
 MC = bsxfun(@eq, reshape(l, [],1), 1:c);

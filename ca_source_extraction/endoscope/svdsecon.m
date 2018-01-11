@@ -19,7 +19,7 @@ function [U,S,V] = svdsecon(X,k)
 assert(k <= m && k <= n, 'k needs to be smaller than size(X,1) and size(X,2)');
 
 if  m <= n
-    C = X*X';
+    C = double(X*X');
     [U,D] = eigs(C,k);
     clear C;
     if nargout > 2
@@ -29,7 +29,7 @@ if  m <= n
         S = diag(s);
     end
 else
-    C = X'*X; 
+    C = double(X'*X); 
     [V,D] = eigs(C,k);
     clear C;
     U = X*V; % convert evecs from X'*X to X*X'. the evals are the same.

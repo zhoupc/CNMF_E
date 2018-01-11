@@ -1,4 +1,4 @@
-function Cn = correlation_image(Y,sz,d1,d2,flag_norm)
+function Cn = correlation_image(Y,sz,d1,d2,flag_norm, K)
 
 % construct correlation image based on neighboing pixels
 % Y: raw data
@@ -12,27 +12,44 @@ function Cn = correlation_image(Y,sz,d1,d2,flag_norm)
 % d1,d2: spatial dimensions
 % flag_norm: indicate whether Y has been normalized and centered ( 1 is
 %   yes, 0 is no)
+% K:  scalar, the rank of the random matrix for projection
 
 % Author: Eftychios A. Pnevmatikakis, Simons Foundation, 2015
-% with modifications from Pengcheng Zhou, Carnegie Mellon University, 2015
+% with modifications from Pengcheng Zhou, Carnegie Mellon University, 2015.
+% It uses convolution and random projection for speeding up the
+% computation.
 
 %% preprocess the raw data
-if nargin<5;     flag_norm = false; end
-if ismatrix(Y)
-    Y = reshape(Y,d1,d2,size(Y,2));
+if ~exist('flag_norm', 'var') || isempty(flag_norm)
+    flag_norm = false;
 end
-if (nargin<2);   sz = [0,1,0; 1,0,1; 0,1,0]; end
 
-[d1,d2,~] = size(Y);    % image dimension
+if ~exist('sz', 'var') || isempty(sz)
+    sz = [0,1,0; 1,0,1; 0,1,0];
+end
 
-if (~flag_norm)
+% center data 
+Y = bsxfun(@minus, double(Y), mean(Y, ndims(Y))); 
+if ~ismatrix(Y)
+    [d1, d2, T] = size(Y);
+else
+    T = size(Y, 2);
+end
+
+if exist('K', 'var') && (~isempty(K))
+    Y = double(reshape(Y, [], T))*randn(T, K); 
     % centering
-    mY = mean(Y,3);
-    Y = bsxfun(@minus, Y, mY);
-    % normalizing
-    sY = sqrt(mean(Y.*Y, 3));
-    sY(sY==0) = 1; % avoid nan values 
+    mY = mean(Y,2);
+    Y = bsxfun(@minus, Y, mY);        % normalizing
+    flag_norm = false; 
+end
+if ~flag_norm
+    sY = sqrt(mean(Y.*Y, ndims(Y)));
+    sY(sY==0) = 1; % avoid nan values
     Y = bsxfun(@times, Y, 1./sY);
+end
+if ismatrix(Y)
+    Y = reshape(Y, d1, d2, []);
 end
 
 %% construct a matrix indicating location of the matrix

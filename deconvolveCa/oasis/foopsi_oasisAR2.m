@@ -42,7 +42,9 @@ if ~exist('g', 'var') || isempty(g)
 end
 if ~exist('lam', 'var') || isempty(lam);   lam = 0; end
 
-if ~exist('smin', 'var') || isempty(smin);   smin = 0; end
+if ~exist('smin', 'var') || isempty(smin);   
+    smin = 0; 
+end
 if ~exist('optimize_b', 'var') || isempty(optimize_b)
     optimize_b = false;
 end
@@ -76,11 +78,11 @@ if ~optimize_b   %% don't optimize the baseline b
     [solution, spks, active_set] = oasisAR2(y, g, lam, smin);
     
     %% iteratively update parameters g
-        if optimize_g;
-            g = update_g(y-b, g, spks);
-            smin = choose_smin(g, sn, 0.9999);
-            [solution, spks,active_set] = oasisAR2(y, g, 0, smin);
-        end
+    if optimize_g;
+        g_old = g;
+        g = update_g(y-b, g, spks);
+        [solution, spks,active_set] = oasisAR2(y, g, 0, smin);
+    end
 else
     disp('to be done'); 
 %     %% initialization

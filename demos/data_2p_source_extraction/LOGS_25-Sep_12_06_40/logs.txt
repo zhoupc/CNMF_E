@@ -1,0 +1,85 @@
+Data: /data/home/zhoupc/google/work/CNMF_E/demos/data_2p_source_extraction/data_30_40_5.mat
+
+--------25-Sep_12_06_44--------
+[12:06:44]Start running source extraction......
+The collection of options are saved as intermediate_results.options_0
+
+[12:06:44]Start initializing neurons from frame 1 to frame 2000
+
+[12:06:47]Finished the initialization procedure.
+	In total, 48 neurons were initialized. 
+	The initialization results were saved as intermediate_results.initialization
+
+[12:06:48]Finished updating background using svd model.
+	The results were saved as intermediate_results.bg_25_Sep_12_06_48
+
+[12:06:48]Start picking neurons from the residual......
+	The collection of options are saved as intermediate_results.options_2
+[12:06:49]Finished the initialization of neurons from the residual video.
+	In total, 4 neurons were detected. 
+	The  results were saved as intermediate_results.initialization_res_25_Sep_12_06_49
+
+[12:06:50]Finished updating temporal components.
+	The results were saved as intermediate_results.temporal_25_Sep_12_06_50
+
+[12:06:51]Finished updating spatial components.
+	The results were saved as intermediate_results.spatial_25_Sep_12_06_50
+
+[12:06:51]Start Merging neurons based on temporal correlations and neuron distances:
+ 	Thresholds:
+		Temporal correlation of C: 0.700
+		Minimum distance: 10.000
+	13 neurons will be merged into 5 new neurons.
+[12:06:51]You approved all merges.
+		1, 17, 49, ---> 1
+		4, 19, ---> 4
+		12, 15, 25, ---> 12
+		23, 37, ---> 23
+		26, 47, 48, ---> 26
+	The spatial and temporal components of the merged neurons were saved as intermediate_results.spatial_25_Sep_12_06_51
+	Now the old neurons will be deleted and the merged new ones will replace them.
+
+[12:06:51]Deleted 8 neurons: 
+15, 17, 19, 25, 37, 47, 48, 49, 
+	The IDS of these neurons were saved as intermediate_results.spatial_25_Sep_12_06_51
+
+[12:06:51]Start Merging neurons based on neuron distances:
+ 	Options:
+		Minimum distance: 2.000
+		Method for computing neuron center: max
+	2 neurons will be merged into 1 new neurons.
+[12:06:51]You approved all merges.
+		38, 52, ---> 38
+	The spatial and temporal components of the merged neurons were saved as intermediate_results.spatial_25_Sep_12_06_51
+	Now the old neurons will be deleted and the merged new ones will replace them.
+
+[12:06:51]Deleted 1 neurons: 
+52, 
+	The IDS of these neurons were saved as intermediate_results.spatial_25_Sep_12_06_51
+
+[12:06:52]Finished updating background using svd model.
+	The results were saved as intermediate_results.bg_25_Sep_12_06_52
+
+[12:06:53]Finished updating temporal components.
+	The results were saved as intermediate_results.temporal_25_Sep_12_06_53
+
+[12:06:53]Finished updating spatial components.
+	The results were saved as intermediate_results.spatial_25_Sep_12_06_53
+
+[12:06:53]Start Merging neurons based on temporal correlations and neuron distances:
+ 	Thresholds:
+		Temporal correlation of C: 0.700
+		Minimum distance: 10.000
+	All pairs of neurons are below the merging criterion!
+
+ [12:06:53]Start Merging neurons based on neuron distances:
+ 	Options:
+		Minimum distance: 2.000
+		Method for computing neuron center: max
+	All pairs of neurons are below the merging criterion!
+
+ 
+--------25-Sep_12_06_54--------
+[12:06:54]Save the current workspace into file 
+	/data/home/zhoupc/google/work/CNMF_E/demos/data_2p_source_extraction/LOGS_25-Sep_12_06_40/25-Sep_12_06_53.mat
+

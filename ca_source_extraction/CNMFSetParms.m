@@ -103,6 +103,20 @@ Names = [
     'smin               ' % mimimum spike size
     'center_psf         ' % center psf or not 
     'gaussian_shape     ' % neurons have 2D gaussian shapes. 
+    'ring_radius        ' % radius of the ring in CNMF-E background model 
+    'bg_ssub            ' % spatial downsampling factor when estimating background
+    'bg_acceleration    ' % accelerating bg estimation using random projection
+    'num_neighbors      ' % number of pixels on the ring 
+    'dmin               ' %minum distances between two neurons 
+    'method_dist        ' % method for computing distances of two neurons 
+    'thresh_outlier     ' % threshod for detecting outliers in the estimation of background 
+    'background_model   ' % model for estimating the the background {'ring', 'svd', 'nmf'}
+    'nk                 ' % number of knots for detrending data 
+    'detrend_method     ' % method for detrending {'spline', 'local_min'}
+    'spatial_constraints' % spatial constraints {'circular'}
+    'spatial_algorithm  ' % method for updating spatial components 
+    'with_overlap_init  ' % initialize repeat neurons across different patch 
+    'save_intermediate  ' % save intermediate results or not 
     ];
 
 [m,n] = size(Names);
@@ -278,6 +292,20 @@ Values = [
     {5}
     {true}
     {true}
+    {15}
+    {1}
+    {true}
+    {[]}
+    {1}
+    {'max'}
+    {nan} 
+    {'svd'}
+    {1}
+    {'spline'}
+    {struct('circular', false, 'connected', true)}
+    {'hals'}
+    {false}
+    {false}
     ];
 
 for j = 1:m

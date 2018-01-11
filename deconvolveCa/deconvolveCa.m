@@ -70,7 +70,7 @@ if isempty(options.sn)
     options.sn = GetSn(y);
 end
 % estimate time constant
-if isempty(options.pars)
+if isempty(options.pars) || all(options.pars==0)
     switch options.type
         case 'ar1'
             try
@@ -111,9 +111,17 @@ s = y;
 switch lower(options.method)
     case 'foopsi'  %% use FOOPSI
         if strcmpi(options.type, 'ar1')  % AR 1
+            if options.smin<0
+                options.smin = abs(options.smin)*options.sn;
+            end
+            
+            gmax = exp(-1/options.max_tau);
             [c, s, options.b, options.pars] = foopsi_oasisAR1(y-options.b, options.pars, options.lambda, ...
-                options.smin, options.optimize_b, options.optimize_pars, [], options.maxIter);
+                options.smin, options.optimize_b, options.optimize_pars, [], options.maxIter, gmax);
         elseif strcmpi(options.type, 'ar2') % AR 2
+            if options.smin<0
+                options.smin = abs(options.smin)*options.sn/max_ht(options.pars);
+            end
             [c, s, options.b, options.pars] = foopsi_oasisAR2(y-options.b, options.pars, options.lambda, ...
                 options.smin);
         elseif strcmpi(options.type, 'exp2')   % difference of two exponential functions
@@ -203,6 +211,7 @@ options.maxIter = 10;
 options.thresh_factor = 1.0;
 options.extra_params = [];
 options.p_noise = 0.9999; 
+options.max_tau = 100; 
 
 if isempty(varargin)
     return;
@@ -218,7 +227,9 @@ else
 end
 %% parse all input arguments
 while k<=nargin
-    
+    if isempty(varargin{k})
+        k = k+1; 
+    end 
     switch lower(varargin{k})
         case {'ar1', 'ar2', 'exp2', 'kernel'}
             % convolution kernel type

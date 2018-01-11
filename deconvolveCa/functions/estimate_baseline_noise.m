@@ -22,8 +22,14 @@ bins = temp(1):dbin:temp(end);
 nums = hist(y, bins); 
 
 %% fit a gaussian distribution: nums = A * exp(-(bins-b)/(2*sig^2))
-[b, sn] = fit_gauss1(bins, nums, 0.3, 3); 
+if isempty(bins)
+    b = mean(y);
+    sn = 0;
+    return; 
+end
+[b, sn] = fit_gauss1(bins, nums, 0.3, 3);
+
 if b<bmin
-    b = bmin; 
-    sn = fit_gauss1(bins-bmin, nums, 0.3, 3,false ); 
+    b = bmin;
+    sn = fit_gauss1(bins-bmin, nums, 0.3, 3,false );
 end

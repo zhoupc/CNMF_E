@@ -1,16 +1,12 @@
 # CNMF_E
-Constrained Nonnegative Matrix Factorization for microEndoscopic data 
+Constrained Nonnegative Matrix Factorization for microEndoscopic data. 'E' also suggests 'extension'. It is build on top of [CNMF](https://github.com/epnev/ca_source_extraction) with supports to 1 photon data. 
 
-
-
-Download
-=======
+## Download
 OPTION 1: download the package using this [LINK](https://github.com/zhoupc/CNMF_E/archive/master.zip)
 
 OPTION 2: (recommended) clone the git repository <https://github.com/zhoupc/CNMF_E.git>. In this way, you are able to get the latest updates of the package within 1-line command or 1-button click. 
 
-Installation
-=======
+## Installation
 Run cnmfe_setup.m to add CNMF-E package to the search path of MATLAB
 
 `>> cnmfe_setup`
@@ -26,25 +22,36 @@ Other required MATLAB toolboxes are listed below.
 5. /curvefit/curvefit
 
 
-Example
-=======
-The best way to get started is running a demo script for analyzing an example data. 
+## Examples
+The best way to get started is running a demo script for analyzing an example data. We included three demo scripts for you to try. You can modify these demos to process your own datasets. 
 
-`>> run demos/demo_endoscope.m ` 
+1. demo_endoscope.m : this demo is good for exploratory analysis of your data. It gives you a good sense of different stages of CNMF-E pipeline and how different parameter selections influence your final results. 
 
-Questions
-=======
-You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. 
+	`>> run demos/demo_endoscope.m ` 
 
-Reference
-=======
-**Please cite this paper when you use CNMF-E in your research. Thanks!**
+2. demo_large_data_1p.m : this demo is good for processing large-scale dataset with the minimal manual intervention. It can process small data as well and should be used in most automated analysis. 
 
-**Zhou, P.**, Resendez, S.L., Rodriguez-Romaguera, J., Jimenez, J.C, Neufeld, S.Q., Stuber, G.D., Hen, R., Kheirbek, M.A., Sabatini, B.L., Kass, R.E., Paninski, L. (2016). [Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data](https://arxiv.org/abs/1605.07266). arXiv Prepr, arXiv1605.07266.
+	`>> run demos/demo_large_data_1p.m`
 
-License
-=======
+3. demo_large_data_2p.m : this demo is the same as demo_large_data_1p.m. It is optimized for processing 2p data. 
 
+	`>> run demos/demo_large_data_2p.m`
+
+## Questions
+You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. An email request for slack channel invitation is required,  or you can ask your collegues who have joined the slack channel already for an invitation. 
+
+Please read more from the [wiki page](https://github.com/zhoupc/CNMF_E/wiki) 
+
+## Reference
+**Please cite these papers when you use CNMF-E in your research. Thanks!**
+
+**Zhou, P.**, Resendez, S.L., Rodriguez-Romaguera, J., Jimenez, J.C, Neufeld, S.Q., Stuber, G.D., Hen, R., Kheirbek, M.A., Sabatini, B.L., Kass, R.E., Paninski, L. (2016). [Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data](https://arxiv.org/abs/1605.07266). arXiv Prepr, arXiv1605.07266.  (When you use the (Corr+PNR) algorithm in initialization step or use the ring model for estimating background components)
+
+Pnevmatikakis, E.A., Soudry, D., Gao, Y., Machado, T.A., Merel, J., Pfau, D., Reardon, T., Mu, Y., Lacefield, C., Yang, W. and Ahrens, M., 2016. [Simultaneous denoising, deconvolution, and demixing of calcium imaging data](http://www.sciencedirect.com/science/article/pii/S0896627315010843). Neuron, 89(2), pp.285-299. (The original CNMF framework paper) 
+
+
+
+## License
 Copyright 2016 Pengcheng Zhou
 
 This program is free software: you can redistribute it and/or modify
