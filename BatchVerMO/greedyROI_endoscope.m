@@ -1,5 +1,5 @@
 function [results, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, options,debug_on, save_avi)
-% (parameter sweep version, modified by Shijie Gu)
+% (with min_pnr chosen automatically, modified by Shijie Gu)
 % A greedy method for detecting ROIs and initializing CNMF. In each iteration,
 % it searches the one with large (peak-median)/noise level and large local
 %       correlation. It's the same with greedyROI_corr.m, but with some features
@@ -11,6 +11,9 @@ function [results, center, Cn, PNR, save_avi] = greedyROI_endoscope(Y, K, option
 %       neurons picked. The actual plotting will be done after iteration
 %       where neuron deletion and additions are possible. Method
 %       drawPNRCn() is called in demo_endoscope2 to generate the plot.
+% The automated min_pnr choice is based on the observation that neuron
+%       seeds have various PNR values while non-neuron max have values that are
+%       low and clustered together. See more at "help threshold_by_diff".
 %% Input:
 %   Y:  d X T matrx, imaging data
 %   K:  scalar, maximum number of neurons to be detected.
@@ -56,8 +59,6 @@ d2 = options.d2;        % image width
 gSig = options.gSig;    % width of the gaussian kernel approximating one neuron
 gSiz = options.gSiz;    % average size of neurons
 min_corr = options.min_corr;    %minimum local correlations for determining seed pixels
-min_pnr = options.min_pnr;               % peak to noise ratio for determining seed pixels
-min_v_search = min_corr*min_pnr;
 seed_method = options.seed_method; % methods for selecting seed pixels
 % kernel_0 = options.kernel;
 deconv_options_0= options.deconv_options;
@@ -112,7 +113,8 @@ HY = reshape(HY, d1*d2, []);
 HY = bsxfun(@minus, HY, median(HY, 2));
 HY0= HY;
 
-HY_max = max(HY, [], 2);
+HY_sorted = sort(HY,2,'descend');
+HY_max = mean(HY_sorted(:,1:3),2); % choose top 3 max to avoid noisy fluctuation.
 Ysig = get_noise_fft(HY, options);
 PNR = reshape(HY_max./Ysig, d1, d2);
 PNR0 = PNR;
@@ -128,14 +130,27 @@ HY_thr(bsxfun(@lt, HY_thr, Ysig*sig)) = 0;
 % compute loal correlation
 Cn = correlation_image(HY_thr, [1,2], d1,d2);
 Cn(isnan(Cn)) = 0;
-%Cn = Cn + randn(size(Cn))*(1e-100);
 Cn0 = Cn;   % backup
 
 % screen seeding pixels as center of the neuron
 v_search = Cn.*PNR;
+
+
+    tmp_d = 2*round(gSiz/4)+1;
+    v_search = medfilt2(v_search, round(gSiz/4)*[1, 1]); %+randn(size(v_search))*(1e-100);
+    %v_search(ind_search) = 0;
+    v_max = ordfilt2(v_search, tmp_d^2, true(tmp_d));
+    ind_localmax0 = find(and(v_search(:)==v_max(:), v_max(:)>0));
+    min_pnr=threshold_by_diff(PNR0(ind_localmax0),1,10); 
+    results.min_pnr=min_pnr; % min_pnr will be added to neuron.options outside this function through 'results'.
+    min_v_search = min_corr*min_pnr;
+    
 v_search(or(Cn<min_corr, PNR<min_pnr)) = 0;
+
+
 ind_search = false(d1*d2,1);  % showing whether this pixel has been searched before
 ind_search(v_search==0) = true; % ignore pixels with small correlations or low peak-noise-ratio
+
 ind_neuron = false(d1*d2,1);
 ind_neuron_whole = false(d1*d2,1);
 ind_not_neuron=true(d1*d2,1); % all pixels are not neurons so far
@@ -168,7 +183,7 @@ end
 
 %% start initialization
 if ~exist('K', 'var')||isempty(K); 
-    K = floor(sum(v_search(:)>0)/10);
+    K = floor(sum(v_search(:)>0)/10); % I strongly suggest replace 10 with gSiz or gSig.
 else
     K = min(floor(sum(v_search(:)>0)/10), K);
 end
@@ -188,6 +203,7 @@ ind_bd(1:bd, :) = true;
 ind_bd((end-bd+1):end, :) = true;
 ind_bd(:, 1:bd) = true;
 ind_bd(:, (end-bd):end) = true;
+
 while searching_flag
     %% find local maximum as initialization point
     %find all local maximum as initialization point
@@ -197,6 +213,7 @@ while searching_flag
     v_max = ordfilt2(v_search, tmp_d^2, true(tmp_d));
     % set boundary to be 0
     v_search(ind_bd) = 0;
+    v_search0=v_search;
     
     if strcmpi(seed_method, 'manual') %manually select seed pixels
         tmp_fig = figure('position', [200, 200, 1024, 412]);
@@ -235,6 +252,7 @@ while searching_flag
         % automatically select seed pixels
         ind_search(v_search<min_v_search) = true;    % avoid generating new seed pixels after initialization
         ind_localmax = find(and(v_search(:)==v_max(:), v_max(:)>0));
+        %display(ind_localmax)
         if(isempty(ind_localmax)); break; end
     end
     [~, ind_sort] = sort(v_search(ind_localmax), 'descend');
@@ -303,6 +321,7 @@ while searching_flag
                 frame.cdata = imresize(frame.cdata, [800, 1200]);
                 avi_file.writeVideo(frame);
             end
+            pause(3)
         end
         
         %% extract ai, ci
@@ -362,7 +381,8 @@ while searching_flag
             
             % update the maximum projection of HY
             Ysig_box = Ysig(ind_nhood_HY);
-            temp = max(HY_box, [], 2);
+            temp_maxes = sort(HY_box, 2, 'descend');
+            temp=mean(temp_maxes(:,1:3),2);
             tmp_PNR = temp./Ysig_box;
             tmp_PNR(or(isnan(tmp_PNR), tmp_PNR<min_pnr)) = 0;
             %tmp_PNR(isnan(tmp_PNR)) = 0;
@@ -439,6 +459,7 @@ if deconv_flag
     results.kernel_pars = cell2mat(kernel_pars(1:k));
 end
 results.THRESH=THRESH;
+% results.ind_localmax=ind_localmax0;
 
 Cn = Cn0;
 PNR = PNR0;
