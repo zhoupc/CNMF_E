@@ -3,20 +3,27 @@ clear; clc; close all;
 
 %% choose multiple datasets or just one  
 neuron = Sources2D(); 
-nams = {'./data_1p.tif'};          % you can put all file names into a cell array; when it's empty, manually select files 
+%nams = {'./data_1p.tif'};          % you can put all file names into a cell array; when it's empty, manually select files 
+nams={};
+
+datadir='Z:\EmilyShijieShared_old\PC_batch\';
+for i=1:numel(samplelist)
+    nams{i}=[datadir,samplelist(i).name];
+end
+    
 nams = neuron.select_multiple_files(nams);  %if nam is [], then select data interactively 
 
 %% parameters  
 % -------------------------    COMPUTATION    -------------------------  %
 pars_envs = struct('memory_size_to_use', 8, ...   % GB, memory space you allow to use in MATLAB 
     'memory_size_per_patch', 0.5, ...   % GB, space for loading data within one patch 
-    'patch_dims', [64, 64],...  %GB, patch size 
+    'patch_dims', [300, 400],...  %GB, patch size 
     'batch_frames', 1000);           % number of frames per batch 
   % -------------------------      SPATIAL      -------------------------  %
-gSig = 3;           % pixel, gaussian width of a gaussian kernel for filtering the data. 0 means no filtering
-gSiz = 13;          % pixel, neuron diameter
+gSig = 10;           % pixel, gaussian width of a gaussian kernel for filtering the data. 0 means no filtering
+gSiz = 17;          % pixel, neuron diameter
 ssub = 1;           % spatial downsampling factor
-with_dendrites = true;   % with dendrites or not
+with_dendrites = false;   % with dendrites or not
 if with_dendrites
     % determine the search locations by dilating the current neuron shapes
     updateA_search_method = 'dilate';  %#ok<UNRCH>
@@ -32,16 +39,16 @@ spatial_constraints = struct('connected', true, 'circular', false);  % you can i
 spatial_algorithm = 'hals';
 
 % -------------------------      TEMPORAL     -------------------------  %
-Fs = 10;             % frame rate
+Fs = 30;             % frame rate
 tsub = 1;           % temporal downsampling factor
 deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1', 'ar2'}
-    'method', 'foopsi', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
+    'method', 'constrained', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
     'smin', -5, ...         % minimum spike size. When the value is negative, the actual threshold is abs(smin)*noise level
     'optimize_pars', true, ...  % optimize AR coefficients
     'optimize_b', true, ...% optimize the baseline);
     'max_tau', 100);    % maximum decay time (unit: frame);
 
-nk = 3;             % detrending the slow fluctuation. usually 1 is fine (no detrending)
+nk = 1;             % detrending the slow fluctuation. usually 1 is fine (no detrending)
 % when changed, try some integers smaller than total_frame/(Fs*30)
 detrend_method = 'spline';  % compute the local minimum as an estimation of trend.
 
@@ -64,7 +71,7 @@ merge_thr_spatial = [0.8, 0.4, -inf];  % merge components with highly correlated
 % -------------------------  INITIALIZATION   -------------------------  %
 K = [];             % maximum number of neurons per patch. when K=[], take as many as possible.
 min_corr = 0.8;     % minimum local correlation for a seeding pixel
-min_pnr = 8;       % minimum peak-to-noise ratio for a seeding pixel
+min_pnr = 21;       % minimum peak-to-noise ratio for a seeding pixel
 min_pixel = gSig^2;      % minimum number of nonzero pixels for each neuron
 bd = 0;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
 frame_range = [];   % when [], uses all frames

@@ -1,4 +1,4 @@
-function  [Afinal_alldays,MC,newIDs,merged_ROIs,close_ind] = mergeACforMo(A,C,merge_thr,M,dmin,d1,d2)
+function  [Afinal_alldays,MC,newIDs,merged_ROIs,close_ind,eachday_ind] = mergeACforMo(A,C,merge_thr,M,dmin,d1,d2)
 % General Description: Merge neurons based on
 %   spatial, temporal correlation, and their distance. Afinal will be
 %   different for each day so that they are put into cell array where each day,
@@ -32,6 +32,7 @@ function  [Afinal_alldays,MC,newIDs,merged_ROIs,close_ind] = mergeACforMo(A,C,me
 %       version. Keep if for now.
 %   close_ind: ind of neurons for output (that are merged) just because some neurons are
 %       close together.
+%   eachday_ind: numbers of neurons that show up in each day.
 
 % Author: Shijie Gu, techel@live.cn, modified from quickMerge() by Pengcheng Zhou
 %  The basic idea is proposed by Eftychios A. Pnevmatikakis: high temporal
@@ -71,14 +72,18 @@ flag_merge2 = (dist_v<=dmin);
 flag_merge=or(flag_merge1,flag_merge2);
 
 MC=merge_detail(flag_merge);
-MC=MC(:,sum(MC,1)>=numel(M));% rough sift
-MC=merge_with_eachday(M,MC); % detailed sift
+MC_=MC(:,sum(MC,1)>=numel(M));% rough sift
+[MC_,~]=merge_with_eachday(M,MC_); % detailed sift
+eachday_ind=size(MC_,2);
 
 MC1=merge_detail(flag_merge1);
-MC1=MC1(:,sum(MC1,1)>=numel(M));
-MC1=merge_with_eachday(M,MC1);
+MC1_=MC1(:,sum(MC1,1)>=numel(M));
+[MC1_,~]=merge_with_eachday(M,MC1_);
 
+
+[MC_missing,missingday_ind]=setdiff(MC',MC_','rows','stable');
 [~,close_ind]=setdiff(MC',MC1','rows','stable');
+MC=[MC_,MC_missing'];
 
 clear A_overlap C_corr C flag_merge1 flag_merge2 flag_merge;
 display('Deleted some big variables.')
