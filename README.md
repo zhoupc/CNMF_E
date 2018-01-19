@@ -27,20 +27,26 @@ The best way to get started is running a demo script for analyzing an example da
 
 1. demo_endoscope.m : this demo is good for exploratory analysis of your data. It gives you a good sense of different stages of CNMF-E pipeline and how different parameter selections influence your final results. 
 
-	`>> run demos/demo_endoscope.m ` 
+  `>> run demos/demo_endoscope.m ` 
 
 2. demo_large_data_1p.m : this demo is good for processing large-scale dataset with the minimal manual intervention. It can process small data as well and should be used in most automated analysis. 
 
-	`>> run demos/demo_large_data_1p.m`
+  `>> run demos/demo_large_data_1p.m`
 
 3. demo_large_data_2p.m : this demo is the same as demo_large_data_1p.m. It is optimized for processing 2p data. 
 
-	`>> run demos/demo_large_data_2p.m`
+  `>> run demos/demo_large_data_2p.m`
 
 ## Questions
 You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. An email request for slack channel invitation is required,  or you can ask your collegues who have joined the slack channel already for an invitation. 
 
 Please read more from the [wiki page](https://github.com/zhoupc/CNMF_E/wiki) 
+
+## Python 
+
+This repository is the native implementation of the CNMF-E model & algorithms using MATLAB. There is also a python implementation of the model in [CaImAn](https://github.com/flatironinstitute/CaImAn). However, these two implementations are not exactly the same in some details and we are still working to make them consistent. For those people who love Python but still want to run CNMF-E using the MATLAB implementation, we provided a Python wrapper (thanks to [Tim Machado](https://github.com/tamachado)) for calling MATLAB version CNMF-E in Python.  You can use the ipython notebook file python_wrapper/ analyze_cnmfe_matlab.ipynb to get started. 
+
+
 
 ## Reference
 **Please cite these papers when you use CNMF-E in your research. Thanks!**
