@@ -1773,7 +1773,7 @@ classdef Sources2D < handle
             
             obj.compress_results();
             file_path = [obj.P.log_folder,  strrep(get_date(), ' ', '_'), '.mat'];
-            evalin('base', sprintf('save(''%s'', ''neuron'', ''save_*'', ''show_*'', ''use_parallel'', ''with_*'', ''-v7.3''); ', file_path));
+            evalin('caller', sprintf('save(''%s'', ''neuron'', ''save_*'', ''show_*'', ''use_parallel'', ''with_*'', ''-v7.3''); ', file_path));
             try
                 fp = fopen(obj.P.log_file, 'a');
                 fprintf(fp, '\n--------%s--------\n[%s]\bSave the current workspace into file \n\t%s\n\n', get_date(), get_minute(), file_path);
