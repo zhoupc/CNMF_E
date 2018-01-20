@@ -1,16 +1,21 @@
-function [M_final,xxsfyysf]=motioncorrection(AsfromDaysCell,AsfromDaysPic,options_nonrigid,gridstartend)
+function [M_final,xxsfyysf,T]=motioncorrection(AsfromDaysCell,AsfromDaysPic,options_nonrigid,gridstartend)
+% T is the tranformation matrix
 %%
 Y=AsfromDaysPic; 
 clear AsfromDaysPic
 AnumInFolder=numel(AsfromDaysCell);
 sizes=cellfun(@(x) size(x,2),AsfromDaysCell);
 
-M=cell(1,AnumInFolder);  M_central=cell(1,AnumInFolder); 
+M=cell(1,AnumInFolder);  M_central=M; 
+T=M;
 ind_del=cell(1,AnumInFolder);
 
 % the only left out one;
-M{1}{1}=AsfromDaysCell{1};  ind_del{1}{1}=false(1,sizes(1));
+M{1}{1}=AsfromDaysCell{1};
 M_central{1}{1}=centralA(AsfromDaysCell{1});
+T{1}{1}=zeros(size(Y,1),size(Y,2),2);
+ind_del{1}{1}=false(1,sizes(1));
+
 
 for ia=2:AnumInFolder
     shifts_up_1=cell(1,ia-1); shifts_up_2=cell(1,ia-1);
@@ -19,6 +24,7 @@ for ia=2:AnumInFolder
     % The day's own data
     M{ia}{ia}=AsfromDaysCell{ia};
     M_central{ia}{ia}=centralA(AsfromDaysCell{ia});
+    T{ia}{ia}=zeros(size(Y,1),size(Y,2),2);
     ind_del{ia}{ia}=false(1,siz_oneday);
     % Previous days
     M_buffer=[];
@@ -43,6 +49,12 @@ for ia=2:AnumInFolder
 
         % inverse consec
         shifts_up_1_tmp=sum(cat(3,shifts_up_1{io:ia-1}),3); shifts_up_2_tmp=sum(cat(3,shifts_up_2{io:ia-1}),3);
+        T=zeros(size(Y,1),size(Y,2),2);
+        T(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),1)=shifts_up_2_tmp;
+        T(gridstartend(1):gridstartend(2),gridstartend(3):gridstartend(4),2)=shifts_up_1_tmp;
+        T{io}{ia}=T;
+        T{ia}{io}=-T;
+        
         Mf_temp=[];
         ind_del{ia}{io}=false(1,sizes(io));
         for ni=1:sizes(io)

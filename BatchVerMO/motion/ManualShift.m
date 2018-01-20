@@ -70,6 +70,7 @@ handles.d2=p.Results.d2;
 handles.pickOrnot=false;
 handles.normco.cnmfedir=p.Results.cnmfedir; % All variables related to normcorr are put in handles.normco
 handles.plotgrid=false;
+handles.T=[];
 
 if ischar(handles.normco.cnmfedir)
     cnmfedir=handles.normco.cnmfedir; %loadAs will use 'cnmfedir'
@@ -123,8 +124,9 @@ function varargout = ManualShift_OutputFcn(hObject, eventdata, handles)
 % Get default command line output from handles structure
 display('Saving results...')
 varargout{1} = handles.M;
-varargout{2} = handles.output;
-varargout{3} = handles.M_intact;
+varargout{2} = handles.T;
+varargout{3} = handles.output;
+varargout{4} = handles.M_intact;
 delete(handles.figure1);
 
 function neuron_list_tmpl_Callback(hObject, eventdata, handles)
@@ -815,7 +817,7 @@ function automove_Callback(hObject, eventdata, handles)
 % hObject    handle to automove (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-[handles.M,~]=motioncorrection(handles.normco.AsfromDaysCell,...
+[handles.M,~,handle.T]=motioncorrection(handles.normco.AsfromDaysCell,...
     handles.normco.AsfromDaysPic,handles.normco.options_nonrigid,handles.normco.gridstartend);
 handles.M_intact=handles.M;
 handles=Precalculate_Minfo(handles.M,handles);
