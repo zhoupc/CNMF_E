@@ -85,9 +85,10 @@ d1=File_fulllist(1).options.d1;
 d2=File_fulllist(1).options.d2;
 dmin=4;%%%%%%%%%%
 clear ACS File_samplelist %File_fulllist
-[M2,MC,newIDs,merged_ROIs,close_ind] = mergeACforMo(Amask_temp,C,merge_thr_2,M1,dmin,d1,d2);
+[M2,MC,newIDs,merged_ROIs,close_ind,eachday_ind] = mergeACforMo(Amask_temp,C,merge_thr_2,M1,dmin,d1,d2);
 
 save([outputdir 'RoughAfinalcnmfeBatchVerMOTION.mat'],'-v7.3')
+%% Print Log file for regitration of neurons.
 
 %% 4 Determine Afinal that will be used to extract C's in each file.
 
