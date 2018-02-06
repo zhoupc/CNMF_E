@@ -367,7 +367,13 @@ elseif strcmpi(ext,'.avi')
     imData = squeeze(imData(:, :, 1, :));
 elseif strcmpi(ext, '.mat')
     data = matfile(path_to_file);
-    dims = data.Ysiz;
+    data_info = whos(data);
+    
+    if length(data_info)>1
+        dims = data.Ysiz;
+    else
+        dims = data_info.size;
+    end
     sizy = dims(1);
     sizx = dims(2);
     numFrames = dims(3);
@@ -377,7 +383,11 @@ elseif strcmpi(ext, '.mat')
         num2read = min(numFrames-sframe+1, round(varargin{3}));
     end
     
-    imData = data.Y(:, :, sframe+(0:(num2read-1)));
+    if length(data_info)>1
+        imData = data.Y(:, :, sframe+(0:(num2read-1)));
+    else
+        imData = eval(sprintf('data.%s(:, :, sframe+(0:(num2read-1)))', data_info.name));
+    end
 elseif isempty(ext)
     % the input is a folder and data are stored as image sequences
     

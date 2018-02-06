@@ -144,13 +144,13 @@ neuron.merge_high_corr(show_merge, merge_thr_spatial);
 
 %% update spatial components
 
-% %% pick neurons from the residual
-% [center_res, Cn_res, PNR_res] =neuron.initComponents_residual_parallel([], save_initialization, use_parallel, min_corr_res, min_pnr_res, seed_method_res);
-% if show_init
-%     axes(ax_init);
-%     plot(center_res(:, 2), center_res(:, 1), '.g', 'markersize', 10);
-% end
-% neuron_init_res = neuron.copy();
+%% pick neurons from the residual
+[center_res, Cn_res, PNR_res] =neuron.initComponents_residual_parallel([], save_initialization, use_parallel, min_corr_res, min_pnr_res, seed_method_res);
+if show_init
+    axes(ax_init);
+    plot(center_res(:, 2), center_res(:, 1), '.g', 'markersize', 10);
+end
+neuron_init_res = neuron.copy();
 
 %% udpate spatial&temporal components, delete false positives and merge neurons
 % update spatial

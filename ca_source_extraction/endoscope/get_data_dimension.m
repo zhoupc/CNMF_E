@@ -44,8 +44,15 @@ elseif strcmpi(ext, '.avi')
     sizy = obj.Height;
     dims = [sizy, sizx, numFrames];
 elseif strcmpi(ext, '.mat')
-    data = matfile(path_to_file); 
-    dims = data.Ysiz; 
+    data = matfile(path_to_file);
+    data_info = whos(data);
+    if length(data_info)>1
+        % if there is one variable storing the image size
+        dims = data.Ysiz;
+    else
+        % only a 3D/4D video is stored in the video
+        dims = data_info.size;
+    end
 elseif isempty(ext)
     % the input is a folder and data are stored as image sequences
     imgs = dir([path_to_file, filesep,'*.tif']);
