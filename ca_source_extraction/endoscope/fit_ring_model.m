@@ -16,6 +16,9 @@ if ~exist('A', 'var') || isempty(A)
     A = ones(d,1); 
     C = zeros(1, T); 
 end
+if issparse(A)
+    A = full(A); 
+end
 % check whether this is the first run 
 if length(unique(W_old(1,:)))==2
     ind_active = true(size(W_old(:,1))); 
