@@ -1,5 +1,5 @@
 # CNMF_E
-Constrained Nonnegative Matrix Factorization for microEndoscopic data. 'E' also suggests 'extension'. It is build on top of [CNMF](https://github.com/epnev/ca_source_extraction) with supports to 1 photon data. 
+Constrained Nonnegative Matrix Factorization for microEndoscopic data. 'E' also suggests 'extension'. It is built on top of [CNMF](https://github.com/epnev/ca_source_extraction) with supports to 1 photon data. 
 
 ## Download
 OPTION 1: download the package using this [LINK](https://github.com/zhoupc/CNMF_E/archive/master.zip)
@@ -51,7 +51,7 @@ This repository is the native implementation of the CNMF-E model & algorithms us
 ## Reference
 **Please cite these papers when you use CNMF-E in your research. Thanks!**
 
-**Zhou, P.**, Resendez, S.L., Rodriguez-Romaguera, J., Jimenez, J.C, Neufeld, S.Q., Stuber, G.D., Hen, R., Kheirbek, M.A., Sabatini, B.L., Kass, R.E., Paninski, L. (2016). [Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data](https://arxiv.org/abs/1605.07266). arXiv Prepr, arXiv1605.07266.  (When you use the (Corr+PNR) algorithm in initialization step or use the ring model for estimating background components)
+**Zhou, P.**, Resendez, S.L., Rodriguez-Romaguera, J., Jimenez, J.C, Neufeld, S.Q., Giovannucci, A., Friedrich, J., Pnevmatikakis, E.A., Stuber, Garret D ,  Stuber, G.D., Hen, R., Kheirbek, M.A., Sabatini, B.L., Kass, R.E., Paninski, L. (2018). [Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data](https://elifesciences.org/articles/28728). eLife,  pp.e28728.  (When you use the (Corr+PNR) algorithm in initialization step or use the ring model for estimating background components)
 
 Pnevmatikakis, E.A., Soudry, D., Gao, Y., Machado, T.A., Merel, J., Pfau, D., Reardon, T., Mu, Y., Lacefield, C., Yang, W. and Ahrens, M., 2016. [Simultaneous denoising, deconvolution, and demixing of calcium imaging data](http://www.sciencedirect.com/science/article/pii/S0896627315010843). Neuron, 89(2), pp.285-299. (The original CNMF framework paper) 
 
