@@ -34,7 +34,7 @@ else
 end
 [~,~,ext] = fileparts(path_to_file);
 
-if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');
+if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif') || strcmpi(ext,'.BTF');
     info = imfinfo(path_to_file);
     
     
@@ -101,6 +101,7 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');
             form='uint8';
             for_mult=1;
         end
+        for_mult = uint64(for_mult); 
         framenum=num2read;
         imData=cell(1,framenum);
         
@@ -109,17 +110,19 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');
         fp = fopen(path_to_file , 'rb');
         % The StripOffsets field provides the offset to the first strip. Based on
         % the INFO for this file, each image consists of 1 strip.
-        
-        he_w=info.Width;
+        he_w = info.Width; 
         sizx=he_w;
-        he_h=info.Height;
+        he_w=uint64(he_w);
+        he_h = info.Height;
         sizy=he_h;
+        he_h=uint64(he_h);
         
         first_offset=info.StripOffsets;
-        ofds=zeros(numFrames);
+        first_offset = uint64(first_offset); 
+        ofds=zeros(numFrames, 1, 'like', uint64(0));
         %compute frame offsets
         for i=1:numFrames
-            ofds(i)=first_offset+(i-1)*he_w*he_h*for_mult;
+            ofds(i)=first_offset+uint64(i-1)*he_w*he_h*for_mult;
             %ofds(i)
         end
         
@@ -367,7 +370,13 @@ elseif strcmpi(ext,'.avi')
     imData = squeeze(imData(:, :, 1, :));
 elseif strcmpi(ext, '.mat')
     data = matfile(path_to_file);
-    dims = data.Ysiz;
+    data_info = whos(data);
+    
+    if length(data_info)>1
+        dims = data.Ysiz;
+    else
+        dims = data_info.size;
+    end
     sizy = dims(1);
     sizx = dims(2);
     numFrames = dims(3);
@@ -377,7 +386,11 @@ elseif strcmpi(ext, '.mat')
         num2read = min(numFrames-sframe+1, round(varargin{3}));
     end
     
-    imData = data.Y(:, :, sframe+(0:(num2read-1)));
+    if length(data_info)>1
+        imData = data.Y(:, :, sframe+(0:(num2read-1)));
+    else
+        imData = eval(sprintf('data.%s(:, :, sframe+(0:(num2read-1)))', data_info.name));
+    end
 elseif isempty(ext)
     % the input is a folder and data are stored as image sequences
     

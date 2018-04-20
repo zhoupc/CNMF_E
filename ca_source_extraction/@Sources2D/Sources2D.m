@@ -210,7 +210,7 @@ classdef Sources2D < handle
             Ypatch = get_patch_data(mat_data, patch_pos, frame_range, false);
         end
         %% distribute data and be ready to run source extraction
-        function getReady(obj, pars_envs)
+        function getReady(obj, pars_envs, filter_kernel)
             % data and its extension
             if iscell(obj.file)
                 nam = obj.file{1};
@@ -228,11 +228,16 @@ classdef Sources2D < handle
                 patch_dims = pars_envs.patch_dims;
             end
             
+            if ~exist('filter_kernel', 'var')
+                filter_kernel = []; 
+            end 
             % overlapping area
             w_overlap = obj.options.ring_radius;
             
             % distribute data
-            [data, dims, obj.P.folder_analysis] = distribute_data(nam, patch_dims, w_overlap, memory_size_per_patch, memory_size_to_use);
+            [data, dims, obj.P.folder_analysis] = distribute_data(nam,...
+                patch_dims, w_overlap, memory_size_per_patch, memory_size_to_use,...
+                [], filter_kernel);
             obj.P.mat_data = data;
             obj.P.mat_file = data.Properties.Source;
             obj.updateParams('d1', dims(1), 'd2', dims(2));
@@ -1773,7 +1778,7 @@ classdef Sources2D < handle
             
             obj.compress_results();
             file_path = [obj.P.log_folder,  strrep(get_date(), ' ', '_'), '.mat'];
-            evalin('base', sprintf('save(''%s'', ''neuron'', ''save_*'', ''show_*'', ''use_parallel'', ''with_*'', ''-v7.3''); ', file_path));
+            evalin('caller', sprintf('save(''%s'', ''neuron'', ''save_*'', ''show_*'', ''use_parallel'', ''with_*'', ''-v7.3''); ', file_path));
             try
                 fp = fopen(obj.P.log_file, 'a');
                 fprintf(fp, '\n--------%s--------\n[%s]\bSave the current workspace into file \n\t%s\n\n', get_date(), get_minute(), file_path);

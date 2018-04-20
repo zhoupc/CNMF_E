@@ -1,4 +1,5 @@
-function [mat_data, dims, folder_analysis] = distribute_data(nam, patch_dims, w_overlap, memory_size_per_patch, memory_size_to_use)
+function [mat_data, dims, folder_analysis] = distribute_data(nam, patch_dims, ...
+    w_overlap, memory_size_per_patch, memory_size_to_use, dir_output, filter_kernel)
 % divide the field of view into multiple small patches and save the data
 % into these small patches individually. There are overlaps between these
 % patches.
@@ -21,7 +22,12 @@ end
 if ~exist('memory_size_to_use', 'var') || isempty(memory_size_to_use)
     memory_size_to_use = 30;
 end
-
+if ~exist('filter_kernel', 'var') || isempty(filter_kernel)
+    filter_kernel = []; 
+    filter_data = false; 
+else
+    filter_data = true; 
+end
 
 %% get the data dimension and determine the best way of distributing data
 dims = get_data_dimension(file_name);
@@ -96,7 +102,13 @@ nc_block = length(block_idx_c) - 1;
 
 %% prepare for distributing the data into multiple patches.
 [dir_nm, file_nm, ~] = fileparts(file_name);
-folder_analysis = [dir_nm, filesep, file_nm, '_source_extraction'];
+if ~exist('dir_output', 'var') || ~exist(dir_output, 'dir') 
+    dir_output = [dir_nm, filesep]; 
+elseif dir_output(end)~=filesep
+    dir_output = dir_output(1:(end-1)); 
+end
+folder_analysis = [dir_output, file_nm, '_source_extraction'];
+
 mat_file = [folder_analysis, filesep,...
     sprintf('data_%d_%d_%d.mat', patch_dims(1), patch_dims(2), w_overlap)];
 
@@ -169,6 +181,10 @@ fprintf('Data is being loaded and distributed into multiple small blocks for eas
 while t_start<T
     num2read = min(Tchunk, T-t_start);
     Y = smod_bigread2(file_name, t_start+1, num2read);
+    temp = Y(1); 
+    if filter_data
+        Y = cast(imfilter(double(Y), filter_kernel, 'replicate'), 'like', temp); 
+    end 
     for m=1:nr_block
         r0 = block_idx_r(m);
         r1 = block_idx_r(m+1);

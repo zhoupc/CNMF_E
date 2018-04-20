@@ -1,5 +1,5 @@
 # CNMF_E
-Constrained Nonnegative Matrix Factorization for microEndoscopic data. 'E' also suggests 'extension'. It is build on top of [CNMF](https://github.com/epnev/ca_source_extraction) with supports to 1 photon data. 
+Constrained Nonnegative Matrix Factorization for microEndoscopic data. 'E' also suggests 'extension'. It is built on top of [CNMF](https://github.com/epnev/ca_source_extraction) with supports to 1 photon data. 
 
 ## Download
 OPTION 1: download the package using this [LINK](https://github.com/zhoupc/CNMF_E/archive/master.zip)
@@ -27,25 +27,31 @@ The best way to get started is running a demo script for analyzing an example da
 
 1. demo_endoscope.m : this demo is good for exploratory analysis of your data. It gives you a good sense of different stages of CNMF-E pipeline and how different parameter selections influence your final results. 
 
-	`>> run demos/demo_endoscope.m ` 
+  `>> run demos/demo_endoscope.m ` 
 
 2. demo_large_data_1p.m : this demo is good for processing large-scale dataset with the minimal manual intervention. It can process small data as well and should be used in most automated analysis. 
 
-	`>> run demos/demo_large_data_1p.m`
+  `>> run demos/demo_large_data_1p.m`
 
 3. demo_large_data_2p.m : this demo is the same as demo_large_data_1p.m. It is optimized for processing 2p data. 
 
-	`>> run demos/demo_large_data_2p.m`
+  `>> run demos/demo_large_data_2p.m`
 
 ## Questions
 You can ask questions by sending emails to zhoupc1988@gmail.com or joining our [slack channel](https://beat-ica.slack.com) for discussions. An email request for slack channel invitation is required,  or you can ask your collegues who have joined the slack channel already for an invitation. 
 
 Please read more from the [wiki page](https://github.com/zhoupc/CNMF_E/wiki) 
 
+## Python 
+
+This repository is the native implementation of the CNMF-E model & algorithms using MATLAB. There is also a python implementation of the model in [CaImAn](https://github.com/flatironinstitute/CaImAn). However, these two implementations are not exactly the same in some details and we are still working to make them consistent. For those people who love Python but still want to run CNMF-E using the MATLAB implementation, we provided a Python wrapper (thanks to [Tim Machado](https://github.com/tamachado)) for calling MATLAB version CNMF-E in Python.  You can use the ipython notebook file python_wrapper/ analyze_cnmfe_matlab.ipynb to get started. 
+
+
+
 ## Reference
 **Please cite these papers when you use CNMF-E in your research. Thanks!**
 
-**Zhou, P.**, Resendez, S.L., Rodriguez-Romaguera, J., Jimenez, J.C, Neufeld, S.Q., Stuber, G.D., Hen, R., Kheirbek, M.A., Sabatini, B.L., Kass, R.E., Paninski, L. (2016). [Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data](https://arxiv.org/abs/1605.07266). arXiv Prepr, arXiv1605.07266.  (When you use the (Corr+PNR) algorithm in initialization step or use the ring model for estimating background components)
+**Zhou, P.**, Resendez, S.L., Rodriguez-Romaguera, J., Jimenez, J.C, Neufeld, S.Q., Giovannucci, A., Friedrich, J., Pnevmatikakis, E.A., Stuber, Garret D ,  Stuber, G.D., Hen, R., Kheirbek, M.A., Sabatini, B.L., Kass, R.E., Paninski, L. (2018). [Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data](https://elifesciences.org/articles/28728). eLife,  pp.e28728.  (When you use the (Corr+PNR) algorithm in initialization step or use the ring model for estimating background components)
 
 Pnevmatikakis, E.A., Soudry, D., Gao, Y., Machado, T.A., Merel, J., Pfau, D., Reardon, T., Mu, Y., Lacefield, C., Yang, W. and Ahrens, M., 2016. [Simultaneous denoising, deconvolution, and demixing of calcium imaging data](http://www.sciencedirect.com/science/article/pii/S0896627315010843). Neuron, 89(2), pp.285-299. (The original CNMF framework paper) 
 

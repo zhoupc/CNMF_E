@@ -68,10 +68,10 @@ IND = sparse(logical(determine_search_location(obj.A, search_method, options)));
 %% identify existing neurons within each patch
 A = cell(nr_patch, nc_patch);
 C = cell(nr_patch, nc_patch);
-if strcmpi(bg_model, 'ring')
-    A_prev = A;
-    C_prev = C;
-end
+% if strcmpi(bg_model, 'ring')
+A_prev = A;
+C_prev = C;
+% end
 sn = cell(nr_patch, nc_patch);
 ind_neurons = cell(nr_patch, nc_patch);
 IND_search = cell(nr_patch, nc_patch);

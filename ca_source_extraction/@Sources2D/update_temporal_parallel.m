@@ -62,10 +62,10 @@ maxIter = options.maxIter;
 %% identify existing neurons within each patch
 A = cell(nr_patch, nc_patch);
 C = cell(nr_patch, nc_patch);
-if strcmpi(bg_model, 'ring')
+% if strcmpi(bg_model, 'ring')
     A_prev = A;
     C_prev = C;
-end
+% end
 sn = cell(nr_patch, nc_patch);
 ind_neurons = cell(nr_patch, nc_patch);
 

@@ -25,6 +25,7 @@ data_nam = sprintf('mat_data_%d', string2hash(mat_file));
 if isOnWorker || isempty(evalin('base', sprintf('whos(''%s'')', data_nam)))
     ws = 'caller';   % use the current workspace
     data_nam = 'mat_data'; % load data from mat file
+    isOnWorker = true; 
 else
     ws = 'base';
 end

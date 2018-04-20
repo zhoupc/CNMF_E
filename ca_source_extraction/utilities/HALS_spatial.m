@@ -1,5 +1,5 @@
 function A = HALS_spatial(Y, A, C, active_pixel, maxIter)
-%% run HALS by fixating all spatial components 
+%% run HALS by fixating all temporal components 
 % input: 
 %   Y:  d*T, fluorescence data
 %   A:  d*K, spatial components 
