@@ -4,6 +4,12 @@ Ymean = mean(Y,2);
 Cmean = mean(C, 2); 
 Y = bsxfun(@minus, double(Y), Ymean); 
 C = bsxfun(@minus, C, Cmean);
+if ~exist('A', 'var') || isempty(A)
+    A = ones(d,1); 
+    C = zeros(1, T); 
+elseif issparse(A)
+    A = full(A); 
+end
 Bf = Y - A*C; 
 Bf_old = b_old*f_old; 
 tmp_Bf = Bf(ind_patch, :); 

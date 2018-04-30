@@ -15,6 +15,8 @@ function [W, b0] = fit_ring_model(Y, A, C, W_old, thresh_outlier, sn, ind_patch,
 if ~exist('A', 'var') || isempty(A)
     A = ones(d,1); 
     C = zeros(1, T); 
+elseif issparse(A)
+    A = full(A); 
 end
 % check whether this is the first run 
 if length(unique(W_old(1,:)))==2
