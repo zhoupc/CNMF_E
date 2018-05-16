@@ -5,6 +5,7 @@ Cmean = mean(C, 2);
 Y = bsxfun(@minus, double(Y), Ymean); 
 C = bsxfun(@minus, C, Cmean);
 if ~exist('A', 'var') || isempty(A)
+    [d, T] = size(Y); 
     A = ones(d,1); 
     C = zeros(1, T); 
 elseif issparse(A)
