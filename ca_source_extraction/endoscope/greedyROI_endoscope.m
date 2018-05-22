@@ -128,6 +128,7 @@ HY = reshape(HY, d1*d2, []);
 % HY_med = median(HY, 2);
 % HY_max = max(HY, [], 2)-HY_med;    % maximum projection
 HY = bsxfun(@minus, HY, median(HY, 2));
+HY0=HY; % saved as intact filtered result.
 HY_max = max(HY, [], 2);
 Ysig = GetSn(HY);
 PNR = reshape(HY_max./Ysig, d1, d2);
@@ -451,7 +452,7 @@ while searching_flag
     end
 end
 center = center(1:k, :);
-results.Ain = sparse(Ain(:, 1:k));
+results.Ain = Ain(:, 1:k);
 results.Cin = Cin(1:k, :);
 results.Cin_raw = Cin_raw(1:k, :);
 if deconv_flag

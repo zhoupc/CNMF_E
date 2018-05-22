@@ -66,12 +66,14 @@ if spatial_constraints.connected
 end
 ai = ai(:); 
 
-% %% threshold the spatial shape and remove outliers 
-% % remove outliers 
-% temp =  full(ai>quantile(ai(:), 0.5)); 
-% l = bwlabel(reshape(temp, nr, nc), 4); 
-% temp(l~=l(ind_ctr)) = false; 
-% ai(~temp(:)) = 0; 
+
+%% threshold the spatial shape and remove outliers 
+% remove outliers 
+temp =  full(ai>quantile(ai(:), 0.5)); 
+l = bwlabel(reshape(temp, nr, nc), 4); 
+temp(l~=l(ind_ctr)) = false; 
+ai(~temp(:)) = 0; 
+
 if sum(ai(:)>0) < min_pixels %the ROI is too small
     ind_success=false;
     return;

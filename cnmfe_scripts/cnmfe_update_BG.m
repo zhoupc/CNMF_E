@@ -1,5 +1,5 @@
 clear Ysignal;
-tic; 
+tic;
 Ybg = Y-neuron.A*neuron.C;
 rr = ceil(neuron.options.gSiz * bg_neuron_ratio); 
 active_px = []; %(sum(IND, 2)>0);  %If some missing neurons are not covered by active_px, use [] to replace IND

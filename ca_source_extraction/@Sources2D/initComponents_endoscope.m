@@ -13,7 +13,7 @@ function [center, Cn, PNR] = initComponents_endoscope(obj, Y, K, patch_sz, debug
 %   Cn:     correlation image
 %   PNR:    peak to noise ratio
 %% Author: Pengcheng Zhou, Carnegie Mellon University, zhoupc1988@gmail.com
-
+%  modified by Shijie Gu
 %% process parameters
 d1 = obj.options.d1;
 d2 = obj.options.d2;
@@ -66,6 +66,7 @@ if (~exist('patch_sz', 'var'))||(isempty(patch_sz))||(max(patch_sz(:))==1)
         obj.S = zeros(size(obj.C));
     end
     obj.Cn = Cn;
+    obj.P.THRESH=results.THRESH;
     return;
 elseif isscalar(patch_sz)
     % patch size has been assigned

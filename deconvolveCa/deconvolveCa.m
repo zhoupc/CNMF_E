@@ -78,8 +78,8 @@ if isempty(options.pars) || all(options.pars==0)
             catch 
                 c = y*0;
                 s = c; 
-                fprintf('fail to deconvolve the trace\n'); 
-                return; 
+                fprintf('fail to deconvolve the trace\n');
+                return
             end
             if length(options.pars)~=1
                 c = zeros(size(y)); 

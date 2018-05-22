@@ -92,8 +92,7 @@ while and(m>=1, m<=length(ind))
     if ~isempty(C2)
         plot(t, C2(ind(m), :)*max(obj.A(:, ind(m))), 'linewidth', 2); hold on;
         plot(t, obj.C(ind(m), :)*max(obj.A(:, ind(m))), 'r');
-    else
-        
+    else        
         plot(t, obj.C(ind(m), :)*max(obj.A(:, ind(m))));
     end
     xlim([t(1), t(end)]);

@@ -63,7 +63,7 @@ classdef Sources2D < handle
             obj.options = CNMFSetParms();
             obj.P =struct('mat_file', [], 'mat_data', [], 'indicator', '', 'k_options', 0, ...
                 'k_snapshot', 0, 'k_del', 0, 'k_merge', 0, 'k_trim', 0, 'sn', [], ...
-                'kernel_pars',[], 'k_ids', 0);
+                'kernel_pars',[], 'k_ids', 0,'THRESH',[]);
             if nargin>0
                 obj.options = CNMFSetParms(obj.options, varargin{:});
             end
@@ -446,7 +446,7 @@ classdef Sources2D < handle
         end
         
         %% update temporal components for endoscope data
-        updateSpatial_endoscope(obj, Y, numIter, method, IND_thresh);
+        updateSpatial_endoscope(obj, Y, numIter, method, IND_thresh, allow_deletion);
         
         %% update temporal components
         function updateTemporal(obj, Y)
@@ -455,7 +455,7 @@ classdef Sources2D < handle
         end
         
         %% udpate temporal components with fast deconvolution
-        updateTemporal_endoscope(obj, Y, allow_deletion)
+        [C_offset,ind_del]= updateTemporal_endoscope(obj, Y, allow_deletion)
         updateTemporal_endoscope_parallel(obj, Y, smin)
         
         %% update temporal components without background
@@ -783,7 +783,13 @@ classdef Sources2D < handle
             
             obj.A(:, ind) = [];
             obj.C(ind, :) = [];
-            if ~isempty(obj.S)
+
+            THRESH=obj.P.THRESH;
+            THRESH.Corr(ind)=[];
+            
+            THRESH.PNR(ind)=[];
+            if ~isempty(obj.S);
+
                 try obj.S(ind, :) = []; catch; end
             end
             if ~isempty(obj.C_raw)
@@ -924,10 +930,12 @@ classdef Sources2D < handle
         end
         
         %% trim spatial components
-        function [ind_small] = trimSpatial(obj, thr, sz)
+        function [ind_small] = trimSpatial(obj, thr, sz, allow_deletion)
             % remove small nonzero pixels
+
             if nargin<2;    thr = 0.01; end
             if nargin<3;    sz = 5; end
+
             
             se = strel('square', sz);
             ind_small = false(size(obj.A, 2), 1);
@@ -945,8 +953,10 @@ classdef Sources2D < handle
                 end
                 obj.A(:, m) = ai(:);
             end
+
 %             ind_small = find(ind_small);
 %             obj.delete(ind_small);
+
         end
         
         %% keep spatial shapes compact
@@ -1646,9 +1656,13 @@ classdef Sources2D < handle
             obj.C = [obj.C; neuron.C];
             obj.C_raw = [obj.C_raw; neuron.C_raw];
             if obj.options.deconv_flag
-                obj.S = [obj.S; neuron.S];
                 obj.P.kernel_pars = [obj.P.kernel_pars; neuron.P.kernel_pars];
+                obj.S = [obj.S; neuron.S];
             end
+            obj.P.THRESH.Corr= [obj.P.THRESH.Corr neuron.P.THRESH.Corr];
+            obj.P.THRESH.CorrOut= [obj.P.THRESH.CorrOut neuron.P.THRESH.CorrOut];
+            obj.P.THRESH.PNR= [obj.P.THRESH.PNR neuron.P.THRESH.PNR];
+            obj.P.THRESH.PNROut= [obj.P.THRESH.PNROut neuron.P.THRESH.PNROut];
         end
         
         %% post process spatial component
@@ -2028,8 +2042,11 @@ classdef Sources2D < handle
                 
             end
         end
-        
-        %% manually draw ROI and show the mean fluorescence traces within the ROI
+
+       %% New method added by Shijie Gu, since Jun,2017
+       drawPNRCn(obj,min_pnr,min_corr)
+
+       %% manually draw ROI and show the mean fluorescence traces within the ROI
         function y = drawROI(obj, Y, img, type)
             Y = obj.reshape(Y,1);
             if ~exist('img', 'var') || isempty(img)

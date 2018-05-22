@@ -1,4 +1,4 @@
-function updateSpatial_endoscope(obj, Y, num, method)
+function updateSpatial_endoscope(obj, Y, num, method, IND_thresh, allow_deletion)
 %% udpate spatial components
 
 %% inputs:
@@ -8,6 +8,7 @@ function updateSpatial_endoscope(obj, Y, num, method)
 %       overlapping at one pixel
 %   method: method for updating the spatial components {'hals', 'nnls'}.
 %       default: 'nnls'
+%   allow_deletion: true or false.
 
 %% Author: Pengcheng Zhou, Carnegie Mellon University.
 
@@ -22,7 +23,9 @@ if ~exist('num', 'var')||isempty(num)
         num = 10;
     end
 end
-
+if ~exist('allow_deletion', 'var')
+    allow_deletion = true; 
+end
 %% determine the search locations
 search_method = obj.options.search_method;
 params = obj.options;
@@ -32,16 +35,16 @@ end
 IND = logical(determine_search_location(obj.A, search_method, params));
 
 %% estimate the noise
-if and(strcmpi(method, 'hals_thresh') || strcmpi(method, 'nnls_thresh'), isempty(obj.P.sn))
-    %% estimate the noise for all pixels
-    b0 =zeros(size(obj.A,1), 1);
-    sn = b0;
-    parfor m=1:size(obj.A,1)
-        [b0(m), sn(m)] = estimate_baseline_noise(Y(m, :));
-    end
-    Y = bsxfun(@minus, Y, b0);
-    obj.P.sn = sn; 
-end
+% if and(strcmpi(method, 'hals_thresh') || strcmpi(method, 'nnls_thresh'), isempty(obj.P.sn))
+%     %% estimate the noise for all pixels
+%     b0 =zeros(size(obj.A,1), 1);
+%     sn = b0;
+%     parfor m=1:size(obj.A,1)
+%         [b0(m), sn(m)] = estimate_baseline_noise(Y(m, :));
+%     end
+%     Y = bsxfun(@minus, Y, b0);
+%     obj.P.sn = sn; 
+% end
 
 %% update spatial components
 if strcmpi(method, 'hals')
@@ -59,7 +62,9 @@ else
     obj.A = nnls_spatial(Y, obj.A, obj.C, IND, num);
 end
 
+if allow_deletion
 %% thresholding the minimum number of neurons
-obj.delete(sum(obj.A>0, 1)<=obj.options.min_pixel);
+    obj.delete(sum(obj.A>0, 1)<=obj.options.min_pixel);
+end
 
 end

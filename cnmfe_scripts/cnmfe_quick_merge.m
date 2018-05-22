@@ -46,8 +46,17 @@ if display_merge && ~isempty(merged_ROI)
     neuron.C_raw = [neuron.C_raw(~ind_after, :); neuron_bk.C_raw(ind_before, :)];
     neuron.S = [neuron.S(~ind_after, :); neuron_bk.S(ind_before, :)];
     neuron.P.kernel_pars = [neuron.P.kernel_pars(~ind_after, :); neuron_bk.P.kernel_pars(ind_before, :)];
-    close;
+    
+    neuron.P.THRESH.Corr=[neuron.P.THRESH.Corr(~ind_after),neuron.P.THRESH.Corr(ind_before)];
+    neuron.P.THRESH.PNR=[neuron.P.THRESH.PNR(~ind_after),neuron.P.THRESH.PNR(ind_before)];    
+    close; 
+
 end
+
+% sort neurons
+[Cpnr, srt] = sort(max(neuron.C, [], 2).*max(neuron.A, [], 1)', 'descend');
+neuron.orderROIs(srt);
+
 
 %% view neurons
 if view_neurons

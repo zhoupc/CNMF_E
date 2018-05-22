@@ -39,7 +39,7 @@ for miter=1:maxIter
             continue; 
         end
         tmp_ind = active_pixel(:, k); 
-        ak = max(0, A(tmp_ind, k)+(U(tmp_ind, k)-A(tmp_ind,:)*V(:, k))/cc(k)); 
+        ak = max(0, full(A(tmp_ind, k))+(U(tmp_ind, k)-full(A(tmp_ind,:))*V(:, k))/cc(k)); 
         A(tmp_ind, k) = ak; 
     end
 end
