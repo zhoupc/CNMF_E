@@ -1,6 +1,11 @@
 function [b, f] = fit_nmf_model(Y, nb, A, C, b_old, f_old, thresh_outlier, sn, ind_patch)
 % fit a patched data with NMF
-
+if ~exist('A', 'var') || isempty(A)
+    A = ones(d,1); 
+    C = zeros(1, T); 
+elseif issparse(A)
+    A = full(A); 
+end
 Y = double(Y); 
 B = Y - A*C; 
 B_old = b_old*f_old; 
