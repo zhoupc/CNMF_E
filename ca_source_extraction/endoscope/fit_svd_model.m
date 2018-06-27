@@ -10,13 +10,18 @@ if ~exist('A', 'var') || isempty(A)
 elseif issparse(A)
     A = full(A); 
 end
-Bf = Y - A*C; 
-Bf_old = b_old*f_old; 
-tmp_Bf = Bf(ind_patch, :); 
-ind_outlier = bsxfun(@gt, tmp_Bf, bsxfun(@plus, Bf_old, thresh_outlier*reshape(sn, [], 1))); 
-tmp_Bf(ind_outlier) = Bf_old(ind_outlier);  
-Bf(ind_patch, :) = tmp_Bf; 
-clear tmp_Bf Bf_old ind_outlier; 
+Bf = Y - A*C;
+if ~exist('ind_patch', 'var')
+    ind_patch = true(size(A,1), 1); 
+end
+if exist('thresho_outlier', 'var')
+    Bf_old = b_old*f_old;
+    tmp_Bf = Bf(ind_patch, :);
+    ind_outlier = bsxfun(@gt, tmp_Bf, bsxfun(@plus, Bf_old, thresh_outlier*reshape(sn, [], 1)));
+    tmp_Bf(ind_outlier) = Bf_old(ind_outlier);
+    Bf(ind_patch, :) = tmp_Bf;
+    clear tmp_Bf Bf_old ind_outlier;
+end
 
 [u, s, v] = svdsecon(bsxfun(@minus, Bf, mean(Bf, 2)), nb); 
 b = u(ind_patch, :)*s; 
