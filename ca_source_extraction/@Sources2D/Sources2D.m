@@ -22,7 +22,7 @@ classdef Sources2D < handle
         f;          % temporal components of backgrounds
         W;          % a sparse weight matrix matrix
         b0;         % constant baselines for each pixel
-        b0_new;  % correct the changes in b0 when we update A & C 
+        b0_new;  % correct the changes in b0 when we update A & C
         % optiosn
         options;    % options for model fitting
         P;          % some estimated parameters or parameters relating to data
@@ -48,7 +48,7 @@ classdef Sources2D < handle
         Cn;         % correlation image
         PNR;        % peak-to-noise ratio image.
         Coor;       % neuron contours
-        neurons_per_patch; 
+        neurons_per_patch;
         Df;         % background for each component to normalize the filtered raw data
         C_df;       % temporal components of neurons and background normalized by Df
         S_df;       % spike counts of neurons normalized by Df
@@ -181,16 +181,16 @@ classdef Sources2D < handle
         end
         
         
-        %% load the patched file into the memory 
+        %% load the patched file into the memory
         function map_data_to_memory(obj)
-           mat_file = obj.P.mat_file; 
-           if exist(mat_file, 'file')
-               data_nam = sprintf('mat_data_%d', string2hash(mat_file));
-               if isempty(evalin('base', sprintf('whos(''%s'')', data_nam)))
-                   % the data has not been mapped yet 
-                   evalin('base', sprintf('%s=load(''%s''); ', data_nam, mat_file));
-               end
-           end
+            mat_file = obj.P.mat_file;
+            if exist(mat_file, 'file')
+                data_nam = sprintf('mat_data_%d', string2hash(mat_file));
+                if isempty(evalin('base', sprintf('whos(''%s'')', data_nam)))
+                    % the data has not been mapped yet
+                    evalin('base', sprintf('%s=load(''%s''); ', data_nam, mat_file));
+                end
+            end
         end
         
         %% load data within selected patch position and selected frames
@@ -229,8 +229,8 @@ classdef Sources2D < handle
             end
             
             if ~exist('filter_kernel', 'var')
-                filter_kernel = []; 
-            end 
+                filter_kernel = [];
+            end
             % overlapping area
             w_overlap = obj.options.ring_radius;
             
@@ -255,9 +255,9 @@ classdef Sources2D < handle
             end
             
             %% map the data to the memory
-            temp = cast(0, data.dtype); 
-            temp = whos('temp'); 
-            data_space = prod(data.dims) * temp.bytes / (2^30); 
+            temp = cast(0, data.dtype);
+            temp = whos('temp');
+            data_space = prod(data.dims) * temp.bytes / (2^30);
             if data_space < memory_size_to_use
                 obj.map_data_to_memory();
             end
@@ -761,7 +761,7 @@ classdef Sources2D < handle
                     fclose(flog);
                     return;
                 end
-
+                
                 fprintf(flog, '[%s]\b', get_minute());
                 fprintf('Deleted %d neurons: ', length(ids_del));
                 fprintf(flog, 'Deleted %d neurons: \n', length(ids_del));
@@ -831,8 +831,8 @@ classdef Sources2D < handle
         %% deconvolve all temporal components
         C_ = deconvTemporal(obj, use_parallel, method_noise)
         
-        %% decorrelate all tmeporal components 
-        C_ = decorrTemporal(obj, wd); 
+        %% decorrelate all tmeporal components
+        C_ = decorrTemporal(obj, wd);
         
         %% play movie
         function playMovie(obj, Y, min_max, col_map, avi_nm, t_pause)
@@ -945,8 +945,8 @@ classdef Sources2D < handle
                 end
                 obj.A(:, m) = ai(:);
             end
-%             ind_small = find(ind_small);
-%             obj.delete(ind_small);
+            %             ind_small = find(ind_small);
+            %             obj.delete(ind_small);
         end
         
         %% keep spatial shapes compact
@@ -1271,7 +1271,7 @@ classdef Sources2D < handle
             % reconstruct the constant baseline
             if strcmpi(bg_model, 'ring')
                 b0_ = obj.reconstruct_b0();
-                b0_new_ = obj.reshape(obj.b0_new, 2); 
+                b0_new_ = obj.reshape(obj.b0_new, 2);
             end
             
             %% start updating the background
@@ -1303,9 +1303,9 @@ classdef Sources2D < handle
                     % reconstruct background
                     %                     Cmean = mean(C_patch , 2);
                     Ypatch = bsxfun(@minus, double(Ypatch), b0_ring);
-%                     b0_ring = b0_(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4));
-%                     b0_ring = reshape(b0_ring, [], 1);
-%                     
+                    %                     b0_ring = b0_(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4));
+                    %                     b0_ring = reshape(b0_ring, [], 1);
+                    %
                     if bg_ssub==1
                         Bf = W_ring*(double(Ypatch) - A_patch*C_patch);
                         Ybg(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4),:) = reshape(bsxfun(@plus, Bf, b0_patch), diff(tmp_patch(1:2))+1, [], T);
@@ -1377,18 +1377,18 @@ classdef Sources2D < handle
             % reconstruct the constant baseline
             if strcmpi(bg_model, 'ring')
                 b0_ = obj.reconstruct_b0();
-                b0_new_ = obj.reshape(obj.b0_new, 2); 
+                b0_new_ = obj.reshape(obj.b0_new, 2);
             end
             
             %% start reconstructing the background
             RSS = cell(nr_patch, nc_patch);
             W_all = obj.W;
             b0_all = cell(nr_patch, nc_patch);  % including b0 within block
-            b0_all_new = b0_all; 
+            b0_all_new = b0_all;
             A_all = cell(nr_patch, nc_patch);
             C_all = cell(nr_patch, nc_patch);
-            A_all_prev = cell(nr_patch, nc_patch); 
-            C_all_prev = cell(nr_patch, nc_patch); 
+            A_all_prev = cell(nr_patch, nc_patch);
+            C_all_prev = cell(nr_patch, nc_patch);
             b_ = obj.b;
             f_ = obj.f;
             for mpatch=1:nr_patch*nc_patch
@@ -1413,7 +1413,7 @@ classdef Sources2D < handle
             end
             
             %%
-           parfor mpatch=1:(nr_patch*nc_patch)
+            parfor mpatch=1:(nr_patch*nc_patch)
                 tmp_block = block_pos{mpatch};
                 tmp_patch = patch_pos{mpatch};
                 
@@ -1430,12 +1430,12 @@ classdef Sources2D < handle
                     [nr_block, nc_block, ~] = size(Ypatch);
                     Ypatch = reshape(Ypatch, [], T);
                     
-%                     tmp_block = block_pos{mpatch};
-%                     tmp_patch = patch_pos{mpatch};
+                    %                     tmp_block = block_pos{mpatch};
+                    %                     tmp_patch = patch_pos{mpatch};
                     b0_ring = b0_all{mpatch};
                     b0_new_patch = b0_all_new{mpatch};
                     b0_ring = reshape(b0_ring, [], 1);
-%                     b0_new_patch = reshape(b0_new_patch, [], 1); 
+                    %                     b0_new_patch = reshape(b0_new_patch, [], 1);
                     
                     % find the neurons that are within the block
                     A_patch = A_all{mpatch};
@@ -1446,13 +1446,13 @@ classdef Sources2D < handle
                     
                     % compute Y-A*C
                     YmAC = double(Ypatch(ind_patch, :)) -A_patch(ind_patch, :)*C_patch;
-                    b0_new_patch = reshape(b0_new_patch(ind_patch), [], 1); 
+                    b0_new_patch = reshape(b0_new_patch(ind_patch), [], 1);
                     
                     % reconstruct background
                     Ypatch = bsxfun(@minus, double(Ypatch), b0_ring);
-%                     b0_ring = b0_all_patch{mpatch};
-%                     b0_ring = reshape(b0_ring, [], 1);
-                    if bg_ssub==1                        
+                    %                     b0_ring = b0_all_patch{mpatch};
+                    %                     b0_ring = reshape(b0_ring, [], 1);
+                    if bg_ssub==1
                         Bf = W_ring*(double(Ypatch) - A_patch_prev*C_patch_prev);
                     else
                         [d1s, d2s] = size(imresize(zeros(nr_block, nc_block), 1/bg_ssub));
@@ -1463,8 +1463,8 @@ classdef Sources2D < handle
                         Bf = Bf((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1, :);
                         Bf = reshape(Bf, [], T);
                     end
-%                     b0_ring = mean(YmAC, 2); 
-                    Ybg_patch = bsxfun(@plus, Bf, b0_new_patch); %, diff(tmp_patch(1:2))+1, [], T);                  
+                    %                     b0_ring = mean(YmAC, 2);
+                    Ybg_patch = bsxfun(@plus, Bf, b0_new_patch); %, diff(tmp_patch(1:2))+1, [], T);
                 elseif strcmpi(bg_model, 'nmf')
                     Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, true);
                     YmAC = double(Ypatch) - A_all{mpatch}*C_all{mpatch};
@@ -1480,13 +1480,13 @@ classdef Sources2D < handle
                     Ybg_patch = bsxfun(@plus, b_svd*f_svd(:, frame_range(1):frame_range(2)), b0_svd);
                 end
                 RSS{mpatch} = sum((YmAC(:)-Ybg_patch(:)).^2);
-%                 temp = YmAC - Ybg_patch; 
-%                 RSS{mpatch} = sum(temp(:).^2)- size(temp,2)*sum(mean(temp, 2).^2); 
+                %                 temp = YmAC - Ybg_patch;
+                %                 RSS{mpatch} = sum(temp(:).^2)- size(temp,2)*sum(mean(temp, 2).^2);
                 
             end
             temp = cell2mat(RSS);
             RSS_total = sum(temp(:));
-            obj.P.RSS = RSS_total; 
+            obj.P.RSS = RSS_total;
         end
         
         %% concateneate b, f, b0, W
@@ -2008,9 +2008,9 @@ classdef Sources2D < handle
                 
                 l = bwlabel(medfilt2(A_temp>thr_a));
                 l_most = mode(l(l>0));
-                ind = (l==l_most); 
-                A_temp(ind) =  max(A_temp(ind), thr_a); 
-                A_temp(~ind) = min(A_temp(~ind), thr_a*0.99); 
+                ind = (l==l_most);
+                A_temp(ind) =  max(A_temp(ind), thr_a);
+                A_temp(~ind) = min(A_temp(~ind), thr_a*0.99);
                 
                 pvpairs = { 'LevelList' , thr_a, 'ZData', A_temp};
                 h = matlab.graphics.chart.primitive.Contour(pvpairs{:});
@@ -2064,9 +2064,9 @@ classdef Sources2D < handle
                 plot(y);
             end
         end
-        %% determine the number of neurons within each patch 
+        %% determine the number of neurons within each patch
         function nn = ids_per_patch(obj)
-            % calculate how many neurons in each patch 
+            % calculate how many neurons in each patch
             try
                 % map data
                 mat_data = obj.P.mat_data;
@@ -2087,22 +2087,47 @@ classdef Sources2D < handle
                 error('No data file selected');
             end
             
-            nn = cell(size(obj.b)); 
+            nn = cell(size(obj.b));
             for mpatch=1:(nr_patch*nc_patch)
                 tmp_patch = patch_pos{mpatch};
                 r0 = tmp_patch(1);
                 r1 = tmp_patch(2);
                 c0 = tmp_patch(3);
                 c1 = tmp_patch(4);
-                ind = false(d1,d2); 
+                ind = false(d1,d2);
                 ind(r0:r1, c0:c1) = true;
-                nn{mpatch} = obj.ids(sum(obj.A(ind, :), 1)>0); 
+                nn{mpatch} = obj.ids(sum(obj.A(ind, :), 1)>0);
             end
-            obj.neurons_per_patch = nn; 
+            obj.neurons_per_patch = nn;
         end
         
+        %% manually merge neurons
+        function manual_merge(obj, IDs)
+            deconv_options_0 = obj.options.deconv_options;
+            active_pixel = (sum(obj.A(:,IDs), 2)>0);
+            
+            % update spatial/temporal components of the merged neuron
+            data = obj.A(active_pixel, IDs)*obj.C_raw(IDs, :);
+            ci = obj.C_raw(IDs(1), :);
+            for miter=1:10
+                ai = data*ci'/(ci*ci');
+                ci = ai'*data/(ai'*ai);
+            end
+            
+            obj.A(active_pixel, IDs(1)) = ai;
+            obj.C_raw(IDs(1), :) = ci;
+            %     [obj.C(IDs(1), :), obj.S(IDs(1), :), tmp_kernel] = deconvCa(ci, obj.kernel, 3, true, false);
+            try
+                [obj.C(IDs(1), :), obj.S(IDs(1),:), deconv_options] = deconvolveCa(ci, deconv_options_0);
+                obj.P.kernel_pars(IDs(1), :) = deconv_options.pars;
+                % remove merged elements
+                obj.delete(IDs(2:end));
+            catch
+                obj.delete(IDs);
+            end
+            fprintf('\n'); 
+        end
         
-     
         
     end
     
