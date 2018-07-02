@@ -6,7 +6,7 @@ function [center, Cn, PNR] = initComponents_parallel(obj, K, frame_range, save_a
 %   save_avi: save the video of initialization procedure
 %   use_parallel: boolean, do initialization in patch mode or not.
 %       default(true); we recommend you to set it false only when you want to debug the code.
-%   use_prev: boolean, use previous initialization or not 
+%   use_prev: boolean, use previous initialization or not
 %% Output:
 %   center: d*2 matrix, centers of all initialized neurons.
 %   Cn:     correlation image
@@ -69,7 +69,7 @@ try
     
     % manually check whether to re-use the previous results
     if ~exist('use_prev', 'var') || isempty(use_prev)
-        use_prev = true; 
+        use_prev = true;
     end
     if (k > 0) & use_prev
         fprintf('\nYou have ran %d initialization(s). \n', k);
@@ -82,7 +82,7 @@ try
         fprintf('\ttype anything if you want to start a new initialization\n');
         fprintf('\t--------------------------  END  --------------------------\n');
         
-        while true 
+        while true
             choice = input('* make your choice:    ');
             if (choice>0) && (choice<=k)
                 % reuse this folder and stop the initialization
@@ -209,7 +209,7 @@ W = cell(nr_patch, nc_patch);    % matrix for saving the weight matrix within ea
 b0 = cell(nr_patch, nc_patch);   % constant baselines for all pixels
 b = cell(nr_patch, nc_patch);
 f = cell(nr_patch, nc_patch);
-Ymean = cell(nr_patch, nc_patch); 
+Ymean = cell(nr_patch, nc_patch);
 if strcmpi(bg_model, 'ring')
     rr = ceil(obj.options.ring_radius/bg_ssub);    % radius of the ring
     [r_shift, c_shift] = get_nhood(rr, obj.options.num_neighbors);    % shifts used for acquiring the neighboring pixels on the ring
@@ -316,7 +316,7 @@ if use_parallel
         tmp_options = options;
         tmp_options.visible_off = true;
         tmp_options.bd = (tmp_patch==tmp_block).*([bd, bd, bd, bd]);
-%                 tmp_options.bd = max([(tmp_patch-tmp_block).*[1, -1, 1, -1]; bd, bd, bd, bd], [], 1);
+        %                 tmp_options.bd = max([(tmp_patch-tmp_block).*[1, -1, 1, -1]; bd, bd, bd, bd], [], 1);
         
         % patch dimension
         tmp_options.d1 = diff(tmp_block(1:2))+1;
@@ -335,8 +335,8 @@ if use_parallel
         
         % load the patch data
         Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, true);
-        temp = mean(Ypatch, 3); 
-        Ymean{mpatch} = temp((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1); 
+        temp = mean(Ypatch, 3);
+        Ymean{mpatch} = temp((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1);
         Ypatch = double(reshape(Ypatch, [], T));
         if nk>1
             Ypatch_dt = detrend_data(Ypatch, nk, detrend_method); % detrend data
@@ -384,8 +384,8 @@ else
         
         % load the patch data
         Ypatch = get_patch_data(mat_data, tmp_patch, frame_range, true);
-        temp = mean(Ypatch, 3); 
-        Ymean{mpatch} = temp((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1); 
+        temp = mean(Ypatch, 3);
+        Ymean{mpatch} = temp((tmp_patch(1):tmp_patch(2))-tmp_block(1)+1, (tmp_patch(3):tmp_patch(4))-tmp_block(3)+1);
         
         Ypatch = double(reshape(Ypatch, [], T));
         if nk>1
@@ -481,19 +481,19 @@ K = size(obj.A, 2);
 obj.P.k_ids = K;
 obj.ids = (1:K);
 obj.tags = zeros(K,1, 'like', uint16(0));
-obj.P.Ymean = Ymean; 
+obj.P.Ymean = Ymean;
 
 %% save the results to log
 fprintf(flog, '[%s]\b', get_minute());
 fprintf(flog, '\tIn total, %d neurons were initialized. \n', size(Ain,2));
-if obj.options.save_intermediate
-    initialization.neuron = obj.obj2struct();
-    initialization.center = center;
-    initialization.Cn = Cn;
-    initialization.PNR = PNR;
-    log_data.initialization = initialization;
-    fprintf(flog, '\tThe initialization results were saved as intermediate_results.initialization\n\n');
-end
+% if obj.options.save_intermediate
+initialization.neuron = obj.obj2struct();
+initialization.center = center;
+initialization.Cn = Cn;
+initialization.PNR = PNR;
+log_data.initialization = initialization;
+fprintf(flog, '\tThe initialization results were saved as intermediate_results.initialization\n\n');
+% end
 fprintf(flog, 'Finished the initialization procedure.\n');
 
 fclose(flog);
