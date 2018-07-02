@@ -97,6 +97,9 @@ else
                 [solution, spks, active_set] = oasisAR1(y-b, g, lam, smin);
                 break;
             end
+            if isempty(active_set)
+                break; 
+            end
             [solution, active_set, g, spks] = update_g(y-b, active_set,lam, smin);
             if abs(g-g0)/g0 < 1e-3  % g is converged
                 optimize_g = false;

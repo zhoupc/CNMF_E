@@ -769,6 +769,7 @@ classdef Sources2D < handle
                     fprintf('%2d, ', ids_del(m));
                     fprintf(flog, '%2d, ', ids_del(m));
                 end
+                fprintf('\n'); 
                 fprintf(flog, '\n');
                 fprintf('\nThe IDS of these neurons were saved as intermediate_results.ids_del_%s\n\n', tmp_str);
                 if obj.options.save_intermediate
