@@ -1,9 +1,6 @@
 function [b, f, b0] = fit_svd_model(Y, nb, A, C, b_old, f_old, thresh_outlier, sn, ind_patch)
 % fit a patched data with SVD
 Ymean = mean(Y,2); 
-Cmean = mean(C, 2); 
-Y = bsxfun(@minus, double(Y), Ymean); 
-C = bsxfun(@minus, C, Cmean);
 if ~exist('A', 'var') || isempty(A)
     [d, T] = size(Y); 
     A = ones(d,1); 
@@ -11,6 +8,10 @@ if ~exist('A', 'var') || isempty(A)
 elseif issparse(A)
     A = full(A); 
 end
+Cmean = mean(C, 2); 
+Y = bsxfun(@minus, double(Y), Ymean); 
+C = bsxfun(@minus, C, Cmean);
+
 Bf = Y - A*C;
 if ~exist('ind_patch', 'var')
     ind_patch = true(size(A,1), 1); 
