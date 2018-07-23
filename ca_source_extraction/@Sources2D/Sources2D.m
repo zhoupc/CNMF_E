@@ -2007,8 +2007,16 @@ classdef Sources2D < handle
                 cmax = min(d2, max(tmp2)+3);
                 A_temp = A_temp(rmin:rmax, cmin:cmax);
                 
-                l = bwlabel(medfilt2(A_temp>thr_a));
+                if nnz(A_temp)>36
+                    l = bwlabel(medfilt2(A_temp>thr_a));
+                else
+                    l = bwlabel(A_temp>=thr_a); 
+                end
                 l_most = mode(l(l>0));
+                if isnan(l_most)
+                    Coor{m} = zeros(2, 1); 
+                    continue; 
+                end
                 ind = (l==l_most);
                 A_temp(ind) =  max(A_temp(ind), thr_a);
                 A_temp(~ind) = min(A_temp(~ind), thr_a*0.99);
