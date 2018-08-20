@@ -1,16 +1,24 @@
-%% add path
-CNMF_dir = fileparts(which('cnmfe_setup.m'));
-addpath(fullfile(CNMF_dir, 'ca_source_extraction'));
-addpath(genpath(fullfile(CNMF_dir, 'ca_source_extraction', 'utilities')));
-addpath(genpath(fullfile(CNMF_dir, 'ca_source_extraction', 'endoscope')));
-addpath(fullfile(CNMF_dir, 'GUI'));
-addpath(fullfile(CNMF_dir, 'GUI', 'gui_callbacks'));
-addpath(fullfile(CNMF_dir, 'GUI', 'modules'));
-addpath(fullfile(CNMF_dir, 'cnmfe_scripts'));
+cnmfe_folder = fileparts(mfilename('fullpath'));
 
-%% setup cvx
-if isempty(which('cvx_begin.m'))
-    if ~exist('cvx', 'dir')
+if ~exist('cnmfe_loaded', 'var') || ~cnmfe_loaded
+    addpath(fullfile(cnmfe_folder, 'ca_source_extraction'));
+    addpath(genpath(fullfile(cnmfe_folder, 'ca_source_extraction', 'utilities')));
+    addpath(genpath(fullfile(cnmfe_folder, 'ca_source_extraction', 'endoscope')));
+    addpath(fullfile(cnmfe_folder, 'GUI'));
+    addpath(fullfile(cnmfe_folder, 'GUI', 'gui_callbacks'));
+    addpath(fullfile(cnmfe_folder, 'GUI', 'modules'));
+    addpath(fullfile(cnmfe_folder, 'cnmfe_scripts'));
+    cnmfe_loaded = true;
+end
+
+%% install deconvolution package 
+run(fullfile(cnmfe_folder, 'OASIS_matlab', 'oasis_setup.m'));
+
+%% install convex optimization solvers
+% by default, we don't install cvx any more. if you want to install cvx,
+% then set install_cvx = true and then run oasis-setup.m 
+if exist('install_cvx', 'var') && install_cvx && isempty(which('cvx_begin.m'))
+    if ~exist(fullfile(oasis_folder, 'packages', 'cvx'), 'dir')
         %install cvx
         if ismac
             cvx_url = 'http://web.cvxr.com/cvx/cvx-maci64.zip';
@@ -19,16 +27,15 @@ if isempty(which('cvx_begin.m'))
         elseif ispc
             cvx_url = 'http://web.cvxr.com/cvx/cvx-w64.zip';
         else
-            fprintf('Your platform is not supported by CVX\n');
+            fprints('Your platform is not supported by CVX\n');
             return;
         end
         fprintf('Downloading CVX...\n');
-        unzip(cvx_url, CNMF_dir);
+        unzip(cvx_url, fullfile(oasis_folder, 'packages'));
     end
-    run(sprintf('%s%scvx%scvx_setup', CNMF_dir, filesep, filesep));
+    run(fullfile(oasis_folder, 'packages', 'cvx', 'cvx_setup.m'));
 end
 %% save path
 %savepath();
 
 %% deconvolution 
-run(fullfile(CNMF_dir, 'deconvolveCa', 'setup.m'));
