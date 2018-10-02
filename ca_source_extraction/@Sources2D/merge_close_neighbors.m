@@ -133,6 +133,11 @@ while m <= n2merge
         imagesc(tmp_img);
         axis equal off tight;
         [tmp_r, tmp_c, ~] = find(sum(tmp_img, 3)>0);
+        if isempty(tmp_c)
+            ind_del(IDs) = true;
+            m = m+1;
+            continue; 
+        end
         xlim([min(tmp_c)-10, max(tmp_c)+10]);
         ylim([min(tmp_r)-10, max(tmp_r)+10]);
         axis off;

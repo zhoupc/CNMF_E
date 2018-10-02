@@ -61,11 +61,13 @@ for miter=1:maxIter
         
         if ~deconv_flag
             % no deconvolution, just thresholding
-            C_raw(k, :) = ck_raw;
-            C(k, :) = max(0, ck_raw);
-            if miter==maxIter
-                C_raw(k, :) = ck_raw;
-            end
+%             C_raw(k, :) = ck_raw;
+            ck_raw = ck_raw -min(ck_raw); 
+            C_raw(k, :) = ck_raw; 
+%             C(k, :) = max(0, ck_raw);
+%             if miter==maxIter
+%                 C_raw(k, :) = ck_raw;
+%             end
         else
             %remove baseline and estimate noise level. estiamte the noise
             %using two methods: psd and histogram. choose the one with

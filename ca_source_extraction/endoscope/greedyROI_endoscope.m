@@ -208,7 +208,7 @@ searching_flag = true;
 k = 0;      %number of found components
 [ii, jj] = meshgrid(1:d2, 1:d1);
 pixel_v = (ii*10+jj)*(1e-10);
-while searching_flag
+while searching_flag && K>0
     %% find local maximum as initialization point
     %find all local maximum as initialization point
     

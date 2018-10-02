@@ -619,6 +619,19 @@ classdef Sources2D < handle
                 elseif strcmpi(srt, 'pnr')
                     pnrs = max(obj.C, [], 2)./std(obj.C_raw-obj.C, 0, 2);
                     [~, srt] = sort(pnrs, 'descend');
+                elseif strcmpi(srt, 'temporal_cluster')
+                    obj.orderROIs('pnr');
+                    dd = pdist(obj.C_raw, 'cosine');
+                    tree = linkage(dd, 'complete');
+                    srt = optimalleaforder(tree, dd);
+                elseif strcmpi(srt, 'spatial_cluster')
+                    obj.orderROIs('pnr');
+                    A_ = bsxfun(@times, obj.A, 1./sqrt(sum(obj.A.^2, 1)));
+                    temp = 1-A_' * A_;
+                    dd = temp(tril(true(size(temp)), -1));
+                    dd = reshape(dd, 1, []);
+                    tree = linkage(dd, 'complete');
+                    srt = optimalleaforder(tree, dd);
                 else %if strcmpi(srt, 'snr')
                     snrs = var(obj.C, 0, 2)./var(obj.C_raw-obj.C, 0, 2);
                     [~, srt] = sort(snrs, 'descend');
