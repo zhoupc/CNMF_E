@@ -117,6 +117,7 @@ Names = [
     'spatial_algorithm  ' % method for updating spatial components 
     'with_overlap_init  ' % initialize repeat neurons across different patch 
     'save_intermediate  ' % save intermediate results or not 
+    'background_smooth  ' % smooth background spatial component using imopen   
     ];
 
 [m,n] = size(Names);
@@ -304,6 +305,7 @@ Values = [
     {'spline'}
     {struct('circular', false, 'connected', true)}
     {'hals'}
+    {false}
     {false}
     {false}
     ];
