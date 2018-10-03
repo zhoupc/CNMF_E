@@ -55,6 +55,8 @@ nb = options.nb;
 bg_ssub = options.bg_ssub;
 bg_model = options.background_model;
 with_projection = options.bg_acceleration;
+bg_smooth = obj.options.background_smooth; 
+gSiz = obj.options.gSiz; 
 
 % previous estimation
 A = cell(nr_patch, nc_patch);
@@ -115,9 +117,6 @@ if strcmpi(bg_model, 'ring')
             end
         end
     end
-else
-    bg_smooth = obj.options.background_smooth; 
-    gSiz = obj.options.gSiz; 
 end
 
 %% start updating the background
