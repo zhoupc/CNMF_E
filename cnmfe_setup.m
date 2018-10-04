@@ -7,7 +7,7 @@ if ~exist('cnmfe_loaded', 'var') || ~cnmfe_loaded
     addpath(fullfile(cnmfe_folder, 'GUI'));
     addpath(fullfile(cnmfe_folder, 'GUI', 'gui_callbacks'));
     addpath(fullfile(cnmfe_folder, 'GUI', 'modules'));
-    addpath(fullfile(cnmfe_folder, 'cnmfe_scripts'));
+    addpath(fullfile(cnmfe_folder, 'scripts'));
     cnmfe_loaded = true;
 end
 
