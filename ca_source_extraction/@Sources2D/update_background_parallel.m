@@ -55,6 +55,8 @@ nb = options.nb;
 bg_ssub = options.bg_ssub;
 bg_model = options.background_model;
 with_projection = options.bg_acceleration;
+bg_smooth = obj.options.background_smooth; 
+gSiz = obj.options.gSiz; 
 
 % previous estimation
 A = cell(nr_patch, nc_patch);
@@ -240,6 +242,11 @@ if use_parallel
             Ypatch = reshape(Ypatch, [], T);
             sn_patch = sn_block(ind_patch);
             [b{mpatch}, f{mpatch}, b0{mpatch}] = fit_svd_model(Ypatch, nb, A_block, C_block, b_old, f_old, thresh_outlier, sn_patch, ind_patch);
+            if bg_smooth
+                temp = reshape(b{mpatch}, diff(tmp_patch(1:2))+1, []);
+                temp = imopen(temp, strel('disk',gSiz));
+                b{mpatch} = reshape(temp, [], 1);
+            end
         end
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
@@ -302,6 +309,11 @@ else
             Ypatch = reshape(Ypatch, [], T);
             sn_patch = sn_block(ind_patch);
             [b{mpatch}, f{mpatch}, b0{mpatch}] = fit_svd_model(Ypatch, nb, A_block, C_block, b_old, f_old, thresh_outlier, sn_patch, ind_patch);
+            if bg_smooth
+                temp = reshape(b{mpatch}, diff(tmp_patch(1:2))+1,[]);
+                temp = imopen(temp, strel('disk', gSiz));
+                b{mpatch} = reshape(temp, [], 1);
+            end
         end
         [r, c] = ind2sub([nr_patch, nc_patch], mpatch);
         fprintf('Patch (%2d, %2d) is done. %2d X %2d patches in total. \n', r, c, nr_patch, nc_patch);
