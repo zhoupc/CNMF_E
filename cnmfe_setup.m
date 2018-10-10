@@ -11,9 +11,21 @@ if ~exist('cnmfe_loaded', 'var') || ~cnmfe_loaded
     cnmfe_loaded = true;
 end
 
-%% install deconvolution package 
-run(fullfile(cnmfe_folder, 'OASIS_matlab', 'oasis_setup.m'));
-
+%% install deconvolution package
+oasis_folder = fullfile(cnmfe_folder, 'OASIS_matlab'); 
+if exist(fullfile(oasis_folder, 'oasis_setup.m'), 'file')
+    run(fullfile(cnmfe_folder, 'OASIS_matlab', 'oasis_setup.m'));
+else
+    oasis_url = 'https://github.com/zhoupc/OASIS_matlab/archive/master.zip'; 
+    fprintf('downloading OASIS_matlab....\n'); 
+    unzip(oasis_url, cnmfe_folder); 
+    if exist(oasis_folder, 'dir')
+        rmdir(oasis_folder, 's');
+    end
+    movefile(fullfile(cnmfe_folder, 'OASIS_matlab-master'), ...
+        oasis_folder);
+    fprintf('done!\n'); 
+end
 %% install convex optimization solvers
 % by default, we don't install cvx any more. if you want to install cvx,
 % then set install_cvx = true and then run oasis-setup.m 
