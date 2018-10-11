@@ -36,7 +36,9 @@ if ~exist('C', 'var')||isempty(C)
     tmpA = bsxfun(@times, A, 1./sum(A, 1)); 
     ind_max = bsxfun(@eq, tmpA, max(tmpA, [], 2)); 
     tmp_A = A.*double(ind_max); 
-    C = bsxfun(@times, tmp_A'*Y, 1./sum(tmp_A.^2, 1)'); 
+    temp = sum(tmp_A.^2, 1)'; 
+    temp(temp==0) = 1; % in case tmp_A is 0 
+    C = bsxfun(@times, tmp_A'*Y, 1./temp); 
 else
     C_old = C;
 end
