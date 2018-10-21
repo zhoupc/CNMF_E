@@ -1807,7 +1807,7 @@ classdef Sources2D < handle
                 fp.close();
             end
             
-            if ~exist('zip_file_path', 'var') || ~isempty(zip_file_path)
+            if exist('zip_file_path', 'var') && ~isempty(zip_file_path)
                [zip_dir, zip_name, ~] = fileparts(get_fullname(zip_file_path)); 
                zip([zip_name, '.zip'], {file_path, log_file}, zip_dir); 
                fprintf('The results and the log files were compresed into file \n%s\n', zip_file_path); 
