@@ -208,6 +208,7 @@ classdef Sources2D < handle
                 frame_range = [1, T];
             end
             Ypatch = get_patch_data(mat_data, patch_pos, frame_range, false);
+            Ypatch(isnan(Ypatch)) = 0; 
         end
         %% distribute data and be ready to run source extraction
         function getReady(obj, pars_envs, filter_kernel)
