@@ -82,7 +82,7 @@ seed_method_res = 'auto';  % method for initializing neurons from the residual
 update_sn = true;
 
 % ----------------------  WITH MANUAL INTERVENTION  --------------------  %
-with_manual_intervention = false;
+with_manual_intervention = true;
 
 % -------------------------  FINAL RESULTS   -------------------------  %
 save_demixed = true;    % save the demixed file or not
