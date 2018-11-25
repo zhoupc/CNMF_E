@@ -280,7 +280,10 @@ aa(aa==0) = 1;
 obj.C_raw = bsxfun(@times, C_new, 1./aa);
 fprintf('Deconvolve and denoise all temporal traces again...\n');
 if deconv_flag
-    C_new = obj.deconvTemporal();
+    obj.C = obj.deconvTemporal();
+else
+    obj.C_raw = bsxfun(@minus, obj.C_raw, min(obj.C_raw,[],2)); 
+    obj.C = obj.C_raw; 
 end
 fprintf('Done!\n');
 

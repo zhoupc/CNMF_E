@@ -16,7 +16,7 @@ pars_envs = struct('memory_size_to_use', 8, ...   % GB, memory space you allow t
 gSig = 3;           % pixel, gaussian width of a gaussian kernel for filtering the data. 0 means no filtering
 gSiz = 13;          % pixel, neuron diameter
 ssub = 1;           % spatial downsampling factor
-with_dendrites = true;   % with dendrites or not
+with_dendrites = false;   % with dendrites or not
 if with_dendrites
     % determine the search locations by dilating the current neuron shapes
     updateA_search_method = 'dilate';  %#ok<UNRCH>
@@ -34,6 +34,7 @@ spatial_algorithm = 'hals_thresh';
 % -------------------------      TEMPORAL     -------------------------  %
 Fs = 10;             % frame rate
 tsub = 1;           % temporal downsampling factor
+deconv_flag = true;     % run deconvolution or not 
 deconv_options = struct('type', 'ar1', ... % model of the calcium traces. {'ar1', 'ar2'}
     'method', 'foopsi', ... % method for running deconvolution {'foopsi', 'constrained', 'thresholded'}
     'smin', -5, ...         % minimum spike size. When the value is negative, the actual threshold is abs(smin)*noise level
@@ -99,6 +100,7 @@ neuron.updateParams('gSig', gSig, ...       % -------- spatial --------
     'spatial_constraints', spatial_constraints, ...
     'spatial_algorithm', spatial_algorithm, ...
     'tsub', tsub, ...                       % -------- temporal --------
+    'deconv_flag', deconv_flag, ...
     'deconv_options', deconv_options, ...
     'nk', nk, ...
     'detrend_method', detrend_method, ...
