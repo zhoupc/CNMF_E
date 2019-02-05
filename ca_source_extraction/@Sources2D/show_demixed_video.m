@@ -41,7 +41,7 @@ if ~exist('range_ac', 'var') || isempty(range_ac)
 end
 range_res = range_ac - mean(range_ac); 
 if ~exist('range_Y', 'var') || isempty(range_Y)
-    if ~exist('multi_factor', 'var') || isempty(multiple_factor)
+    if ~exist('multi_factor', 'var') || isempty(multi_factor)
         temp = quantile(double(Y(randi(numel(Y), 10000,1))), [0.01, 0.98]);
         multi_factor = ceil(diff(temp)/diff(range_ac));
     else

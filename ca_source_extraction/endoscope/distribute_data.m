@@ -181,6 +181,7 @@ fprintf('Data is being loaded and distributed into multiple small blocks for eas
 while t_start<T
     num2read = min(Tchunk, T-t_start);
     Y = smod_bigread2(file_name, t_start+1, num2read);
+    Y(isnan(Y)) = 0;
     temp = Y(1); 
     if filter_data
         Y = cast(imfilter(double(Y), filter_kernel, 'replicate'), 'like', temp); 
