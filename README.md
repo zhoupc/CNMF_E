@@ -54,7 +54,8 @@ This repository is the native implementation of the CNMF-E model & algorithms us
 
 **Zhou, P.**, Resendez, S.L., Rodriguez-Romaguera, J., Jimenez, J.C, Neufeld, S.Q., Giovannucci, A., Friedrich, J., Pnevmatikakis, E.A., Stuber, Garret D ,  Stuber, G.D., Hen, R., Kheirbek, M.A., Sabatini, B.L., Kass, R.E., Paninski, L. (2018). [Efficient and accurate extraction of in vivo calcium signals from microendoscopic video data](https://elifesciences.org/articles/28728). eLife,  pp.e28728.  (When you use the (Corr+PNR) algorithm in initialization step or use the ring model for estimating background components)
 
-Pnevmatikakis, E.A., Soudry, D., Gao, Y., Machado, T.A., Merel, J., Pfau, D., Reardon, T., Mu, Y., Lacefield, C., Yang, W. and Ahrens, M., 2016. [Simultaneous denoising, deconvolution, and demixing of calcium imaging data](http://www.sciencedirect.com/science/article/pii/S0896627315010843). Neuron, 89(2), pp.285-299. (The original CNMF framework paper) 
+Pnevmatikakis, E.A., Soudry, D., Gao, Y., Machado, T.A., Merel, J., Pfau, D., Reardon, T., Mu, Y., Lacefield, C., Yang, W. and Ahrens, M., 2016, **MISSING AUTHORS HERE!**
+[Simultaneous denoising, deconvolution, and demixing of calcium imaging data](http://www.sciencedirect.com/science/article/pii/S0896627315010843). Neuron, 89(2), pp.285-299. (The original CNMF framework paper) 
 
 
 
