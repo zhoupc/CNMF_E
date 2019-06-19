@@ -1278,6 +1278,11 @@ classdef Sources2D < handle
             if ~exist('frame_range', 'var')||isempty(frame_range)
                 frame_range = obj.frame_range;
             end
+            if isempty(obj.frame_range)
+                frame_shift = 0; 
+            else
+                frame_shift = 1 - obj.frame_range(1); 
+            end
             % frames to be loaded for initialization
             T = diff(frame_range) + 1;
             
@@ -1313,7 +1318,7 @@ classdef Sources2D < handle
                     ind = (reshape(mask(:), 1, [])* obj.A_prev>0);
                     
                     A_patch = obj.A_prev(logical(mask), ind);
-                    C_patch = obj.C_prev(ind, frame_range(1):frame_range(2));
+                    C_patch = obj.C_prev(ind, frame_shift+(frame_range(1):frame_range(2)));
                     
                     % reconstruct background
                     %                     Cmean = mean(C_patch , 2);
@@ -1337,12 +1342,12 @@ classdef Sources2D < handle
                 elseif strcmpi(bg_model, 'nmf')
                     b_nmf = obj.b{mpatch};
                     f_nmf = obj.f{mpatch};
-                    Ybg(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4),:) = reshape(b_nmf*f_nmf(:, frame_range(1):frame_range(2)), diff(tmp_patch(1:2))+1, [], T);
+                    Ybg(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4),:) = reshape(b_nmf*f_nmf(:, frame_shift+(frame_range(1):frame_range(2))), diff(tmp_patch(1:2))+1, [], T);
                 else
                     b_svd = obj.b{mpatch};
                     f_svd = obj.f{mpatch};
                     b0_svd = obj.b0{mpatch};
-                    Ybg(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4),:) = reshape(bsxfun(@plus, b_svd*f_svd(:, frame_range(1):frame_range(2)), b0_svd), diff(tmp_patch(1:2))+1, [], T);
+                    Ybg(tmp_patch(1):tmp_patch(2), tmp_patch(3):tmp_patch(4),:) = reshape(bsxfun(@plus, b_svd*f_svd(:, frame_shift+(frame_range(1):frame_range(2))), b0_svd), diff(tmp_patch(1:2))+1, [], T);
                 end
                 
             end
