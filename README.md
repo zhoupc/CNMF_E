@@ -45,9 +45,7 @@ Please read more from the [wiki page](https://github.com/zhoupc/CNMF_E/wiki)
 
 ## Python 
 
-This repository is the native implementation of the CNMF-E model & algorithms using MATLAB. There is also a python implementation of the model in [CaImAn](https://github.com/flatironinstitute/CaImAn). However, these two implementations are not exactly the same in some details and we are still working to make them consistent. For those people who love Python but still want to run CNMF-E using the MATLAB implementation, we provided a Python wrapper (thanks to [Tim Machado](https://github.com/tamachado)) for calling MATLAB version CNMF-E in Python.  You can use the ipython notebook file python_wrapper/ analyze_cnmfe_matlab.ipynb to get started. 
-
-
+This repository is the native implementation of the CNMF-E model & algorithms using MATLAB. There is also a python implementation of the model in [CaImAn](https://github.com/flatironinstitute/CaImAn). However, these two implementations are not exactly the same in some details and we are still working to make them consistent. For those people who love Python but still want to run CNMF-E using the MATLAB implementation, we provided a Python wrapper (thanks to [Tim Machado](https://github.com/tamachado)) for calling MATLAB version CNMF-E in Python.  You can use the ipython notebook file python_wrapper/ analyze_cnmfe_matlab.ipynb to get started. In the meanwhile, [Thomas Akam](https://github.com/ThomasAkam) provided a solution to load CNMF-E results from python, please check [it](https://github.com/ThomasAkam/CNMF-E_mat2npy) out . 
 
 ## Reference
 **Please cite these papers when you use CNMF-E in your research. Thanks!**
