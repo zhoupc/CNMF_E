@@ -48,6 +48,11 @@ else fprintf('Method not recongnized. Search location equals the entire field of
 end
 
 IND = false(d,nr);
+% find all zero components 
+ind_empty = (sum(A, 1)==0);
+if any(ind_empty)
+    A(1, ind_empty) = 1;
+end
 switch method 
     case 'ellipse'
         Coor.x = kron(ones(d2*d3,1),(1:d1)'); 
@@ -93,4 +98,7 @@ switch method
         end
     otherwise
         IND = true(d,nr);
+end
+if any(ind_empty)
+    IND(:, ind_empty) = false;
 end
