@@ -71,7 +71,7 @@ try
     if ~exist('use_prev', 'var') || isempty(use_prev)
         use_prev = true;
     end
-    if (k > 0) & use_prev
+    if (k > 0) && use_prev
         fprintf('\nYou have ran %d initialization(s). \n', k);
         for m=1:k
             fprintf('* %2d:\t %s\n', m, previous_folder{m});
