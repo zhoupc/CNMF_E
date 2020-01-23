@@ -31,7 +31,7 @@ set(gca, 'xticklabel', []);
 set(gca, 'ytick', 0:2);
 ylabel('Fluor.');
 box off;
-legend('Data', 'Truth', 'OASIS', 'CVX', 'location', 'northeast', 'orientation', 'horizental');
+legend('Data', 'Truth', 'OASIS', 'CVX', 'location', 'northeast', 'orientation', 'horizontal');
 % s
 axes('position', [.05, .18, .95, .37]);
 hold on;

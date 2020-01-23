@@ -81,7 +81,7 @@ while ~isnan(ii_next)
 
     %% backtrack until violations fixed
     while (~isnan(ii_prev)) && (active_set(ii,1)/active_set(ii,2)<...
-            active_set(ii_prev,1)/active_set(ii_prev,2)*g^(active_set(ii_prev,4))+smin)
+            max(0, active_set(ii_prev,1)/active_set(ii_prev,2)*g^(active_set(ii_prev,4)))+smin)
         ii_next = ii;
         ii = ii_prev;
         active_set(ii,1) = active_set(ii,1) + active_set(ii_next,1)* (g^(active_set(ii,4)));

@@ -148,6 +148,7 @@ maxl = max(active_set(:, 4));   % maximum ISI
 c = zeros(size(y));     % the optimal denoised trace
 
 %% find the optimal g and get the warm started active_set
+h = []; 
 g = fminbnd(@rss_g, g_range(1), g_range(2));
 yp = y - lam*(1-g);
 for m=1:len_active_set

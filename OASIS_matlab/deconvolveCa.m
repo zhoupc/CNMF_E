@@ -108,6 +108,8 @@ end
 %% run deconvolution
 c = y;
 s = y;
+b0 = options.b;
+
 switch lower(options.method)
     case 'foopsi'  %% use FOOPSI
         if strcmpi(options.type, 'ar1')  % AR 1
@@ -115,21 +117,23 @@ switch lower(options.method)
                 options.smin = abs(options.smin)*options.sn;
             end
             gmax = exp(-1/options.max_tau); 
-            [c, s, options.b, options.pars] = foopsi_oasisAR1(y-options.b, options.pars, options.lambda, ...
+            [c, s, options.b, options.pars] = foopsi_oasisAR1(y-b0, options.pars, options.lambda, ...
                 options.smin, options.optimize_b, options.optimize_pars, [], options.maxIter, ...
                 options.tau_range, gmax);
+            options.b = options.b + b0; 
         elseif strcmpi(options.type, 'ar2') % AR 2
             if options.smin<0
                 options.smin = abs(options.smin)*options.sn/max_ht(options.pars);
             end
-            [c, s, options.b, options.pars] = foopsi_oasisAR2(y-options.b, options.pars, options.lambda, ...
+            [c, s, options.b, options.pars] = foopsi_oasisAR2(y-b0, options.pars, options.lambda, ...
                 options.smin);
+            options.b = options.b + b0;
         elseif strcmpi(options.type, 'exp2')   % difference of two exponential functions
             kernel = exp2kernel(options.pars, options.window);
-            [c, s] = onnls(y-options.b, kernel, options.lambda, ...
+            [c, s] = onnls(y-b0, kernel, options.lambda, ...
                 options.shift, options.window);
         elseif strcmpi(options.type, 'kernel') % convolution kernel itself
-            [c, s] = onnls(y-options.b, options.pars, options.lambda, ...
+            [c, s] = onnls(y-b0, options.pars, options.lambda, ...
                 options.shift, options.window);
         else
             disp('to be done');
@@ -158,7 +162,7 @@ switch lower(options.method)
             %                     options.pars, options.sn, options.optimize_b, options.optimize_pars, ...
             %                     [], options.maxIter, options.thresh_factor);
             %             else
-            %                 [c, s] = oasisAR1(y-options.b, options.pars, options.lambda, ...
+            %                 [c, s] = oasisAR1(y-b0, options.pars, options.lambda, ...
             %                     options.smin);
             %             end
         elseif strcmpi(options.type, 'ar2')
@@ -170,17 +174,17 @@ switch lower(options.method)
             %                     options.pars, options.sn, options.optimize_b, options.optimize_pars, ...
             %                     [], options.maxIter, options.thresh_factor);
             %             else
-            %                 [c, s] = oasisAR2(y-options.b, options.pars, options.lambda, ...
+            %                 [c, s] = oasisAR2(y-b0, options.pars, options.lambda, ...
             %                     options.smin);
             %             end
         elseif strcmpi(options.type, 'exp2')   % difference of two exponential functions
             d = options.pars(1);
             r = options.pars(2);
             options.pars = (exp(log(d)*(1:win)) - exp(log(r)*(1:win))) / (d-r); % convolution kernel
-            [c, s] = onnls(y-options.b, options.pars, options.lambda, ...
+            [c, s] = onnls(y-b0, options.pars, options.lambda, ...
                 options.shift, options.window, [], [], [], options.smin);
         elseif strcmpi(options.type, 'kernel') % convolution kernel itself
-            [c, s] = onnls(y-options.b, options.pars, options.lambda, ...
+            [c, s] = onnls(y-b0, options.pars, options.lambda, ...
                 options.shift, options.window, [], [], [], options.smin);
         else
             disp('to be done');
@@ -194,10 +198,12 @@ end
 
 % deal with large residual
 if options.remove_large_residuals && strcmpi(options.method, 'foopsi')
-    ind = (abs(smooth(y-c, 3))>options.smin);
+    ind = (abs(fastsmooth(y-c, 3))>options.smin) & (c>options.smin*5);
     c(ind) = max(0, y(ind));
 end
 
+% avoid nan output 
+c(isnan(c) | isinf(c)) = 0; 
 
 function options=parseinputs(varargin)
 %% parse input variables

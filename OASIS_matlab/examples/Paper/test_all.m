@@ -1,3 +1,6 @@
+if ~exist('fig', 'dir')
+    mkdir('fig'); 
+end
 fig1; 
 fig2; 
 fig3; 

@@ -245,6 +245,7 @@ if ~exist('g_range', 'var') || isempty(g_range)
    g_range = [0, 1];  
 end
 %% find the optimal g and get the warm started active_set
+h = []; 
 g = fminbnd(@rss_g, g_range(1), g_range(2));
 yp = y;
 for m=1:len_active_set

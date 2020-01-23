@@ -138,7 +138,7 @@ else
             break;
         end
         % update g
-        if and(optimize_g, ~g_converged);
+        if and(optimize_g, ~g_converged)
             g0 = g;
             g = update_g(y-b, g, spks);
             smin = choose_smin(g, sn, 0.9999);
