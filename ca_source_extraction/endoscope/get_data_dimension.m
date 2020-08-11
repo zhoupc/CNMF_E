@@ -32,10 +32,13 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif');
 elseif strcmpi(ext,'.hdf5') || strcmpi(ext,'.h5');
     info = hdf5info(path_to_file);
     temp = squeeze(info.GroupHierarchy.Datasets.Dims);
-    dims = temp([2, 3, 5]); 
+    dims = temp([2, 3, 5]);
 elseif strcmpi(ext, '.avi')
-    obj = audiovideo.mmreader(path_to_file);
-    
+    try
+        obj = audiovideo.mmreader(path_to_file);
+    catch
+        obj = VideoReader(path_to_file);
+    end
     frame_rate = obj.FrameRate;
     total = obj.Duration;
     numFrames = total*frame_rate;
@@ -67,7 +70,7 @@ elseif isempty(ext)
     numFrames=length(imgs);
     
     dims = [sizy, sizx, numFrames];
-
+    
 else
     error('Unknown file extension. Only .tiff and .hdf5 files are currently supported');
     dims = [];

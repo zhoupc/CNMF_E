@@ -73,7 +73,7 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif') || strcmpi(ext,'.BTF');
         
         if sframe>num_tot_frames
             sframe=num_tot_frames;
-            num2read=1;
+            num2read=0;
             display('starting frame has to be less than number of total frames...');
         end
         if (num2read+sframe<= num_tot_frames+1)
@@ -101,7 +101,7 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif') || strcmpi(ext,'.BTF');
             form='uint8';
             for_mult=1;
         end
-        for_mult = uint64(for_mult); 
+        for_mult = uint64(for_mult);
         framenum=num2read;
         imData=cell(1,framenum);
         
@@ -110,7 +110,7 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif') || strcmpi(ext,'.BTF');
         fp = fopen(path_to_file , 'rb');
         % The StripOffsets field provides the offset to the first strip. Based on
         % the INFO for this file, each image consists of 1 strip.
-        he_w = info.Width; 
+        he_w = info.Width;
         sizx=he_w;
         he_w=uint64(he_w);
         he_h = info.Height;
@@ -118,7 +118,7 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif') || strcmpi(ext,'.BTF');
         he_h=uint64(he_h);
         
         first_offset=info.StripOffsets;
-        first_offset = uint64(first_offset); 
+        first_offset = uint64(first_offset);
         ofds=zeros(numFrames, 1, 'like', uint64(0));
         %compute frame offsets
         for i=1:numFrames
@@ -352,7 +352,11 @@ elseif strcmpi(ext,'.hdf5') || strcmpi(ext,'.h5');
     imData =squeeze( h5read(path_to_file,info.GroupHierarchy.Datasets.Name,[ones(1,length(dims)-1),sframe],[dims(1:end-1),num2read]));
     display('Finished reading images')
 elseif strcmpi(ext,'.avi')
-    obj = audiovideo.mmreader(path_to_file);
+    try
+        obj = audiovideo.mmreader(path_to_file);
+    catch
+        obj = VideoReader(path_to_file);
+    end
     
     frame_rate = obj.FrameRate;
     total = obj.Duration;
