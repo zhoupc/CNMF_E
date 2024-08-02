@@ -1,4 +1,4 @@
-function [imData,sizx,sizy]=smod_bigread2(varargin)
+function [imData,sizx,sizy,numFrames]=smod_bigread2(varargin)
 %reads tiff files in Matlab bigger than 4GB, allows reading from sframe to sframe+num2read-1 frames of the tiff - in other words, you can read page 200-300 without rading in from page 1.
 %based on a partial solution posted on Matlab Central (http://www.mathworks.com/matlabcentral/answers/108021-matlab-only-opens-first-frame-of-multi-page-tiff-stack)
 %Darcy Peterka 2014, v1.0
@@ -73,7 +73,7 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif') || strcmpi(ext,'.BTF');
         
         if sframe>num_tot_frames
             sframe=num_tot_frames;
-            num2read=0;
+            num2read=1;
             display('starting frame has to be less than number of total frames...');
         end
         if (num2read+sframe<= num_tot_frames+1)
@@ -101,7 +101,7 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif') || strcmpi(ext,'.BTF');
             form='uint8';
             for_mult=1;
         end
-        for_mult = uint64(for_mult);
+        for_mult = uint64(for_mult); 
         framenum=num2read;
         imData=cell(1,framenum);
         
@@ -110,7 +110,7 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif') || strcmpi(ext,'.BTF');
         fp = fopen(path_to_file , 'rb');
         % The StripOffsets field provides the offset to the first strip. Based on
         % the INFO for this file, each image consists of 1 strip.
-        he_w = info.Width;
+        he_w = info.Width; 
         sizx=he_w;
         he_w=uint64(he_w);
         he_h = info.Height;
@@ -118,7 +118,7 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif') || strcmpi(ext,'.BTF');
         he_h=uint64(he_h);
         
         first_offset=info.StripOffsets;
-        first_offset = uint64(first_offset);
+        first_offset = uint64(first_offset); 
         ofds=zeros(numFrames, 1, 'like', uint64(0));
         %compute frame offsets
         for i=1:numFrames
@@ -338,6 +338,9 @@ if strcmpi(ext,'.tiff') || strcmpi(ext,'.tif') || strcmpi(ext,'.BTF');
 elseif strcmpi(ext,'.hdf5') || strcmpi(ext,'.h5');
     info = hdf5info(path_to_file);
     dims = info.GroupHierarchy.Datasets.Dims;
+    sizx=dims(1);
+    sizy=dims(2);
+    numFrames=dims(3);
     if nargin < 2
         sframe = 1;
     end
